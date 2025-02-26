@@ -1,15 +1,13 @@
 <template>
-  <Waterfall :images="images" :rowHeight="200" @open-preview="openPreview" @open-full-preview="openFullImg" />
+  <!-- <Waterfall :images="images" :rowHeight="200" @open-preview="openPreview" @open-full-preview="openFullImg" />
 
   <el-dialog v-model="previewVisible" :before-close="handlePreviewClose" width="80%">
     <img :src="previewImage" alt="预览图片" class="preview-image" style="width: 100%; height: auto;" />
   </el-dialog>
 
-  <!-- <div class="fullImg"> -->
-    <el-image-viewer class="fullImg" :teleported="true" v-if="fullImgShow" :url-list="fullImgList"
-      :initial-index="currentIndex" @close="fullImgShow = false" />
-  <!-- </div> -->
-
+  <el-image-viewer class="fullImg" :teleported="true" v-if="fullImgShow" :url-list="fullImgList"
+    :initial-index="currentIndex" @close="fullImgShow = false" /> -->
+    <Test />
 
 
 </template>
@@ -19,12 +17,22 @@ import { defineComponent, ref } from 'vue';
 import type { WaterfallItem } from './types';
 import Waterfall from '@/components/Waterfall.vue';
 import { ElImageViewer } from 'element-plus';
+import Test from '@/components/test.vue';
+
 
 const ImgPath = '/img/';
 
 // 照片流数据
 const images: WaterfallItem[] = [
   {
+    id: 0,
+    thumbnail: ImgPath + 'xx.jpg',
+    fullSize: ImgPath + 'xx.jpg',
+    width: 300,
+    height: 300,
+    title: 'aa_',
+    author: 'xx'
+  }, {
     id: 1,
     thumbnail: ImgPath + '20250122-082408-DJI_20250122082408_0144_D-编辑.jpg',
     fullSize: ImgPath + '20250122-082408-DJI_20250122082408_0144_D-编辑.jpg',
@@ -146,18 +154,5 @@ const openFullImg = (item: WaterfallItem) => {
 </script>
 
 <style scoped>
-.preview-image {
-  width: 100%;
-  height: auto;
-}
 
-
-.fullImg {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 9999;
-}
 </style>

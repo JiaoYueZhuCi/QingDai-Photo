@@ -1,6 +1,4 @@
 export type { 
-    WaterfallItem, 
-    WaterfallConfig,
-    WaterfallComponentProps 
+    WaterfallItem
   } from './waterfall'
   

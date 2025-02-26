@@ -10,10 +10,5 @@
     {
       "path": "./tsconfig.vitest.json"
     }
-  ],
-  "compilerOptions": {
-    "types": ["element-plus/global"],
-    "esModuleInterop": true
-  },
-  "include": ["src/**/*.ts", "node_modules/element-plus/es/**/*"]
+  ]
 }
