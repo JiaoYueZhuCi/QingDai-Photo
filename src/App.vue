@@ -43,8 +43,8 @@ import waterfall from '@/components/waterfall.vue';
 import Introduce from '@/components/introduce.vue';
 import tabs from '@/components/tabs.vue';
 import timeline from '@/components/timeline.vue';
-import photoData from './components/photoData.vue';
-import mapData from './components/mapData.vue';
+import photoData from '@/components/photoData.vue';
+import mapData from '@/components/mapData.vue';
 
 const ImgPath = '/img/';
 

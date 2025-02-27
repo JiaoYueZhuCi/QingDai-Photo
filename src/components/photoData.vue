@@ -1,12 +1,12 @@
 <template>
   <div class="phopoDataContainer">
-    <el-row :gutter="16">
+    <el-row :gutter="10">
       <el-col :span="8">
         <div class="statistic-card">
           <el-statistic :value="98500">
             <template #title>
               <div style="display: inline-flex; align-items: center">
-                精选照片数量
+                代表作照片数量
                 <el-tooltip effect="dark" content="具有个人代表的的照片累计和"
                   placement="top">
                   <el-icon style="margin-left: 4px" :size="12">
@@ -41,7 +41,7 @@
           <el-statistic :value="693700">
             <template #title>
               <div style="display: inline-flex; align-items: center">
-                普通照片总数
+                精选照片总数
                 <el-tooltip effect="dark" content="普通照片累积和"
                   placement="top">
                   <el-icon style="margin-left: 4px" :size="12">
@@ -170,5 +170,9 @@ import {
 
 .red {
   color: var(--el-color-error);
+}
+
+.el-col{
+padding: 0;
 }
 </style>

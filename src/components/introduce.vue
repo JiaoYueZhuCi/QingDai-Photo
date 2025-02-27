@@ -18,12 +18,8 @@
             <!-- 用户信息保持原样 -->
             <div class="profile-info">
                 <div class="profile-info-in">
-                    <h1 class="username">皎月祝辞</h1>
-                    <!-- <div class="stats">
-                        <span>粉丝 0</span>
-                        <el-divider direction="vertical" />
-                        <span>关注 0</span>
-                    </div> -->
+                    <div class="username">皎月祝辞</div>
+                    <div class="description">吾生本无乡 心安是归处</div>
                 </div>
             </div>
         </div>
@@ -123,7 +119,6 @@ p {
     color: white;
 }
 
-/* 覆盖原上传组件的hover效果 */
 .cover-container {
     height: 400px;
     background-size: cover;
@@ -161,5 +156,15 @@ p {
 
 :deep(.my-content) {
     background: rgb(255, 255, 255);
+}
+
+.username {
+    font-size: 40px;
+    margin: 10px;
+}
+
+.description {
+    font-size: 18px;
+    color: rgb(90, 90, 90);
 }
 </style>

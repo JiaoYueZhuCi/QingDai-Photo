@@ -1,12 +1,24 @@
 <template>
-  <div v-if="isActive" ref="mapContainer" style="width: 100%; height: 600px"></div>
+  <div class="map-group">
+    <div class="card mapCard">
+      <el-affix :offset="120">
+
+        <div v-if="isActive" ref="mapContainer" class="map-container"></div>
+    
+    </el-affix>
+  </div>
+  <div class="card" :style="{ width: timelineCard + 'px' }">
+    <timeline />
+  </div>
+  </div>
+
 </template>
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount, nextTick, watch, defineProps } from 'vue';
 import * as echarts from 'echarts';
 import chinaJson from '/public/map-data/china.json';
-
+import timeline from '@/components/timeline.vue';
 // 接收父组件参数
 const props = defineProps({
   isActive: Boolean
@@ -44,7 +56,7 @@ const initChart = async () => {
   try {
     // 等待容器渲染完成
     await nextTick();
-    
+
     // 确保容器存在
     if (!mapContainer.value) return;
 
@@ -56,15 +68,17 @@ const initChart = async () => {
 
     // 初始化图表
     chart = echarts.init(mapContainer.value);
-    
-    // 配置项（保持原有配置）
+
+    // 配置项
     const option = {
       geo: {
         map: 'china',
+        width: 500,
+        height: 500,
         roam: false,
         itemStyle: {
           areaColor: '#EEEEEE',
-          borderColor: '#FFFFFF',
+          borderColor: 'black',
           borderWidth: 1
         },
         emphasis: {
@@ -129,4 +143,35 @@ const getProvinceName = (adcode) => {   //根据省份代码返回省份名称
   const feature = chinaJson.features.find(f => f.properties.adcode === adcode);
   return feature?.properties?.name || '';
 };
+
+const timelineCard = ref(window.innerWidth - 500) // 窗口宽度-固定的地图宽度
+
+
 </script>
+
+<style scoped>
+.map-group {
+  background-color: black;
+  display: flex;
+  padding: 0 10px 10px 10px;
+  justify-content: space-around;
+  gap: 10px;
+  min-width: 520px;
+}
+
+.map-container {
+  width: 500px;
+  height: 500px;
+  padding: 10px 0 0 0;
+}
+
+.mapCard {
+  padding: 10px;
+}
+
+.card {
+  border-radius: 4px;
+  background-color: rgb(250, 250, 250);
+  /* margin: 0 10px 0 0; */
+}
+</style>
