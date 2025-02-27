@@ -4,7 +4,7 @@
   <Introduce />
 
   <!-- <tabs /> -->
-  <el-tabs type="border-card">
+  <el-tabs type="border-card" @tab-click="handleTabClick">
     <el-tab-pane label="精选">
       <waterfall :images="images" :rowHeightMax="300" :rowHeightMin="150" :gap="10" @open-preview="openPreview"
         @open-full-preview="openFullImg" />
@@ -16,9 +16,9 @@
     <el-tab-pane label="时间轴">
       <timeline />
     </el-tab-pane>
-    <el-tab-pane label="数据">
+    <el-tab-pane label="数据" name="data">
       <photoData />
-      <mapData />
+      <mapData :is-active="activeTabKey"/>
     </el-tab-pane>
   </el-tabs>
 
@@ -38,6 +38,7 @@
 import { watch, ref } from 'vue';
 import type { WaterfallItem } from './types';
 import { ElImageViewer } from 'element-plus';
+import type { TabsPaneContext } from 'element-plus';
 import waterfall from '@/components/waterfall.vue';
 import Introduce from '@/components/introduce.vue';
 import tabs from '@/components/tabs.vue';
@@ -173,6 +174,21 @@ watch(fullImgShow, (newVal: boolean) => {
     document.body.classList.remove('body-no-scroll');
   }
 });
+
+////打开数据页才渲染地图
+// 定义当前激活标签的标识
+const activeTabKey = ref(false) 
+
+// 标签点击事件处理
+const handleTabClick = (tab: TabsPaneContext) => {
+  if (tab.paneName === 'data') {
+    selectMapShop()
+  }
+}
+// 具体业务逻辑
+const selectMapShop = () => {
+  activeTabKey.value=true;
+}
 </script>
 
 <style>
