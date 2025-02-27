@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import Waterfall from '@/components/Waterfall.vue'
+import Waterfall from '@/components/waterfall.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),

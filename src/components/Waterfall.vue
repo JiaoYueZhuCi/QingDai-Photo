@@ -1,19 +1,23 @@
 <template>
     <div class="container" ref="container">
-        <div class="image-row" v-for="(row, rowIndex) in rows" :key="rowIndex" :style="{ height: `${row.height}px`,flex: '0 0 auto' }" >
-            <div class="image-item" v-for="(item, index) in row.items" :key="item.id" @click="openFatherFullImg(item)">
-                <!-- :fit="'contain'" -->
-                <el-image :src="item.thumbnail" :key="item.id" lazy
-                    :style="{ width: item.calcWidth + 'px', height: item.calcHeight + 'px' }">
-                    <template #error>
-                        <div class="error-image">
-                            <el-icon :size="row.height"><icon-picture /></el-icon>
-                        </div>
-                    </template>
-                </el-image>
-                <div class="image-info">
-                    <div>{{ item.title }}</div>
-                    <div>{{ item.author || '摄影师' }}</div>
+        <div class="container-in">
+            <div class="image-row" v-for="(row, rowIndex) in rows" :key="rowIndex"
+                :style="{ height: `${row.height}px`, flex: '0 0 auto' }">
+                <div class="image-item" v-for="(item, index) in row.items" :key="item.id"
+                    @click="openFatherFullImg(item)">
+                    <!-- :fit="'contain'" -->
+                    <el-image :src="item.thumbnail" :key="item.id" lazy
+                        :style="{ width: item.calcWidth + 'px', height: item.calcHeight + 'px' }">
+                        <template #error>
+                            <div class="error-image">
+                                <el-icon :size="row.height"><icon-picture /></el-icon>
+                            </div>
+                        </template>
+                    </el-image>
+                    <div class="image-info">
+                        <div>{{ item.title }}</div>
+                        <div>{{ item.author || '摄影师' }}</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -142,7 +146,7 @@ var image = ref({})
 onMounted(() => {
     calculateLayout();
 
-    window.addEventListener('resize', calculateLayout); 
+    window.addEventListener('resize', calculateLayout);
 });
 
 </script>
@@ -153,6 +157,10 @@ onMounted(() => {
     width: 100%;
     margin: 0 0;
     padding: 0 0;
+    background-color: black;
+}
+.container-in {
+    padding: 10px 0;
 }
 
 .image-row {

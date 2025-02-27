@@ -1,7 +1,27 @@
 <template>
+  <el-backtop :right="50" :bottom="50" />
+
   <Introduce />
-  <Waterfall :images="images" :rowHeightMax="300" :rowHeightMin="150" :gap="10" @open-preview="openPreview"
-    @open-full-preview="openFullImg" />
+
+  <!-- <tabs /> -->
+  <el-tabs type="border-card">
+    <el-tab-pane label="精选">
+      <waterfall :images="images" :rowHeightMax="300" :rowHeightMin="150" :gap="10" @open-preview="openPreview"
+        @open-full-preview="openFullImg" />
+    </el-tab-pane>
+    <el-tab-pane label="照片">
+      <waterfall :images="images" :rowHeightMax="300" :rowHeightMin="150" :gap="10" @open-preview="openPreview"
+        @open-full-preview="openFullImg" />
+    </el-tab-pane>
+    <el-tab-pane label="时间轴">
+      <timeline />
+    </el-tab-pane>
+    <el-tab-pane label="数据">
+      <photoData />
+      <mapData />
+    </el-tab-pane>
+  </el-tabs>
+
 
   <el-dialog v-model="previewVisible" :before-close="handlePreviewClose" width="80%">
     <img :src="previewImage" alt="预览图片" class="preview-image" style="width: 100%; height: auto;" />
@@ -17,10 +37,13 @@
 <script setup lang="ts">
 import { watch, ref } from 'vue';
 import type { WaterfallItem } from './types';
-import Waterfall from '@/components/Waterfall.vue';
 import { ElImageViewer } from 'element-plus';
+import waterfall from '@/components/waterfall.vue';
 import Introduce from '@/components/introduce.vue';
-
+import tabs from '@/components/tabs.vue';
+import timeline from '@/components/timeline.vue';
+import photoData from './components/photoData.vue';
+import mapData from './components/mapData.vue';
 
 const ImgPath = '/img/';
 
@@ -125,7 +148,6 @@ const handlePreviewClose = () => {
   previewVisible.value = false;
 };
 const openPreview = (item: WaterfallItem) => {
-  console.log('打开图片地址为:::::', item.fullSize);
   previewImage.value = item.fullSize;
   previewVisible.value = true;
 
@@ -156,5 +178,26 @@ watch(fullImgShow, (newVal: boolean) => {
 <style>
 .body-no-scroll {
   overflow: hidden;
+}
+
+.el-tabs--border-card>.el-tabs__content {
+  padding: 0
+}
+
+.el-tabs__nav-scroll {
+  background-color: rgb(250, 250, 250);
+}
+
+.el-tabs--border-card>.el-tabs__header .el-tabs__item {
+  color: white;
+  background-color: rgb(100, 100, 100);
+  border-right-color: white;
+}
+
+.el-tabs--border-card>.el-tabs__header .el-tabs__item.is-active {
+  background-color: black;
+  border-left-color: white;
+  border-right-color: white;
+  color: var(--el-color-primary);
 }
 </style>
