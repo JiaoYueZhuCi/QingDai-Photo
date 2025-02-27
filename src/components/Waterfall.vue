@@ -1,15 +1,13 @@
 <template>
     <div class="container" ref="container">
-        <div class="image-row" v-for="(row, rowIndex) in rows" :key="rowIndex">
-            <div class="image-item" v-for="(item, index) in row" :key="item.id" @click="openFatherFullImg(item)"
-                :style="{ width: item.calcWidth + 'px', height: rowHeight + 'px' }">
+        <div class="image-row" v-for="(row, rowIndex) in rows" :key="rowIndex" :style="{ height: `${row.height}px`,flex: '0 0 auto' }" >
+            <div class="image-item" v-for="(item, index) in row.items" :key="item.id" @click="openFatherFullImg(item)">
                 <!-- :fit="'contain'" -->
-                <el-image :src="item.thumbnail" :key="item.id" lazy v-lazy-style
-                    :style="{ width: item.calcWidth + 'px', height: rowHeight + 'px' }">
+                <el-image :src="item.thumbnail" :key="item.id" lazy
+                    :style="{ width: item.calcWidth + 'px', height: item.calcHeight + 'px' }">
                     <template #error>
-                        <!-- <div class="image-slot" :style="{ width: rowHeight + 'px', height: rowHeight + 'px' }"> -->
-                        <div class="error-image" :style="{ width: rowHeight + 'px', height: rowHeight + 'px' }">
-                            <el-icon><icon-picture /></el-icon>
+                        <div class="error-image">
+                            <el-icon :size="row.height"><icon-picture /></el-icon>
                         </div>
                     </template>
                 </el-image>
@@ -24,142 +22,144 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, nextTick, onBeforeMount } from 'vue';
+import type { PropType } from 'vue';
 import type { WaterfallItem } from '../types';
 import { ElImage, ElIcon } from 'element-plus';
 import { Picture as IconPicture } from '@element-plus/icons-vue'
 
-// 定义 Props
-const props = defineProps({
-    images: {
-        type: Array as PropType<WaterfallItem[]>,
-        required: true,
-    },
-    rowHeight: {
-        type: Number,
-        default: 300,
-    },
-});
 
-// 定义 Emits
+
+//// 定义 Emits
 const emit = defineEmits<{
     (e: 'open-preview', item: WaterfallItem): void
     (e: 'open-full-preview', item: WaterfallItem): void
 }>();
 
-// 打开预览方法
+//// 打开预览方法
 const openFatherPreview = (item: WaterfallItem) => {
     console.log('请求预览打开图片地址为:', item.fullSize);
     emit('open-preview', item); // 触发事件
 };
 
-// 打开全屏
+//// 打开全屏
 const openFatherFullImg = (item: WaterfallItem) => {
-    console.log('请求全屏打开图片地址为:', item.fullSize);
     emit('open-full-preview', item); // 触发事件
 };
 
 
 
 ////计算图片宽度
-const container = ref<HTMLElement | null>(null);
-const rows = ref<any[]>([]);
+const props = defineProps({
+    images: {
+        type: Array as PropType<WaterfallItem[]>,
+        required: true,
+    },
+    rowHeightMax: {
+        type: Number,
+        default: 300,
+    },
+    rowHeightMin: {
+        type: Number,
+        default: 150,
+    },
+    gap: {
+        type: Number,
+        default: 10,
+    },
+
+});
+
+interface RowData {
+    items: WaterfallItem[];
+    height: number;
+}
+
+const rows = ref<RowData[]>([]);
+
+const rowWidth = window.innerWidth - 20;   //总宽度减去瀑布流两侧20px
+// 因为每行设置了justify-content: space-around;  所以gap实际为最小间隙（当照片+间隙刚好填满一行时）
+const gap = props.gap; // 图片间隙
 
 const calculateLayout = () => {
-    if (!container.value) return;
+    const rowsData: RowData[] = [];       // 存储所有行数据
+    let currentRow: WaterfallItem[] = []; // 当前行的图片集合
+    let currentAspectRatioSum = 0;        // 当前行所有图片宽高比之和
 
-    // const containerWidth = container.value.offsetWidth;
-    const containerWidth = window.innerWidth - 20;   //总宽度减去瀑布流两侧20px
+    props.images.forEach((item) => {
+        const aspectRatio = item.aspectRatio ?? item.width / item.height;// 计算宽高比（若未预计算）
+        const newAspectSum = currentAspectRatioSum + aspectRatio;// 当前行所有图片宽高比之和
+        const newGap = (currentRow.length) * gap; // 当前行图片的间隙总和
 
-    const gap = 20; // 图片间隙
+        const idealH = (rowWidth - newGap) / newAspectSum;// 计算理想行高
+        let clampedH = Math.min(props.rowHeightMax, Math.max(props.rowHeightMin, idealH));// 限制行高
 
-    rows.value = []; // 清空之前的数据
-    let currentRow: any[] = [];
-    let currentRowWidth = 0;
+        const totalWidth = newAspectSum * clampedH + newGap; // 计算当前行总宽度
 
-    props.images.forEach((img, index) => {
-        const aspectRatio = img.width / img.height;
-        const itemWidth = props.rowHeight * aspectRatio; // 基础宽度（未缩放）
+        if (totalWidth > rowWidth && currentRow.length > 0) { // 如果当前行总宽度超页面总宽度，则将当前行加入结果并开始新行
+            const rowHeight = (rowWidth - (currentRow.length - 1) * gap) / currentAspectRatioSum;// 计算当前行总高度
+            rowsData.push({
+                items: [...currentRow],
+                height: Math.min(props.rowHeightMax, Math.max(props.rowHeightMin, rowHeight)) // 限制行高
+            });
 
-        // 计算加入当前行后的总宽度（包括间隙）
-        const newWidth = currentRowWidth + itemWidth + (currentRow.length > 0 ? gap : 0);
-
-        // 若超过容器宽度且当前行非空，则换行
-        if (newWidth > containerWidth && currentRow.length > 0) {
-            rows.value.push(currentRow);
-            currentRow = [img];
-            currentRowWidth = itemWidth;
+            // 重置当前行，以当前 item 开始新行
+            currentRow = [item];
+            currentAspectRatioSum = aspectRatio;   //更新当前行宽高比
         } else {
-            currentRow.push(img);
-            currentRowWidth += itemWidth + (currentRow.length > 1 ? gap : 0);
-        }
-
-        // 处理最后一张图片
-        if (index === props.images.length - 1) {
-            rows.value.push(currentRow);
+            // 将 item 加入当前行
+            currentRow.push(item);
+            currentAspectRatioSum = newAspectSum;
         }
     });
 
-    // 调整每行图片宽度以适应容器
-    rows.value.forEach(row => {
-        const totalItemsWidth = row.reduce((sum, item) => {
-            return sum + (props.rowHeight * (item.width / item.height));
-        }, 0);
-        const totalGap = (row.length - 1) * gap;
-        const targetWidth = containerWidth - totalGap;
-        const scale = targetWidth / totalItemsWidth;
+    // 处理最后一行
+    if (currentRow.length > 0) {
+        const rowHeight = (rowWidth - (currentRow.length - 1) * gap) / currentAspectRatioSum;// 计算当前行总高度
+        rowsData.push({
+            items: currentRow,
+            height: Math.min(props.rowHeightMax, Math.max(props.rowHeightMin, rowHeight))
+        });
+    }
 
-        row.forEach((item: any) => {
-            item.calcWidth = (props.rowHeight * (item.width / item.height)) * scale;
+    // 计算每张图片的 calcWidth 和 calcHeight
+    rowsData.forEach(row => {
+        const rowHeight = row.height;
+        row.items.forEach(item => {
+            const aspectRatio = item.aspectRatio ?? item.width / item.height;
+            item.calcWidth = rowHeight * aspectRatio;
+            item.calcHeight = rowHeight;
         });
     });
 
+    rows.value = rowsData;
 };
 
 // 监听图片数组的变化并重新计算布局
 watch(() => props.images, calculateLayout, { immediate: true });
 
-
-// // 组件挂载时计算一次布局，并监听窗口resize事件
+//组件挂载时计算一次布局，并监听窗口resize事件
 var image = ref({})
 onMounted(() => {
     calculateLayout();
 
-    window.addEventListener('resize', calculateLayout);  // 监听resize事件
+    window.addEventListener('resize', calculateLayout); 
 });
 
-
-
-// 新增自定义指令
-const vLazyStyle = {
-    mounted(el: HTMLElement) {
-        const img = el.querySelector('.el-image__inner') as HTMLImageElement
-        if (img) {
-            img.style.width = '100%'
-            img.style.height = '100%'
-            img.style.objectFit = 'cover'
-        }
-    },
-    updated(el: HTMLElement) {
-        // 确保动态更新后重新应用样式
-        const img = el.querySelector('.el-image__inner') as HTMLImageElement
-        img && (img.style.objectFit = 'cover')
-    }
-}
 </script>
 
 
 <style scoped>
 .container {
-    /* max-width: 1280px; */
     width: 100%;
-    margin: 20px auto;
-    padding: 0 10px;
+    margin: 0 0;
+    padding: 0 0;
 }
 
 .image-row {
     display: flex;
     margin-bottom: 10px;
-    gap: 10px;
+    /* gap: 10px; */
+    justify-content: space-around;
 }
 
 .image-item {
@@ -200,5 +200,4 @@ const vLazyStyle = {
     height: 100% !important;
     /* object-fit: cover !important; */
 }
-
 </style>

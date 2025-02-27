@@ -1,28 +1,30 @@
 <template>
-  <!-- <Waterfall :images="images" :rowHeight="200" @open-preview="openPreview" @open-full-preview="openFullImg" />
+  <Introduce />
+  <Waterfall :images="images" :rowHeightMax="300" :rowHeightMin="150" :gap="10" @open-preview="openPreview"
+    @open-full-preview="openFullImg" />
 
   <el-dialog v-model="previewVisible" :before-close="handlePreviewClose" width="80%">
     <img :src="previewImage" alt="预览图片" class="preview-image" style="width: 100%; height: auto;" />
   </el-dialog>
 
-  <el-image-viewer class="fullImg" :teleported="true" v-if="fullImgShow" :url-list="fullImgList"
-    :initial-index="currentIndex" @close="fullImgShow = false" /> -->
-    <Test />
+  <el-image-viewer :teleported="true" v-if="fullImgShow" :url-list="fullImgList" :initial-index="currentIndex"
+    @close="fullImgShow = false" />
+
 
 
 </template>
 
 <script setup lang="ts">
-import { defineComponent, ref } from 'vue';
+import { watch, ref } from 'vue';
 import type { WaterfallItem } from './types';
 import Waterfall from '@/components/Waterfall.vue';
 import { ElImageViewer } from 'element-plus';
-import Test from '@/components/test.vue';
+import Introduce from '@/components/introduce.vue';
 
 
 const ImgPath = '/img/';
 
-// 照片流数据
+//// 照片流数据
 const images: WaterfallItem[] = [
   {
     id: 0,
@@ -115,15 +117,13 @@ const images: WaterfallItem[] = [
   }
 ];
 
-// 预览弹窗相关状态
+// 预览弹窗
 const previewVisible = ref(false);
 const previewImage = ref('');
-
 ///打开关闭图片预览卡片
 const handlePreviewClose = () => {
   previewVisible.value = false;
 };
-
 const openPreview = (item: WaterfallItem) => {
   console.log('打开图片地址为:::::', item.fullSize);
   previewImage.value = item.fullSize;
@@ -133,26 +133,28 @@ const openPreview = (item: WaterfallItem) => {
 
 
 
-//// 全屏预览相关状态
-// 定义插槽上下文类型
-interface ImageViewerSlotProps {
-  image: string;
-}
-
+//// 全屏显示
 const fullImgShow = ref(false);
 const fullImgList = ref<string[]>([]);
 const currentIndex = ref(0);
 // 打开全屏
 const openFullImg = (item: WaterfallItem) => {
-  console.log('打开图片地址为:::::', item.fullSize);
   fullImgList.value = images.map(img => img.fullSize);
-  console.log("fullImgList.value:" + fullImgList.value);
-  currentIndex.value = item.id - 1;
-  console.log("currentIndex.value:" + currentIndex.value);
+  currentIndex.value = item.id;
   fullImgShow.value = true;
 };
+//页面打开时禁止滚动
+watch(fullImgShow, (newVal: boolean) => {
+  if (newVal === true) {
+    document.body.classList.add('body-no-scroll');
+  } else {
+    document.body.classList.remove('body-no-scroll');
+  }
+});
 </script>
 
-<style scoped>
-
+<style>
+.body-no-scroll {
+  overflow: hidden;
+}
 </style>

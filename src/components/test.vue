@@ -1,29 +1,40 @@
 <template>
-    <!-- 触发按钮 -->
-    <el-button @click="showViewer = true">预览图片</el-button>
-  
-    <!-- 图片预览组件 -->
-    <el-image-viewer
-      v-if="showViewer"
-      :url-list="imageList"
-      :initial-index="currentIndex"
-      :z-index="3000"
-      teleported
-      @close="showViewer = false"
-    />
-  </template>
-  
-  <script setup>
-  import { ref } from 'vue';
-  import { ElImageViewer } from 'element-plus';
-  
-  // 图片列表（支持多图切换）
-  const imageList = ref([
-    'https://fuss10.elemecdn.com/1/8e/aeffeb4de74e2fde4bd74fc7b4486jpeg.jpeg',
-    'https://fuss10.elemecdn.com/8/27/f01c15bb73e1ef3793e64e6b7bbccjpeg.jpeg'
-  ]);
-  
-  // 控制显隐 & 初始索引
-  const showViewer = ref(false);
-  const currentIndex = ref(0); // 默认从第一张开始预览
-  </script>
+  <div class="image-row" v-for="(row, rowIndex) in rows" :key="rowIndex">
+    <div 
+      class="image-item" 
+      v-for="(item, index) in row" 
+      :key="item.id"
+      :class="{ 'selected': isSelected(rowIndex, item.id) }"
+      @click="selectItem(rowIndex, item.id)"
+    >
+      <img :src="item.url" />
+    </div>
+  </div>
+</template>
+
+<script lang="ts">
+import { defineComponent } from 'vue';
+
+interface ImageItem {
+  id: string;
+  url: string;
+}
+
+export default defineComponent({
+  data() {
+    return {
+      selectedRow: -1,
+      selectedId: ''
+    };
+  },
+  methods: {
+    selectItem(rowIndex: number, itemId: string) {
+      this.selectedRow = rowIndex;
+      this.selectedId = itemId;
+    },
+    isSelected(rowIndex: number, itemId: string): boolean {
+      return this.selectedRow === rowIndex && this.selectedId === itemId;
+    }
+  }
+});
+</script>
