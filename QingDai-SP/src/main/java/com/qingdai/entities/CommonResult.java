@@ -1,4 +1,4 @@
-package org.jyzc.qingdaisp.entities;
+package com.qingdai.entities;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
