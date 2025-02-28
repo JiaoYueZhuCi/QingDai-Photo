@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @OpenAPIDefinition(
     info = @Info(
-        title = "API 文档",
+        title = "青黛 API 文档",
         version = "1.0",
         description = "系统接口说明文档"
     )
