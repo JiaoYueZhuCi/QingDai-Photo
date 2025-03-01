@@ -31,10 +31,10 @@ public class CodeGenerator {
                                 "D:/Code/qingdai-photo/QingDai-SP/src/main/resources/mapper"))
                 )
                 .strategyConfig(builder -> {
-                    builder.addInclude("photo")
+                    builder.addInclude("timeline")
                             .entityBuilder()
                             .enableLombok()
-                            .enableFileOverride()  //!!!
+//                            .enableFileOverride()  //!!!
                             .idType(IdType.ASSIGN_ID) // 新增主键策略配置
                             .addTableFills() // 可选字段填充配置
                             .versionColumnName("version") // 乐观锁字段

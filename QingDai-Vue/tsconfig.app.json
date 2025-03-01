@@ -15,8 +15,8 @@
       "@/*": [
         "src/*"
       ],
-      "@/types/*": [
-        "src/types"
+      "@/types*": [
+        "src/types/index.d.ts"
       ]
     }
   }

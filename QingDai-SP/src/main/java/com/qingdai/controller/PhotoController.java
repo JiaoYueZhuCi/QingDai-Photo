@@ -26,6 +26,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.Year;
 import java.util.Collections;
 import java.util.List;
 
@@ -217,7 +220,81 @@ public class PhotoController {
         }
     }
 
+    @GetMapping("/getPhotoCount")
+    @Operation(summary = "获取照片总数", description = "从数据库获取所有照片的总数")
+    public ResponseEntity<Long> getPhotoCount() {
+        try {
+            long count = photoService.count();
+            return ResponseEntity.ok().body(count);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
 
+    @GetMapping("/getStartPhotoCount")
+    @Operation(summary = "获取代表作照片总数", description = "从数据库获取start字段为1的照片总数")
+    public ResponseEntity<Long> getStartPhotoCount() {
+        try {
+            long count = photoService.count(new LambdaQueryWrapper<Photo>().eq(Photo::getStart, 1));
+            return ResponseEntity.ok().body(count);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @GetMapping("/getMonthlyPhotoCountChange")
+    @Operation(summary = "获取本月照片数量相比上个月照片数量的变化", description = "根据time字段计算本月照片数量相比上个月照片数量的变化")
+    public ResponseEntity<Long> getMonthlyPhotoCountChange() {
+        try {
+            long currentMonthCount = photoService.countByMonth(YearMonth.now());
+            long previousMonthCount = photoService.countByMonth(YearMonth.now().minusMonths(1));
+            return ResponseEntity.ok().body(currentMonthCount - previousMonthCount);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @GetMapping("/getYearlyPhotoCountChange")
+    @Operation(summary = "获取今年照片数量相比去年照片数量的变化", description = "根据time字段计算今年照片数量相比去年照片数量的变化")
+    public ResponseEntity<Long> getYearlyPhotoCountChange() {
+        try {
+            long currentYearCount = photoService.countByYear(Year.now());
+            long previousYearCount = photoService.countByYear(Year.now().minusYears(1));
+            return ResponseEntity.ok().body(currentYearCount - previousYearCount);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @GetMapping("/getMonthlyStartPhotoCountChange")
+    @Operation(summary = "获取本月start=1照片数量相比上个月照片数量的变化", description = "根据time字段计算本月代表作照片数量相比上个月照片数量的变化")
+    public ResponseEntity<Long> getMonthlyStartPhotoCountChange() {
+        try {
+            long currentMonthCount = photoService.countByMonthAndStart(YearMonth.now(), 1);
+            long previousMonthCount = photoService.countByMonthAndStart(YearMonth.now().minusMonths(1), 1);
+            return ResponseEntity.ok().body(currentMonthCount - previousMonthCount);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @GetMapping("/getYearlyStartPhotoCountChange")
+    @Operation(summary = "获取今年start=1照片数量相比去年照片数量的变化", description = "根据time字段计算今年代表作照片数量相比去年照片数量的变化")
+    public ResponseEntity<Long> getYearlyStartPhotoCountChange() {
+        try {
+            long currentYearCount = photoService.countByYearAndStart(Year.now(), 1);
+            long previousYearCount = photoService.countByYearAndStart(Year.now().minusYears(1), 1);
+            return ResponseEntity.ok().body(currentYearCount - previousYearCount);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
 }
 
 

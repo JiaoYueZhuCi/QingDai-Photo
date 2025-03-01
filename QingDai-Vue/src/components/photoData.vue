@@ -3,12 +3,11 @@
     <el-row :gutter="10">
       <el-col :span="8">
         <div class="statistic-card">
-          <el-statistic :value="98500">
+          <el-statistic :value="startPhotoCount">
             <template #title>
               <div style="display: inline-flex; align-items: center">
-                代表作照片数量
-                <el-tooltip effect="dark" content="具有个人代表的的照片累计和"
-                  placement="top">
+                代表作照片总数
+                <el-tooltip effect="dark" content="具有个人代表的的照片累计和" placement="top">
                   <el-icon style="margin-left: 4px" :size="12">
                     <Warning />
                   </el-icon>
@@ -19,17 +18,17 @@
           <div class="statistic-footer">
             <div class="footer-item">
               <span>本月变化</span>
-              <span class="green">
-                24%
+              <span :class="startPhotoMonthlyChange < 0 ? 'red' : 'green'">
+                {{ startPhotoMonthlyChange }}
                 <el-icon>
-                  <CaretTop />
+                  <component :is="startPhotoMonthlyChange < 0 ? CaretBottom : CaretTop" />
                 </el-icon>
               </span>
               <span>年度变化</span>
-              <span class="red">
-                5%
+              <span :class="startPhotoYearlyChange < 0 ? 'red' : 'green'">
+                {{ startPhotoYearlyChange }}
                 <el-icon>
-                  <CaretBottom />
+                  <component :is="startPhotoYearlyChange < 0 ? CaretBottom : CaretTop" />
                 </el-icon>
               </span>
             </div>
@@ -38,12 +37,11 @@
       </el-col>
       <el-col :span="8">
         <div class="statistic-card">
-          <el-statistic :value="693700">
+          <el-statistic :value="photoCount">
             <template #title>
               <div style="display: inline-flex; align-items: center">
                 精选照片总数
-                <el-tooltip effect="dark" content="普通照片累积和"
-                  placement="top">
+                <el-tooltip effect="dark" content="普通照片累积和" placement="top">
                   <el-icon style="margin-left: 4px" :size="12">
                     <Warning />
                   </el-icon>
@@ -54,17 +52,17 @@
           <div class="statistic-footer">
             <div class="footer-item">
               <span>本月变化</span>
-              <span class="red">
-                12%
+              <span :class="photoMonthlyChange < 0 ? 'red' : 'green'">
+                {{ photoMonthlyChange }}
                 <el-icon>
-                  <CaretBottom />
+                  <component :is="photoMonthlyChange < 0 ? CaretBottom : CaretTop" />
                 </el-icon>
               </span>
               <span>年度变化</span>
-              <span class="red">
-                30%
+              <span :class="photoYearlyChange < 0 ? 'red' : 'green'">
+                {{ photoYearlyChange }}
                 <el-icon>
-                  <CaretBottom />
+                  <component :is="photoYearlyChange < 0 ? CaretBottom : CaretTop" />
                 </el-icon>
               </span>
             </div>
@@ -77,8 +75,7 @@
             <template #title>
               <div style="display: inline-flex; align-items: center">
                 累积照片总数
-                <el-tooltip effect="dark" content="参考快门数累计和"
-                  placement="top">
+                <el-tooltip effect="dark" content="参考快门数累计和" placement="top">
                   <el-icon style="margin-left: 4px" :size="12">
                     <Warning />
                   </el-icon>
@@ -89,17 +86,17 @@
           <div class="statistic-footer">
             <div class="footer-item">
               <span>本月变化</span>
-              <span class="red">
-                1%
+              <span :class="photoMonthlyChange < 0 ? 'red' : 'green'">
+                {{ photoAccumulateMonthlyChange }}
                 <el-icon>
-                  <CaretBottom />
+                  <component :is="photoMonthlyChange < 0 ? CaretBottom : CaretTop" />
                 </el-icon>
               </span>
               <span>年度变化</span>
-              <span class="red">
-                23%
+              <span :class="photoMonthlyChange < 0 ? 'red' : 'green'">
+                {{ photoAccumulateMonthlyChange }}
                 <el-icon>
-                  <CaretBottom />
+                  <component :is="photoMonthlyChange < 0 ? CaretBottom : CaretTop" />
                 </el-icon>
               </span>
             </div>
@@ -111,12 +108,57 @@
 </template>
 
 <script lang="ts" setup>
+import { ref, onMounted } from 'vue';
+import axios from 'axios';
 import {
-  ArrowRight,
   CaretBottom,
   CaretTop,
   Warning,
-} from '@element-plus/icons-vue'
+} from '@element-plus/icons-vue';
+
+const startPhotoCount = ref<number>(0);
+const photoCount = ref<number>(0);
+const startPhotoMonthlyChange = ref<number>(0);
+const startPhotoYearlyChange = ref<number>(0);
+const photoMonthlyChange = ref<number>(0);
+const photoYearlyChange = ref<number>(0);
+const photoAccumulateMonthlyChange = ref<number>(1);
+const photoAccumulateYearlyChange = ref<number>(1);
+
+const fetchStartPhotoCount = async () => {
+  try {
+    const response = await axios.get('/api/QingDai/photo/getStartPhotoCount');
+    startPhotoCount.value = response.data;
+    // 获取本月变化数据
+    const monthlyChangeResponse = await axios.get('/api/QingDai/photo/getMonthlyStartPhotoCountChange');
+    startPhotoMonthlyChange.value = monthlyChangeResponse.data;
+    // 获取年度变化数据
+    const yearlyChangeResponse = await axios.get('/api/QingDai/photo/getYearlyStartPhotoCountChange');
+    startPhotoYearlyChange.value = yearlyChangeResponse.data;
+  } catch (error) {
+    console.error('获取代表作照片总数失败:', error);
+  }
+};
+
+const fetchPhotoCount = async () => {
+  try {
+    const response = await axios.get('/api/QingDai/photo/getPhotoCount');
+    photoCount.value = response.data;
+    // 获取本月变化数据
+    const monthlyChangeResponse = await axios.get('/api/QingDai/photo/getMonthlyPhotoCountChange');
+    photoMonthlyChange.value = monthlyChangeResponse.data;
+    // 获取年度变化数据
+    const yearlyChangeResponse = await axios.get('/api/QingDai/photo/getYearlyPhotoCountChange');
+    photoYearlyChange.value = yearlyChangeResponse.data;
+  } catch (error) {
+    console.error('获取精选照片总数失败:', error);
+  }
+};
+
+onMounted(() => {
+  fetchStartPhotoCount();
+  fetchPhotoCount();
+});
 </script>
 
 <style scoped>
@@ -172,7 +214,7 @@ import {
   color: var(--el-color-error);
 }
 
-.el-col{
-padding: 0;
+.el-col {
+  padding: 0;
 }
 </style>

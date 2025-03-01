@@ -26,7 +26,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, nextTick, onBeforeMount } from 'vue';
 import type { Ref } from 'vue';
-import type { WaterfallItem } from '../types';
+import type { WaterfallItem } from '@/types';
 import { ElImage, ElIcon } from 'element-plus';
 import { Picture as IconPicture } from '@element-plus/icons-vue'
 import { useImageStore } from '@/stores/imageStore'; // 引入 imageStore
