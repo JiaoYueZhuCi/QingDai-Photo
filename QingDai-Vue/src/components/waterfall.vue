@@ -5,8 +5,7 @@
                 :style="{ height: `${row.height}px`, flex: '0 0 auto' }">
                 <div class="image-item" v-for="(item, index) in row.items" :key="item.id"
                     @click="openFatherFullImg(item)">
-                    <!-- :fit="'contain'" -->
-                    <el-image :src="item.thumbnail" :key="item.id" lazy
+                    <el-image :src="item.compressedSrc" :key="item.id" lazy
                         :style="{ width: item.calcWidth + 'px', height: item.calcHeight + 'px' }">
                         <template #error>
                             <div class="error-image">
@@ -30,7 +29,73 @@ import type { PropType } from 'vue';
 import type { WaterfallItem } from '../types';
 import { ElImage, ElIcon } from 'element-plus';
 import { Picture as IconPicture } from '@element-plus/icons-vue'
+import { useImageStore } from '@/stores/imageStore'; // 引入 imageStore
+import axios from 'axios'; // 引入 axios
+import { debounce } from 'lodash';
 
+
+//// 照片流数据
+const images = ref<WaterfallItem[]>([]);
+
+const fetchPhotos = async () => {
+    try {
+        const response = await axios.get('/api/QingDai/photo/getAllPhotos');
+        // 预处理数据，确保所有字段类型匹配
+        const processedData = response.data.map((item: any) => ({
+            id: item.id,
+            fileName: item.fileName,
+            author: item.author || '未知作者', // 设置默认值
+            width: item.width || 0,
+            height: item.height || 0,
+            aperture: item.aperture || '',
+            iso: item.iso || '',
+            shutter: item.shutter || '',
+            camera: item.camera || '', // 设置默认值
+            lens: item.lens || '', // 设置默认值
+            time: item.time || '',
+            title: item.title || '', // 设置默认值
+            introduce: item.introduce || '', // 设置默认值
+            start: item.start || 0,
+            aspectRatio: item.width / item.height, // 计算宽高比
+            calcWidth: 0, // 初始化
+            calcHeight: 0, // 初始化
+            compressedSrc: '' // 初始化
+        }));
+
+        images.value = processedData;
+    } catch (error) {
+        console.error('获取照片数据失败:', error);
+    }
+};
+
+// 在组件挂载时调用 fetchPhotos
+onMounted(() => {
+    fetchPhotos();
+});
+
+// 获取压缩图片
+const fetchCompressedPhotos = async () => {
+    for (let item of images.value) {
+        try {
+            const response = await axios.get('/api/QingDai/photo/getCompressedPhoto', {
+                params: { id: item.id },
+                responseType: 'blob',
+            });
+            item.compressedSrc = URL.createObjectURL(response.data);
+        } catch (error) {
+            console.error('未找到照片:', error);
+        }
+    }
+};
+
+const debouncedFetchCompressedPhotos = debounce(fetchCompressedPhotos, 300);
+
+watch(images, async (newVal, oldVal) => {
+    if (newVal.length > 0 && newVal !== oldVal) {
+        await debouncedFetchCompressedPhotos();
+        calculateLayout();
+    }
+}, { immediate: true, deep: true });
 
 
 //// 定义 Emits
@@ -41,7 +106,7 @@ const emit = defineEmits<{
 
 //// 打开预览方法
 const openFatherPreview = (item: WaterfallItem) => {
-    console.log('请求预览打开图片地址为:', item.fullSize);
+    // console.log('请求预览打开图片地址为:', item.fullSize);
     emit('open-preview', item); // 触发事件
 };
 
@@ -54,10 +119,6 @@ const openFatherFullImg = (item: WaterfallItem) => {
 
 ////计算图片宽度
 const props = defineProps({
-    images: {
-        type: Array as PropType<WaterfallItem[]>,
-        required: true,
-    },
     rowHeightMax: {
         type: Number,
         default: 300,
@@ -89,7 +150,7 @@ const calculateLayout = () => {
     let currentRow: WaterfallItem[] = []; // 当前行的图片集合
     let currentAspectRatioSum = 0;        // 当前行所有图片宽高比之和
 
-    props.images.forEach((item) => {
+    images.value.forEach((item) => {
         const aspectRatio = item.aspectRatio ?? item.width / item.height;// 计算宽高比（若未预计算）
         const newAspectSum = currentAspectRatioSum + aspectRatio;// 当前行所有图片宽高比之和
         const newGap = (currentRow.length) * gap; // 当前行图片的间隙总和
@@ -138,16 +199,13 @@ const calculateLayout = () => {
     rows.value = rowsData;
 };
 
-// 监听图片数组的变化并重新计算布局
-watch(() => props.images, calculateLayout, { immediate: true });
-
 //组件挂载时计算一次布局，并监听窗口resize事件
-var image = ref({})
-onMounted(() => {
-    calculateLayout();
+// onMounted(() => {
+//     fetchCompressedPhotos(); // 添加此行
+//     calculateLayout();
 
-    window.addEventListener('resize', calculateLayout);
-});
+//     window.addEventListener('resize', calculateLayout);
+// });
 
 </script>
 
@@ -159,6 +217,7 @@ onMounted(() => {
     padding: 0 0;
     background-color: black;
 }
+
 .container-in {
     padding: 10px 0;
 }

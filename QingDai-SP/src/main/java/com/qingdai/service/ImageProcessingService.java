@@ -11,6 +11,7 @@ import com.qingdai.utils.DateUtils;
 import com.qingdai.utils.FileUtils;
 import com.qingdai.utils.SnowflakeIdGenerator;
 import net.coobird.thumbnailator.Thumbnails;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -27,6 +28,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class ImageProcessingService {
+    @Autowired
+    PhotoService photoService;
     @Value("${qingdai.defaultAuthor}")
     private String defaultAuthor;
 
@@ -232,7 +235,7 @@ public class ImageProcessingService {
         }
     }
 
-        // 处理相机型号  需要getFirstDirectoryOfType(ExifIFD0Directory.class);
+    // 处理相机型号  需要getFirstDirectoryOfType(ExifIFD0Directory.class);
     private void processCameraModel(Metadata metadata, Photo photo) {
         // 从 Metadata 中获取 ExifIFD0 目录（存储相机制造商和型号）
         ExifIFD0Directory exifIFD0 = metadata.getFirstDirectoryOfType(ExifIFD0Directory.class);
@@ -255,5 +258,13 @@ public class ImageProcessingService {
         }
     }
 
+    //
+    public String getFileNameById(Long photoId) {
+        Photo photo = photoService.getById(photoId);
+        if (photo == null) {
+            return null;
+        }
+        return photo.getFileName();
+    }
 }
 

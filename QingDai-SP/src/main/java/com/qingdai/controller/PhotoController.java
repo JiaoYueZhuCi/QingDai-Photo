@@ -1,6 +1,7 @@
 package com.qingdai.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.service.IService;
 import com.qingdai.entity.Photo;
 import com.qingdai.service.ImageProcessingService;
 import com.qingdai.service.PhotoService;
@@ -13,7 +14,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -35,7 +39,7 @@ import java.util.List;
  */
 @Tag(name = "图片管理", description = "图片相关操作接口")
 @RestController
-@RequestMapping("/qingdai/photo")
+@RequestMapping("/photo")
 public class PhotoController {
     @Autowired
     PhotoService photoService;
@@ -57,6 +61,7 @@ public class PhotoController {
                             .orderByDesc(Photo::getTime) // 按时间倒序
             );
 
+
             // 2. 处理空数据集情况
             if (photos == null || photos.isEmpty()) {
                 // 返回空数据的响应，自动使用404状态码
@@ -74,7 +79,7 @@ public class PhotoController {
         }
     }
 
-    @GetMapping("/getAllPhotos")
+    @GetMapping("/getStartPhotos")
     @Operation(summary = "获取代表作照片信息(时间倒叙)", description = "从数据库获取所有代表作的详细信息(时间倒叙)")
     public ResponseEntity<List<Photo>> getStartPhotos() {
         try {
@@ -181,6 +186,37 @@ public class PhotoController {
             return ResponseEntity.internalServerError().body(e.getMessage());
         }
     }
+
+    @GetMapping("/getCompressedPhoto")
+    @Operation(summary = "获取指定压缩照片文件", description = "根据接收到的照片ID获取压缩照片文件并返回")
+    public ResponseEntity<Resource> getThumbnailPhoto(@RequestParam String id) {
+        try {
+            String fileName = imageService.getFileNameById(Long.valueOf(id));
+            if (fileName == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            }
+            return FileUtils.getFileResource(thumbnailSizeUrl, fileName);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @GetMapping("/getFullSizePhoto")
+    @Operation(summary = "获取指定原图照片文件", description = "根据接收到的照片ID获取原图照片文件并返回")
+    public ResponseEntity<Resource> getFullSizePhoto(@RequestParam String id) {
+        try {
+            String fileName = imageService.getFileNameById(Long.valueOf(id));
+            if (fileName == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            }
+            return FileUtils.getFileResource(fullSizeUrl, fileName);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
 
 }
 
