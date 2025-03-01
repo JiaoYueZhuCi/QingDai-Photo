@@ -1,5 +1,6 @@
 package com.qingdai.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.qingdai.entity.Photo;
 import com.qingdai.service.ImageProcessingService;
 import com.qingdai.service.PhotoService;
@@ -47,11 +48,42 @@ public class PhotoController {
 
 
     @GetMapping("/getAllPhotos")
-    @Operation(summary = "获取全部照片信息", description = "从数据库获取所有照片的详细信息")
+    @Operation(summary = "获取全部照片信息(时间倒叙)", description = "从数据库获取所有照片的详细信息(时间倒叙)")
     public ResponseEntity<List<Photo>> getAllPhotos() {
         try {
             // 1. 使用MyBatis Plus的list方法获取所有记录
-            List<Photo> photos = photoService.list();
+            List<Photo> photos = photoService.list(
+                    new LambdaQueryWrapper<Photo>()
+                            .orderByDesc(Photo::getTime) // 按时间倒序
+            );
+
+            // 2. 处理空数据集情况
+            if (photos == null || photos.isEmpty()) {
+                // 返回空数据的响应，自动使用404状态码
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Collections.emptyList());
+            }
+
+            // 3. 返回成功结果，自动使用200状态码
+            return ResponseEntity.ok().body(photos);
+
+        } catch (Exception e) {
+            // 4. 异常处理（建议记录日志）
+            e.printStackTrace();
+            // 返回500状态码并自动使用错误信息
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @GetMapping("/getAllPhotos")
+    @Operation(summary = "获取代表作照片信息(时间倒叙)", description = "从数据库获取所有代表作的详细信息(时间倒叙)")
+    public ResponseEntity<List<Photo>> getStartPhotos() {
+        try {
+            // 1. 使用MyBatis Plus的list方法获取所有记录
+            List<Photo> photos = photoService.list(
+                    new LambdaQueryWrapper<Photo>()
+                            .orderByDesc(Photo::getTime) // 按时间倒序
+                            .eq(Photo::getStart, 1)
+            );
 
             // 2. 处理空数据集情况
             if (photos == null || photos.isEmpty()) {
@@ -142,7 +174,7 @@ public class PhotoController {
             // 执行处理
             imageService.processBatch(srcDir, destDir, maxSizeKB, overwrite);
 
-            return ResponseEntity.ok("压缩任务已提交");
+            return ResponseEntity.ok("压缩任务已完成");
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (IOException e) {

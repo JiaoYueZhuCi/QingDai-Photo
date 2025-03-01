@@ -17,6 +17,12 @@ public class FileUtils {
         return (dotIndex == -1) ? "" : fileName.substring(dotIndex + 1);
     }
 
+    //获取文件基本名的方法
+    public static String getBaseName(String fileName) {
+        int lastDotIndex = fileName.lastIndexOf('.');
+        return (lastDotIndex == -1) ? fileName : fileName.substring(0, lastDotIndex);
+    }
+
     private static final String[] IMAGE_EXTENSIONS = {"jpg", "jpeg", "png"};
     private static final String EXTENSION_PATTERN = ".*\\.(%s)$";
 
