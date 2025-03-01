@@ -36,6 +36,7 @@
 
 <script setup lang="ts">
 import { watch, ref, onMounted } from 'vue';
+import type { Ref } from 'vue';
 import axios from 'axios'; // 引入 axios
 import type { WaterfallItem } from './types';
 import { ElImageViewer } from 'element-plus';
@@ -55,7 +56,7 @@ const handlePreviewClose = () => {
   previewVisible.value = false;
 };
 const openPreview = (item: WaterfallItem) => {
-  previewImage.value = item.id; // 修改为使用存储路径
+  // previewImage.value = item.id; // 修改为使用存储路径
   previewVisible.value = true;
 
 };
@@ -65,10 +66,17 @@ const fullImgShow = ref(false);
 const fullImgList = ref<string[]>([]);
 const currentIndex = ref(0);
 // 打开全屏
-const openFullImg = (item: WaterfallItem) => {
-  //!!!!!
-  // fullImgList.value = images.value.map(img => item.id); // 修改为使用存储路径
-  currentIndex.value = item.id;
+const openFullImg = async (id: string, images: Ref<WaterfallItem[]>) => {
+  try {
+    const response = await axios.get('/api/QingDai/photo/getFullSizePhoto', {
+      params: { id },
+      responseType: 'blob',
+    });
+    fullImgList.value = [URL.createObjectURL(response.data)];
+  } catch (error) {
+    console.error('获取全尺寸照片失败:', error);
+  }
+  currentIndex.value = 0;
   fullImgShow.value = true;
 };
 //页面打开时禁止滚动

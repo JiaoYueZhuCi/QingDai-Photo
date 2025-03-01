@@ -1,5 +1,5 @@
 export interface WaterfallItem {
-  id: number            // 照片id 
+  id: string            // 照片id 
   fileName: string      // 照片名称
   author: string        // 作者信息
   width: number         // 原始宽度（像素）

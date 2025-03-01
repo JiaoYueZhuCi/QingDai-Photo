@@ -4,7 +4,7 @@
             <div class="image-row" v-for="(row, rowIndex) in rows" :key="rowIndex"
                 :style="{ height: `${row.height}px`, flex: '0 0 auto' }">
                 <div class="image-item" v-for="(item, index) in row.items" :key="item.id"
-                    @click="openFatherFullImg(item)">
+                    @click="openFatherFullImg(item.id, images)">
                     <el-image :src="item.compressedSrc" :key="item.id" lazy
                         :style="{ width: item.calcWidth + 'px', height: item.calcHeight + 'px' }">
                         <template #error>
@@ -25,7 +25,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, nextTick, onBeforeMount } from 'vue';
-import type { PropType } from 'vue';
+import type { Ref } from 'vue';
 import type { WaterfallItem } from '../types';
 import { ElImage, ElIcon } from 'element-plus';
 import { Picture as IconPicture } from '@element-plus/icons-vue'
@@ -101,7 +101,7 @@ watch(images, async (newVal, oldVal) => {
 //// 定义 Emits
 const emit = defineEmits<{
     (e: 'open-preview', item: WaterfallItem): void
-    (e: 'open-full-preview', item: WaterfallItem): void
+    (e: 'open-full-preview', id: string, images:Ref<WaterfallItem[]>): void
 }>();
 
 //// 打开预览方法
@@ -111,8 +111,8 @@ const openFatherPreview = (item: WaterfallItem) => {
 };
 
 //// 打开全屏
-const openFatherFullImg = (item: WaterfallItem) => {
-    emit('open-full-preview', item); // 触发事件
+const openFatherFullImg = (id: string, images:Ref<WaterfallItem[]>) => {
+    emit('open-full-preview', id, images); // 触发事件
 };
 
 
