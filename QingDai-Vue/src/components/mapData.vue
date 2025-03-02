@@ -3,7 +3,7 @@
     <div class="card mapCard">
       <el-affix :offset="120">
 
-        <div v-if="isActive" ref="mapContainer" class="map-container"></div>
+        <div  ref="mapContainer" class="map-container"></div>
     
     </el-affix>
   </div>
@@ -19,10 +19,7 @@ import { ref, onMounted, onBeforeUnmount, nextTick, watch } from 'vue';
 import * as echarts from 'echarts';
 import chinaJson from '@/map-data/china.json';
 import timeline from '@/components/timeline.vue';
-// 接收父组件参数
-const props = defineProps({
-  isActive: Boolean
-});
+
 
 const activatedProvinces = ref([
   110000, // 北京市
@@ -111,18 +108,9 @@ const handleResize = () => {
   if (chart) chart.resize();
 };
 
-// 监听激活状态变化
-watch(() => props.isActive, (newVal) => {
-  if (newVal) {
-    initChart();
-  } else {
-    disposeChart();
-  }
-});
-
 // 生命周期处理
 onMounted(() => {
-  if (props.isActive) initChart();
+  initChart();
 });
 
 onBeforeUnmount(() => {

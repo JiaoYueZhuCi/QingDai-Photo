@@ -33,13 +33,34 @@ import { useImageStore } from '@/stores/imageStore'; // 引入 imageStore
 import axios from 'axios'; // 引入 axios
 import { debounce } from 'lodash';
 
+// 添加 props 来接收父组件传递的值
+const props = defineProps({
+    rowHeightMax: {
+        type: Number,
+        default: 300,
+    },
+    rowHeightMin: {
+        type: Number,
+        default: 150,
+    },
+    gap: {
+        type: Number,
+        default: 10,
+    },
+    photoType: {
+        type: Number,
+        default: 0,
+    },
+});
 
 //// 照片流数据
 const images = ref<WaterfallItem[]>([]);
 
 const fetchPhotos = async () => {
     try {
-        const response = await axios.get('/api/QingDai/photo/getAllPhotos');
+        // 根据 props.photoType 动态选择 API
+        const apiEndpoint = props.photoType === 0 ? '/api/QingDai/photo/getAllPhotos' : '/api/QingDai/photo/getStartPhotos';
+        const response = await axios.get(apiEndpoint);
         // 预处理数据，确保所有字段类型匹配
         const processedData = response.data.map((item: any) => ({
             id: item.id,
@@ -73,6 +94,12 @@ onMounted(() => {
     fetchPhotos();
 });
 
+watch(() => props.photoType, async (newVal, oldVal) => {
+    if (newVal !== oldVal) {
+        await fetchPhotos();
+    }
+}, { immediate: true });
+
 // 获取压缩图片
 const fetchCompressedPhotos = async () => {
     for (let item of images.value) {
@@ -101,7 +128,7 @@ watch(images, async (newVal, oldVal) => {
 //// 定义 Emits
 const emit = defineEmits<{
     (e: 'open-preview', item: WaterfallItem): void
-    (e: 'open-full-preview', id: string, images:Ref<WaterfallItem[]>): void
+    (e: 'open-full-preview', id: string, images: Ref<WaterfallItem[]>): void
 }>();
 
 //// 打开预览方法
@@ -111,28 +138,13 @@ const openFatherPreview = (item: WaterfallItem) => {
 };
 
 //// 打开全屏
-const openFatherFullImg = (id: string, images:Ref<WaterfallItem[]>) => {
+const openFatherFullImg = (id: string, images: Ref<WaterfallItem[]>) => {
     emit('open-full-preview', id, images); // 触发事件
 };
 
 
 
 ////计算图片宽度
-const props = defineProps({
-    rowHeightMax: {
-        type: Number,
-        default: 300,
-    },
-    rowHeightMin: {
-        type: Number,
-        default: 150,
-    },
-    gap: {
-        type: Number,
-        default: 10,
-    },
-
-});
 
 interface RowData {
     items: WaterfallItem[];
