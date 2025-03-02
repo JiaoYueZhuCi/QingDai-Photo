@@ -44,6 +44,9 @@ spring:
         enabled: true
   aop:
     auto: true
+#  data:
+#    redis: localhost
+#    host: 6379
 
 mybatis-plus:
   configuration:

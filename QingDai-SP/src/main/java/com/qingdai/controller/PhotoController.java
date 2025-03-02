@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
@@ -299,6 +300,7 @@ public class PhotoController {
 
     @GetMapping("/getPhotosByPage")
     @Operation(summary = "获取分页照片信息(时间倒叙)", description = "从数据库获取分页照片的详细信息(时间倒叙)")
+//    @Cacheable(value = "photos", key = "#page + '_' + #pageSize")
     public ResponseEntity<Page<Photo>> getPhotosByPage(
             @RequestParam int page,
             @RequestParam int pageSize) {
@@ -329,6 +331,7 @@ public class PhotoController {
 
     @GetMapping("/getStartPhotosByPage")
     @Operation(summary = "获取分页代表作照片信息(时间倒叙)", description = "从数据库获取分页代表作的详细信息(时间倒叙)")
+//    @Cacheable(value = "startPhotos", key = "#page + '_' + #pageSize")
     public ResponseEntity<Page<Photo>> getStartPhotosByPage(
             @RequestParam int page,
             @RequestParam int pageSize) {
