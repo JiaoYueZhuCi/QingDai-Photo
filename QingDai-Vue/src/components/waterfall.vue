@@ -1,5 +1,5 @@
 <template>
-    <div class="container" ref="container">
+    <div class="container" ref="containerRef">
         <div class="container-in">
             <div class="image-row" v-for="(row, rowIndex) in rows" :key="rowIndex"
                 :style="{ height: `${row.height}px`, flex: '0 0 auto' }">
@@ -8,14 +8,14 @@
                     <el-image :src="item.compressedSrc" :key="item.id" lazy
                         :style="{ width: item.calcWidth + 'px', height: item.calcHeight + 'px' }">
                         <template #error>
-                            <div class="error-image">
-                                <el-icon :size="row.height"><icon-picture /></el-icon>
+                            <div class="image-slot">
+                                <el-icon><icon-picture /></el-icon>
                             </div>
                         </template>
                     </el-image>
                     <div class="image-info">
-                        <div>{{ item.title }}</div>
-                        <div>{{ item.author || '摄影师' }}</div>
+                        <div>{{ item.title || '标题' }}</div>
+                        <div>{{ item.introduce || '文字介绍' }}</div>
                     </div>
                 </div>
             </div>
@@ -24,12 +24,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, nextTick, onBeforeMount } from 'vue';
+import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import type { Ref } from 'vue';
 import type { WaterfallItem } from '@/types';
 import { ElImage, ElIcon } from 'element-plus';
 import { Picture as IconPicture } from '@element-plus/icons-vue'
-import { useImageStore } from '@/stores/imageStore'; // 引入 imageStore
 import axios from 'axios'; // 引入 axios
 import { debounce } from 'lodash';
 
@@ -56,13 +55,30 @@ const props = defineProps({
 //// 照片流数据
 const images = ref<WaterfallItem[]>([]);
 
-const fetchPhotos = async () => {
+//
+const currentPage = ref(1);
+const pageSize = ref(100);
+const hasMore = ref(true);
+const containerRef = ref<HTMLElement | null>(null);
+
+// 修改后的 getPhotos 方法
+const getPhotos = async () => {
+    if (!hasMore.value) return;
+
     try {
-        // 根据 props.photoType 动态选择 API
-        const apiEndpoint = props.photoType === 0 ? '/api/QingDai/photo/getAllPhotos' : '/api/QingDai/photo/getStartPhotos';
-        const response = await axios.get(apiEndpoint);
+        const apiEndpoint = props.photoType === 0
+            ? '/api/QingDai/photo/getPhotosByPage'
+            : '/api/QingDai/photo/getStartPhotosByPage';
+
+        const response = await axios.get(apiEndpoint, {
+            params: {
+                page: currentPage.value,
+                pageSize: pageSize.value
+            }
+        });
+
         // 预处理数据，确保所有字段类型匹配
-        const processedData = response.data.map((item: any) => ({
+        const processedData = response.data.records.map((item: any) => ({
             id: item.id,
             fileName: item.fileName,
             author: item.author || '未知作者', // 设置默认值
@@ -83,47 +99,83 @@ const fetchPhotos = async () => {
             compressedSrc: '' // 初始化
         }));
 
-        images.value = processedData;
+        // 记录添加前的长度
+        const previousLength = images.value.length;
+        // 更新数据时保留原有数据
+        images.value = [...images.value, ...processedData];
+        // 计算布局
+        calculateLayout();
+
+        // 仅处理新增的数据项
+        await getThumbnailPhotos(previousLength, images.value.length - 1);
+
+        // 检查是否还有更多数据
+        if (response.data.current >= response.data.pages) {
+            hasMore.value = false;
+        }
     } catch (error) {
         console.error('获取照片数据失败:', error);
-    }
+    } 
 };
 
-// 在组件挂载时调用 fetchPhotos
-onMounted(() => {
-    fetchPhotos();
+// 新增滚动事件处理
+const handleScroll = debounce(() => {
+    const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+    const scrollBottom = scrollHeight - (scrollTop + clientHeight);
+
+    console.log("Scroll bottom:", scrollBottom);
+
+
+    // 当距离底部小于 50px
+    if (scrollBottom < 50 && hasMore.value) {
+        currentPage.value++;
+        getPhotos();
+    }
+}, 200);
+
+// 在 onMounted 中添加滚动监听
+onMounted(async () => {
+    await getPhotos();
+    window.addEventListener('scroll', handleScroll);
+
 });
 
-watch(() => props.photoType, async (newVal, oldVal) => {
-    if (newVal !== oldVal) {
-        await fetchPhotos();
-    }
-}, { immediate: true });
+// 在 onUnmounted 中移除监听
+onUnmounted(() => {
+    window.removeEventListener('scroll', handleScroll);
+});
 
-// 获取压缩图片
-const fetchCompressedPhotos = async () => {
-    for (let item of images.value) {
-        try {
-            const response = await axios.get('/api/QingDai/photo/getCompressedPhoto', {
-                params: { id: item.id },
-                responseType: 'blob',
-            });
-            item.compressedSrc = URL.createObjectURL(response.data);
-        } catch (error) {
-            console.error('未找到照片:', error);
+// 修改 photoType 的 watch 处理
+watch(() => props.photoType, (newVal, oldVal) => {
+    if (newVal !== oldVal) {
+        currentPage.value = 1;
+        images.value = [];
+        hasMore.value = true;
+        getPhotos();
+    }
+});
+
+// 缩略图获取方法（并行请求）
+const getThumbnailPhotos = async (start: number, end: number) => {
+    const requests = [];
+    for (let i = start; i <= end; i++) {
+        const item = images.value[i];
+        if (!item.compressedSrc) { // 避免重复请求
+            requests.push(
+                axios.get('/api/QingDai/photo/getCompressedPhoto', {
+                    params: { id: item.id },
+                    responseType: 'blob',
+                }).then(response => {
+                    item.compressedSrc = URL.createObjectURL(response.data);
+                }).catch(error => {
+                    console.error('未找到照片:', error);
+                    item.compressedSrc = ''; // 设置默认错误
+                })
+            );
         }
     }
+    await Promise.all(requests);
 };
-
-const debouncedFetchCompressedPhotos = debounce(fetchCompressedPhotos, 300);
-
-watch(images, async (newVal, oldVal) => {
-    if (newVal.length > 0 && newVal !== oldVal) {
-        await debouncedFetchCompressedPhotos();
-        calculateLayout();
-    }
-}, { immediate: true, deep: true });
-
 
 //// 定义 Emits
 const emit = defineEmits<{
@@ -278,5 +330,20 @@ const calculateLayout = () => {
     /* width: 100% !important; */
     height: 100% !important;
     /* object-fit: cover !important; */
+}
+
+.image-slot {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    background: var(--el-fill-color-light);
+    color: var(--el-text-color-secondary);
+    font-size: 30px;
+}
+
+.image-slot .el-icon {
+    font-size: 30px;
 }
 </style>

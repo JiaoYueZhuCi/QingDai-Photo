@@ -1,6 +1,7 @@
 package com.qingdai.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.qingdai.entity.Photo;
 import com.qingdai.service.ImageProcessingService;
@@ -292,6 +293,60 @@ public class PhotoController {
             return ResponseEntity.ok().body(currentYearCount - previousYearCount);
         } catch (Exception e) {
             e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @GetMapping("/getPhotosByPage")
+    @Operation(summary = "获取分页照片信息(时间倒叙)", description = "从数据库获取分页照片的详细信息(时间倒叙)")
+    public ResponseEntity<Page<Photo>> getPhotosByPage(
+            @RequestParam int page,
+            @RequestParam int pageSize) {
+        try {
+            System.out.println("page: " + page);
+            System.out.println("pageSize: " + pageSize);
+
+            // 确保page参数是从1开始的
+            if (page < 1) {
+                page = 1;
+            }
+            // 1. 使用MyBatis Plus的page方法获取分页记录
+            Page<Photo> photoPage = new Page<>(page, pageSize);
+            photoService.page(photoPage, new LambdaQueryWrapper<Photo>()
+                    .orderByDesc(Photo::getTime) // 按时间倒序
+            );
+
+            // 2. 返回成功结果，自动使用200状态码
+            return ResponseEntity.ok().body(photoPage);
+
+        } catch (Exception e) {
+            // 3. 异常处理（建议记录日志）
+            e.printStackTrace();
+            // 返回500状态码并自动使用错误信息
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @GetMapping("/getStartPhotosByPage")
+    @Operation(summary = "获取分页代表作照片信息(时间倒叙)", description = "从数据库获取分页代表作的详细信息(时间倒叙)")
+    public ResponseEntity<Page<Photo>> getStartPhotosByPage(
+            @RequestParam int page,
+            @RequestParam int pageSize) {
+        try {
+            // 1. 使用MyBatis Plus的page方法获取分页记录
+            Page<Photo> photoPage = new Page<>(page, pageSize);
+            photoService.page(photoPage, new LambdaQueryWrapper<Photo>()
+                    .orderByDesc(Photo::getTime) // 按时间倒序
+                    .eq(Photo::getStart, 1)
+            );
+
+            // 2. 返回成功结果，自动使用200状态码
+            return ResponseEntity.ok().body(photoPage);
+
+        } catch (Exception e) {
+            // 3. 异常处理（建议记录日志）
+            e.printStackTrace();
+            // 返回500状态码并自动使用错误信息
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }

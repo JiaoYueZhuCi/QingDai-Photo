@@ -18,6 +18,8 @@ export default defineConfig({
     },
   },
   server: {
+    host: '0.0.0.0', // 允许所有 IP 访问
+    port: 5173, // 你可以根据需要更改端口号
     proxy: {
       '/api': {
         target: 'http://localhost:8080',

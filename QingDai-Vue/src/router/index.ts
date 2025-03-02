@@ -44,11 +44,22 @@ const router = createRouter({
         // }
       ]
     },
-    {
-      path: '/:pathMatch(.*)*',
-      component: () => import('@/components/data.vue').catch(() => errorPage)
-    }
+    // {
+    //   path: '/404',
+    //   component: () => import('@/components/errorpage.vue')
+    // },
+    // {
+    //   path: '/:pathMatch(.*)*', 
+    //   redirect: '/404' // 将未匹配路径重定向到明确地址
+    // }
   ]
 })
+
+router.beforeEach((to, from, next) => {
+  if (to.path.startsWith('blob:')) {
+    return next(false); // 阻止路由处理
+  }
+  next();
+});
 
 export default router

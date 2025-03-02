@@ -1,0 +1,39 @@
+
+// 图片加载方法
+const loadImage = async (item: WaterfallItem) => {
+    console.log('加载压缩图片的id为:', item.id);
+    if (item.loaded || item.compressedSrc) {
+        console.log('图片已加载，无需再次加载');
+    };
+    try {
+        const response = await axios.get('/api/QingDai/photo/getCompressedPhoto', {
+            params: { id: item.id },
+            responseType: 'blob',
+        });
+
+        // 检查响应头，确保返回的是图片
+        const contentType = response.headers['content-type'];
+        if (!contentType.startsWith('image/')) {
+            console.error('返回的数据不是图片:', contentType);
+            item.compressedSrc = ''; // 设置为默认错误图片或空字符串
+            return;
+        }
+        const url = URL.createObjectURL(response.data);
+        console.log(url);
+
+        // 测试URL有效性
+        const img = new Image();
+        img.onload = () => {
+            console.log('图片加载成功');
+            // URL.revokeObjectURL(url); // 释放内存
+        };
+        img.onerror = () => console.error('图片加载失败');
+        img.src = url;
+
+        item.compressedSrc = url;
+        item.loaded = true;
+    } catch (error) {
+        console.error('加载压缩图片失败:', error);
+        item.compressedSrc = ''; // 可以设置为默认错误图片
+    }
+};

@@ -16,7 +16,8 @@ export interface WaterfallItem {
   aspectRatio?: number  // 自动计算的宽高比
   calcWidth?: number    // 自动计算的宽度（像素）
   calcHeight?: number   // 自动计算的高度（像素）
-  compressedSrc?:string //compressedSrc
+  compressedSrc?:string //图片路径
+  loaded?: boolean      // 是否进入需要加载的范围
 
 
 
