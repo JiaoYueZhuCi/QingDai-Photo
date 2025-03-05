@@ -5,6 +5,7 @@ qingdai:
   url: E:/QingDaiPhotos/
   fullSizeUrl: E:/QingDaiPhotos/Photos/FullSize/
   thumbnailSizeUrl: E:/QingDaiPhotos/Photos/Thumbnail/
+  pendingUrl: E:/QingDaiPhotos/Photos/Pending/
   defaultAuthor: 皎月祝辞
 
 server:

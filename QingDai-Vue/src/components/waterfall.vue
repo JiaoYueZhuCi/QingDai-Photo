@@ -4,7 +4,7 @@
             <div class="image-row" v-for="(row, rowIndex) in rows" :key="rowIndex"
                 :style="{ height: `${row.height}px`, flex: '0 0 auto' }">
                 <div class="image-item" v-for="(item, index) in row.items" :key="item.id"
-                    @click="openFatherFullImg(item.id, images)">
+                    @click="openFatherFullImg(item.id)">
                     <el-image :src="item.compressedSrc" :key="item.id" lazy
                         :style="{ width: item.calcWidth + 'px', height: item.calcHeight + 'px' }">
                         <template #error>
@@ -67,7 +67,7 @@ const getPhotos = async () => {
 
     try {
         const apiEndpoint = props.photoType === 0
-            ? '/api/QingDai/photo/getPhotosByPage'
+            ? '/api/QingDai/photo/getVisiblePhotosByPage'
             : '/api/QingDai/photo/getStartPhotosByPage';
 
         const response = await axios.get(apiEndpoint, {
@@ -190,7 +190,7 @@ const openFatherPreview = (item: WaterfallItem) => {
 };
 
 //// 打开全屏
-const openFatherFullImg = (id: string, images: Ref<WaterfallItem[]>) => {
+const openFatherFullImg = (id: string) => {
     emit('open-full-preview', id, images); // 触发事件
 };
 

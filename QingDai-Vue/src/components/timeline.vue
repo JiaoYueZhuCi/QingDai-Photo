@@ -14,9 +14,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
-import type { Timeline } from '@/types';
+import type { TimelineItem } from '@/types';
 
-const timelines = ref<Timeline[]>([]);
+const timelines = ref<TimelineItem[]>([]);
 
 const fetchTimelines = async () => {
   try {

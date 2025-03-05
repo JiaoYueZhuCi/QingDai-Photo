@@ -14,6 +14,7 @@ import net.coobird.thumbnailator.Thumbnails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -27,22 +28,82 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
-public class ImageProcessingService {
+public class PhotoProcessingService {
+
+    
     @Autowired
     PhotoService photoService;
     @Value("${qingdai.defaultAuthor}")
     private String defaultAuthor;
 
-    // 压缩文件到指定目录
-    public void processBatch(File srcDir, File destDir, int maxSizeKB, boolean overwrite) {
+    // 雪花算法生成器
+    private final SnowflakeIdGenerator idGenerator = new SnowflakeIdGenerator(1, 1);
+
+    // 处理指定文件夹中的图片文件，返回一个包含处理后照片信息的 Photo 对象列表
+    public List<Photo> getPhotosByFolder(File folder) {
+        return Arrays.stream(FileUtils.getImageFiles(folder))  // 返回 Stream<File>
+                .parallel()  // 并行处理
+                .map(this::getPhotoObjectByFile)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
+    // 处理上传的文件并返回Photo对象列表
+    public List<Photo> getPhotosByMultipartFiles(MultipartFile[] files) {
+        return Arrays.stream(files)
+                .parallel()
+                .map(this::getPhotoObjectByMultipartFile)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
+    // 压缩文件夹内所有图片到指定目录
+    public void compressPhotosFromFolderToFolder(File srcDir, File thumbnailDir, int maxSizeKB, boolean overwrite) {
         Arrays.stream(Objects.requireNonNull(srcDir.listFiles()))
                 .parallel()
-                .filter(this::isSupportedImage)
-                .forEach(file -> processSingleImage(file, destDir, maxSizeKB, overwrite));
+                .filter(this::isSupportedPhoto)
+                .forEach(file -> compressPhoto(file, thumbnailDir, maxSizeKB, overwrite));
+    }
+
+    public void compressPhotosFromMultipartFileToFolder(MultipartFile[] photos,
+                                                        File pendingDir,
+                                                        File thumbnailDir,
+                                                        int maxSizeKB,
+                                                        boolean overwrite) throws IOException {
+        // 创建随机名称的临时目录
+        File tempDir = FileUtils.createTempDir(pendingDir);
+
+        //保存所有图片到临时目录
+        Arrays.stream(photos)
+                .parallel()
+                .forEach(photo -> {
+                    File thumbnailFile = new File(tempDir, photo.getOriginalFilename());
+                    try {
+                        photo.transferTo(thumbnailFile);
+                    } catch (IOException e) {
+                        throw new RuntimeException("无法保存文件到临时目录: " + thumbnailFile.getAbsolutePath(), e);
+                    }
+                });
+
+        // 调用压缩方法处理临时目录中的文件
+        compressPhoto(tempDir, thumbnailDir, maxSizeKB, overwrite);
+
+        // 删除临时目录及其内容
+        FileUtils.deleteFolder(tempDir);
+    }
+
+
+    // 根据照片ID获取文件名
+    public String getFileNameById(Long photoId) {
+        Photo photo = photoService.getById(photoId);
+        if (photo == null) {
+            return null;
+        }
+        return photo.getFileName();
     }
 
     // 判断是否为支持的图片格式
-    private boolean isSupportedImage(File file) {
+    public boolean isSupportedPhoto(File file) {
         String name = file.getName().toLowerCase();
         return name.endsWith(".jpg") || name.endsWith(".jpeg")
                 || name.endsWith(".png") || name.endsWith(".webp");
@@ -55,9 +116,9 @@ public class ImageProcessingService {
     优先调整图片质量以满足大小要求。
     如果调整质量不达标，则尝试缩小图片尺寸。
     如果仍不达标，抛出异常。*/
-    private void processSingleImage(File srcFile, File destDir, int maxSizeKB, boolean overwrite) {
+    private void compressPhoto(File fullSizeDir, File thumbnailDir, int maxSizeKB, boolean overwrite) {
         try {
-            String fileName = srcFile.getName();
+            String fileName = fullSizeDir.getName();
             String formatName = FileUtils.getFileExtension(fileName).toLowerCase();
             String baseName = FileUtils.getBaseName(fileName);
 
@@ -67,45 +128,88 @@ public class ImageProcessingService {
                 formatName = "jpg";
             }
 
-            File destFile = new File(destDir, fileName);
+            File thumbnailFile = new File(thumbnailDir, fileName);
 
-            if (destFile.exists() && !overwrite) return;
+            if (thumbnailFile.exists() && !overwrite) return;
 
             long maxSizeBytes = maxSizeKB * 1024L;
             boolean sizeMet = false;
 
             // 优先调整质量参数
-            sizeMet = adjustQuality(srcFile, destFile, formatName, maxSizeBytes);
+            sizeMet = adjustPhotoQuality(fullSizeDir, thumbnailDir, formatName, maxSizeBytes);
 
             // 若未达标，调整尺寸
             if (!sizeMet) {
-                sizeMet = scaleDownImage(srcFile, destFile, formatName, maxSizeBytes);
+                sizeMet = scaleDownPhoto(fullSizeDir, thumbnailDir, formatName, maxSizeBytes);
             }
 
             if (!sizeMet) {
-                throw new IOException("无法压缩到指定大小: " + srcFile.getName());
+                throw new IOException("无法压缩到指定大小: " + fullSizeDir.getName());
             }
         } catch (IOException e) {
-            throw new RuntimeException("文件处理失败: " + srcFile.getName(), e);
+            throw new RuntimeException("文件处理失败: " + fullSizeDir.getName(), e);
+        }
+    }
+
+    public Photo getPhotoObjectByMultipartFile(MultipartFile file) {
+        try {
+            String fileName = file.getOriginalFilename();
+
+            String formatName = FileUtils.getFileExtension(fileName).toLowerCase();
+            String baseName = FileUtils.getBaseName(fileName);
+
+            // 保存文件到临时目录
+            File tempFile = File.createTempFile(baseName, "." + formatName);
+            file.transferTo(tempFile);
+
+            Photo photo = getPhotoObjectByFile(tempFile);
+
+            // 删除临时文件
+            if (!tempFile.delete()) {
+                System.out.println("无法删除临时文件: " + tempFile.getAbsolutePath());
+            }
+
+            return photo;
+        } catch (IOException e) {
+            System.out.println("处理文件失败: " + file.getOriginalFilename() + e);
+            return null;
+        }
+    }
+
+    // 生成包含元数据的Photo对象
+    private Photo getPhotoObjectByFile(File PhotoFile) {
+        try {
+            BufferedImage image = ImageIO.read(PhotoFile);
+            if (image == null) return null;
+
+            //Id 原图 作者 宽度 高度 压缩图 简介 精选
+            Photo photo = buildBasicPhoto(PhotoFile, image);
+            //拍摄时间 拍摄参数
+            processExifData(PhotoFile, photo);
+
+            return photo;
+        } catch (IOException | ImageProcessingException e) {
+            System.out.println("处理文件失败: " + PhotoFile.getName() + e);
+            return null;
         }
     }
 
     // 循环逐步降低图片质量，直到满足文件大小要求 如果质量低于最小值仍未满足要求，则返回false
-    private boolean adjustQuality(File srcFile, File destFile, String formatName, long maxSizeBytes) throws IOException {
+    private boolean adjustPhotoQuality(File fullSizeDir, File thumbnailDir, String formatName, long maxSizeBytes) throws IOException {
         double quality = 0.85;
         double minQuality = 0.2;
         double step = 0.05;
 
         while (quality >= minQuality) {
-            Thumbnails.of(srcFile)
+            Thumbnails.of(fullSizeDir)
                     .scale(1)
                     .outputFormat(formatName)
                     .outputQuality(quality)
                     // 处理PNG透明背景
                     .imageType(BufferedImage.TYPE_INT_RGB)
-                    .toFile(destFile);
+                    .toFile(thumbnailDir);
 
-            if (destFile.length() <= maxSizeBytes) {
+            if (thumbnailDir.length() <= maxSizeBytes) {
                 return true;
             }
             quality = BigDecimal.valueOf(quality).subtract(BigDecimal.valueOf(step)).doubleValue();
@@ -114,19 +218,19 @@ public class ImageProcessingService {
     }
 
     //图片按比例缩小
-    private boolean scaleDownImage(File srcFile, File destFile, String formatName, long maxSizeBytes) throws IOException {
+    private boolean scaleDownPhoto(File fullSizeDir, File thumbnailDir, String formatName, long maxSizeBytes) throws IOException {
         double scale = 1.0;
         double step = 0.1;
 
         while (scale >= 0.1) {
-            Thumbnails.of(srcFile)
+            Thumbnails.of(fullSizeDir)
                     .scale(scale)
                     .outputFormat(formatName)
                     .outputQuality(0.7) // 适当质量值
                     .imageType(BufferedImage.TYPE_INT_RGB)
-                    .toFile(destFile);
+                    .toFile(thumbnailDir);
 
-            if (destFile.length() <= maxSizeBytes) {
+            if (thumbnailDir.length() <= maxSizeBytes) {
                 return true;
             }
             scale -= step;
@@ -134,44 +238,14 @@ public class ImageProcessingService {
         return false;
     }
 
-    // 雪花算法生成器
-    private final SnowflakeIdGenerator idGenerator = new SnowflakeIdGenerator(1, 1);
-
-    // 处理指定文件夹中的图片文件，返回一个包含处理后照片信息的 Photo 对象列表
-    public List<Photo> processImageFolder(File folder) {
-        return Arrays.stream(FileUtils.getImageFiles(folder))  // 返回 Stream<File>
-                .parallel()  // 并行处理
-                .map(this::processSingleImage)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
-    }
-
-    // 生成包含元数据的Photo对象
-    private Photo processSingleImage(File imageFile) {
-        try {
-            BufferedImage image = ImageIO.read(imageFile);
-            if (image == null) return null;
-
-            //Id 原图 作者 宽度 高度 压缩图 简介 精选
-            Photo photo = buildBasicPhoto(imageFile, image);
-            //拍摄时间 拍摄参数
-            processExifData(imageFile, photo);
-
-            return photo;
-        } catch (IOException | ImageProcessingException e) {
-            System.out.println("处理文件失败: " + imageFile.getName() + e);
-            return null;
-        }
-    }
-
     // 生成Photo对象
-    private Photo buildBasicPhoto(File file, BufferedImage image) {
+    private Photo buildBasicPhoto(File file, BufferedImage Photo) {
         Photo photo = new Photo();
         photo.setId(idGenerator.nextId());
         photo.setFileName(file.getName());
         photo.setAuthor(defaultAuthor);
-        photo.setWidth(image.getWidth());
-        photo.setHeight(image.getHeight());
+        photo.setWidth(Photo.getWidth());
+        photo.setHeight(Photo.getHeight());
         photo.setTitle(null);
         photo.setIntroduce(null);
         photo.setStart(0);
@@ -179,8 +253,8 @@ public class ImageProcessingService {
     }
 
     // 处理EXIF数据
-    private void processExifData(File imageFile, Photo photo) throws ImageProcessingException, IOException {
-        Metadata metadata = ImageMetadataReader.readMetadata(imageFile);
+    private void processExifData(File PhotoFile, Photo photo) throws ImageProcessingException, IOException {
+        Metadata metadata = ImageMetadataReader.readMetadata(PhotoFile);
         ExifSubIFDDirectory exif = metadata.getFirstDirectoryOfType(ExifSubIFDDirectory.class);
 
         if (exif == null) return;
@@ -221,7 +295,6 @@ public class ImageProcessingService {
             photo.setShutter(shutter);
         }
 
-
         // 处理ISO
         Integer isoValue = exif.getInteger(ExifSubIFDDirectory.TAG_ISO_EQUIVALENT);
         if (isoValue != null) {
@@ -252,19 +325,13 @@ public class ImageProcessingService {
             if (exifSubIFD != null) {
                 model = exifSubIFD.getString(ExifSubIFDDirectory.TAG_MODEL);
             }
-            photo.setCamera(model);
-        } else {
-            System.out.println("相机型号为空");
         }
+
+        photo.setCamera(model);
     }
 
-    //
-    public String getFileNameById(Long photoId) {
-        Photo photo = photoService.getById(photoId);
-        if (photo == null) {
-            return null;
-        }
-        return photo.getFileName();
+    public void deletePhotoFiles(String fullSizeUrl,String thumbnailSizeUrl,String fileName) throws IOException {
+        FileUtils.deleteFile(new File(fullSizeUrl, fileName));
+        FileUtils.deleteFile(new File(thumbnailSizeUrl, fileName));
     }
 }
-

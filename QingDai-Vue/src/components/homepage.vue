@@ -114,7 +114,7 @@ watch(activeTab, (newTab) => {
     padding: 0
 }
 
-.el-tabs__nav-scroll {
+/* .el-tabs__nav-scroll {
     background-color: rgb(250, 250, 250);
 }
 
@@ -129,5 +129,5 @@ watch(activeTab, (newTab) => {
     border-left-color: white;
     border-right-color: white;
     color: var(--el-color-primary);
-}
+} */
 </style>

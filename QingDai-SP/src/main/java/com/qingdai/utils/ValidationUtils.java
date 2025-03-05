@@ -10,10 +10,5 @@ public class ValidationUtils {
         }
     }
 
-    // 目录校验
-    public static void validateDirectory(File dir) {
-        if (!dir.exists() || !dir.isDirectory()) {
-            throw new IllegalArgumentException("目录不存在: " + dir.getAbsolutePath());
-        }
-    }
+
 }

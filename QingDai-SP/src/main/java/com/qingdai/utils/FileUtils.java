@@ -1,19 +1,25 @@
 package com.qingdai.utils;
 
-import java.io.File;
-import java.io.IOException;
-
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.UUID;
 
 public class FileUtils {
     //   判断目录是否存在，不存在直接异常
-    public static void validateDirectory(File dir) throws IOException {
-        if (!dir.exists() && !dir.mkdirs()) {
-            throw new IOException("无法创建目录: " + dir.getAbsolutePath());
+    public static void validateDirectory(File dir) {
+        if (!dir.exists() || !dir.isDirectory()) {
+            throw new IllegalArgumentException("目录不存在: " + dir.getAbsolutePath());
         }
     }
 
@@ -63,8 +69,104 @@ public class FileUtils {
             return ResponseEntity.ok()
                     .contentType(MediaType.IMAGE_PNG)
                     .body(resource);
-        }  else {
+        } else {
             return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).body(null);
         }
     }
+
+    // 保存MultipartFile到指定目录
+    public static void saveFile(MultipartFile file, File destDir) throws IOException {
+        if (!destDir.exists() && !destDir.mkdirs()) {
+            throw new IOException("无法创建目标目录: " + destDir.getAbsolutePath());
+        }
+
+        String fileName = file.getOriginalFilename();
+        if (fileName == null) {
+            throw new IOException("文件名为空");
+        }
+
+        File destFile = new File(destDir, fileName);
+        file.transferTo(destFile);
+    }
+
+    // 复制文件夹中的所有文件到目标文件夹
+    public static void copyFiles(File sourceDir, File destDir) throws IOException {
+        if (!sourceDir.exists() || !sourceDir.isDirectory()) {
+            throw new IOException("源目录不存在或不是目录: " + sourceDir.getAbsolutePath());
+        }
+        if (!destDir.exists() && !destDir.mkdirs()) {
+            throw new IOException("无法创建目标目录: " + destDir.getAbsolutePath());
+        }
+
+        File[] files = sourceDir.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.isFile()) {
+                    Path sourcePath = Paths.get(file.getAbsolutePath());
+                    Path destPath = Paths.get(destDir.getAbsolutePath(), file.getName());
+                    Files.copy(sourcePath, destPath, StandardCopyOption.REPLACE_EXISTING);
+                }
+            }
+        }
+    }
+
+    // 删除文件夹中的所有文件
+    public static void deleteFile(File file) throws IOException {
+        if (!file.exists()) return;
+        if (!file.delete()) {
+            throw new IOException("无法删除文件: " + file.getAbsolutePath());
+        }
+    }
+
+    public static void deleteFiles(File dir) throws IOException {
+        if (!dir.exists() || !dir.isDirectory()) {
+            throw new IOException("目录不存在或不是目录: " + dir.getAbsolutePath());
+        }
+
+        File[] files = dir.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.isFile()) {
+                    if (!file.delete()) {
+                        throw new IOException("无法删除文件: " + file.getAbsolutePath());
+                    }
+                }
+            }
+        }
+    }
+
+    // 在Dir下创建随机名称的临时目录
+    public static File createTempDir(File Dir) throws IOException {
+        String tempDirName = UUID.randomUUID().toString();
+        File tempDir = new File(Dir, tempDirName);
+        if (!tempDir.mkdirs()) {
+            throw new IOException("无法创建临时目录: " + tempDir);
+        }
+        return tempDir;
+    }
+
+    // 删除文件夹及其所有内容
+    public static void deleteFolder(File dir) throws IOException {
+        if (!dir.exists() || !dir.isDirectory()) {
+            throw new IOException("目录不存在或不是目录: " + dir.getAbsolutePath());
+        }
+
+        File[] files = dir.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    deleteFolder(file); // 递归删除子目录
+                } else {
+                    if (!file.delete()) {
+                        throw new IOException("无法删除文件: " + file.getAbsolutePath());
+                    }
+                }
+            }
+        }
+
+        if (!dir.delete()) {
+            throw new IOException("无法删除目录: " + dir.getAbsolutePath());
+        }
+    }
+
 }

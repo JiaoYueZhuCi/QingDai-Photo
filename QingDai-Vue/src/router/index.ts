@@ -37,7 +37,21 @@ const router = createRouter({
               component: () => import('@/components/data.vue').catch(() => errorPage)
             }
           ]
-        }
+        },
+        {
+          path: '/manage',
+          component: () => import('@/components/managePage.vue').catch(() => errorPage),
+          children: [
+            {
+              path: '',
+              redirect: '/manage/photoList'
+            },
+            {
+              path: '/manage/photoList',
+              component: () => import('@/components/photoList.vue').catch(() => errorPage)
+            }
+          ]
+        },
         // ,{
         //   path: '/login',
         //   component: () => import('@/components/login.vue').catch(() => errorPage)

@@ -14,6 +14,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Collections;
 import java.util.List;
+import org.springframework.web.bind.annotation.PutMapping; 
+import org.springframework.web.bind.annotation.PostMapping; 
+import org.springframework.web.bind.annotation.DeleteMapping; 
+import org.springframework.web.bind.annotation.RequestBody; // 添加缺失的导入语句
+import org.springframework.web.bind.annotation.PathVariable; // 添加缺失的导入语句
 
 /**
  * <p>
@@ -54,6 +59,54 @@ public class TimelineController {
             // 4. 异常处理
             e.printStackTrace();
             // 返回500状态码并自动使用错误信息
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+    
+    @PostMapping("/addTimeline")
+    @Operation(summary = "添加时间线信息", description = "向数据库中添加一条时间线信息")
+    public ResponseEntity<Timeline> addTimeline(@RequestBody Timeline timeline) {
+        try {
+            boolean success = timelineService.save(timeline);
+            if (success) {
+                return ResponseEntity.status(HttpStatus.CREATED).body(timeline);
+            } else {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @DeleteMapping("/deleteTimeline/{id}")
+    @Operation(summary = "删除时间线信息", description = "根据ID从数据库中删除一条时间线信息")
+    public ResponseEntity<Void> deleteTimeline(@PathVariable Long id) {
+        try {
+            boolean success = timelineService.removeById(id);
+            if (success) {
+                return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @PutMapping("/updateTimeline")
+    @Operation(summary = "更新时间线信息", description = "根据传入的时间线信息更新数据库中的记录")
+    public ResponseEntity<Timeline> updateTimeline(@RequestBody Timeline timeline) {
+        try {
+            boolean success = timelineService.updateById(timeline);
+            if (success) {
+                return ResponseEntity.status(HttpStatus.OK).body(timeline);
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }

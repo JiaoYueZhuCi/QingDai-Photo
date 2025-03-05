@@ -4,7 +4,7 @@
   </router-view>
 </template>
 
-<script lang="ts">
+<script lang="ts" setup>
 import { useRouter, useRoute } from 'vue-router'
 import { watch, ref, onMounted } from 'vue';
 
