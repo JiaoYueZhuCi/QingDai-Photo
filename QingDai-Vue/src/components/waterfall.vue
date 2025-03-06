@@ -123,9 +123,6 @@ const handleScroll = debounce(() => {
     const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
     const scrollBottom = scrollHeight - (scrollTop + clientHeight);
 
-    console.log("Scroll bottom:", scrollBottom);
-
-
     // 当距离底部小于 50px
     if (scrollBottom < 50 && hasMore.value) {
         currentPage.value++;
@@ -133,11 +130,26 @@ const handleScroll = debounce(() => {
     }
 }, 200);
 
+// 新增响应式变量来存储动态的行高
+const dynamicRowHeightMax = ref<number>(props.rowHeightMax);
+const dynamicRowHeightMin = ref<number>(props.rowHeightMin);
+
+// 监听窗口大小变化
+const handleResize = () => {
+    if (window.innerWidth < 600) {
+        dynamicRowHeightMax.value = 200;
+        dynamicRowHeightMin.value = 100;
+    } else {
+        dynamicRowHeightMax.value = props.rowHeightMax;
+        dynamicRowHeightMin.value = props.rowHeightMin;
+    }
+};
+
 // 在 onMounted 中添加滚动监听
 onMounted(async () => {
+    handleResize(); 
     await getPhotos();
     window.addEventListener('scroll', handleScroll);
-
 });
 
 // 在 onUnmounted 中移除监听
@@ -220,7 +232,7 @@ const calculateLayout = () => {
         const newGap = (currentRow.length) * gap; // 当前行图片的间隙总和
 
         const idealH = (rowWidth - newGap) / newAspectSum;// 计算理想行高
-        let clampedH = Math.min(props.rowHeightMax, Math.max(props.rowHeightMin, idealH));// 限制行高
+        let clampedH = Math.min(dynamicRowHeightMax.value, Math.max(dynamicRowHeightMin.value, idealH));// 限制行高
 
         const totalWidth = newAspectSum * clampedH + newGap; // 计算当前行总宽度
 
@@ -228,7 +240,7 @@ const calculateLayout = () => {
             const rowHeight = (rowWidth - (currentRow.length - 1) * gap) / currentAspectRatioSum;// 计算当前行总高度
             rowsData.push({
                 items: [...currentRow],
-                height: Math.min(props.rowHeightMax, Math.max(props.rowHeightMin, rowHeight)) // 限制行高
+                height: Math.min(dynamicRowHeightMax.value, Math.max(dynamicRowHeightMin.value, rowHeight)) // 限制行高
             });
 
             // 重置当前行，以当前 item 开始新行
@@ -246,7 +258,7 @@ const calculateLayout = () => {
         const rowHeight = (rowWidth - (currentRow.length - 1) * gap) / currentAspectRatioSum;// 计算当前行总高度
         rowsData.push({
             items: currentRow,
-            height: Math.min(props.rowHeightMax, Math.max(props.rowHeightMin, rowHeight))
+            height: Math.min(dynamicRowHeightMax.value, Math.max(dynamicRowHeightMin.value, rowHeight))
         });
     }
 

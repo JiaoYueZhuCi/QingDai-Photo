@@ -5,12 +5,13 @@ import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
 import path from 'path'
 
-// https://vite.dev/config/
+// 开发环境才引入devtools
+const plugins = process.env.NODE_ENV === 'development' 
+  ? [vueDevTools(), vue()] 
+  : [vue()]
+
 export default defineConfig({
-  plugins: [
-    vue(),
-    vueDevTools(),
-  ],
+  plugins: plugins,
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -19,11 +20,10 @@ export default defineConfig({
   },
   server: {
     host: '0.0.0.0', // 允许所有 IP 访问
-    port: 80, // 你可以根据需要更改端口号
+    port: 80, 
     proxy: {
       '/api': {
-        // target: 'http://localhost:8080',
-        target: 'http://qingdai-sp:8080',
+        target: process.env.NODE_ENV === 'development' ?   'http://localhost:8080':'http://qingdai-sp:8080',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '')
       }

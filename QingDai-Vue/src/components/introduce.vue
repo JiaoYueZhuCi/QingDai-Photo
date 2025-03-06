@@ -25,14 +25,14 @@
             </div>
         </div>
 
-        <el-descriptions class="margin-top" :column="3" border>
+        <el-descriptions class="margin-top" :column="columnCount" border>
             <el-descriptions-item label-class-name="my-label" class-name="my-content">
                 <template #label>
                     <div class="cell-item">
                         <el-icon :style="iconStyle">
                             <user />
                         </el-icon>
-                        各平台同名账号
+                        同名账号
                     </div>
                 </template>
                 500px,小红书
@@ -57,7 +57,10 @@
                         地点
                     </div>
                 </template>
-                北京通州,天津滨海
+                <div class="device" >
+                    <el-tag size="large">北京通州</el-tag>
+                    <el-tag size="large">天津滨海</el-tag>
+                </div>
             </el-descriptions-item>
             <el-descriptions-item label-class-name="my-label" class-name="my-content">
                 <template #label>
@@ -68,7 +71,11 @@
                         领域
                     </div>
                 </template>
-                风光,人文,动植物
+                <div class="device" >
+                    <el-tag size="large">风光</el-tag>
+                    <el-tag size="large">人文</el-tag>
+                    <el-tag size="large">动植物</el-tag>
+                </div>
             </el-descriptions-item>
             <el-descriptions-item label-class-name="my-label" class-name="my-content">
                 <template #label>
@@ -80,11 +87,11 @@
                     </div>
                 </template>
                 <div class="device" >
-                    <el-tag size="small">Nikon Z50</el-tag>
-                    <el-tag size="small">Nikkor 16mm-50mm f3.5-6.3</el-tag>
-                    <el-tag size="small">Nikkor 50mm-250mm f4.5-6.3</el-tag>
-                    <el-tag size="small">Nikkor 50mm f1.8</el-tag>
-                    <el-tag size="small">DJI Air3S</el-tag>
+                    <el-tag size="large">Nikon Z50</el-tag>
+                    <el-tag size="large">Nikkor 16mm-50mm f3.5-6.3</el-tag>
+                    <el-tag size="large">Nikkor 50mm-250mm f4.5-6.3</el-tag>
+                    <el-tag size="large">Nikkor 50mm f1.8</el-tag>
+                    <el-tag size="large">DJI Air3S</el-tag>
                 </div>
 
 
@@ -121,6 +128,16 @@ const iconStyle = computed(() => {
 
 const avatarSize = 120
 
+// 添加计算属性来动态设置列数
+const columnCount = computed(() => {
+    if (window.innerWidth < 600) {
+        return 1; // 手机屏幕显示1列
+    } else if (window.innerWidth < 900) {
+        return 2; // 平板屏幕显示2列
+    } else {
+        return 3; // 大屏幕显示3列
+    }
+})
 </script>
 
 
@@ -173,8 +190,30 @@ p {
     margin: 10px;
     color: rgb(239, 243, 0);
 }
-.device{
-    display: flex;
-    gap: 5px;
+.el-tag{
+    margin: 5px;
+}
+
+/* 添加媒体查询来调整列数 */
+@media (max-width: 600px) {
+    .margin-top {
+        width: 100%;
+    }
+}
+
+@media (min-width: 601px) and (max-width: 900px) {
+    .margin-top {
+        width: 100%;
+    }
+}
+
+@media (min-width: 901px) {
+    .margin-top {
+        width: 100%;
+    }
+}
+
+.el-descriptions__body .el-descriptions__table.is-bordered .el-descriptions__cell{
+    padding: 1px 1px;
 }
 </style>
