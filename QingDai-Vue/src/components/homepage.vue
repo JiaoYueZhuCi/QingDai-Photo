@@ -1,21 +1,22 @@
 <template>
     <el-backtop :right="50" :bottom="50" />
-  
+
     <Introduce />
-  
+
     <el-tabs type="border-card" v-model="activeTab" @tab-click="handleTabClick">
-      <el-tab-pane label="精选" name="featured"></el-tab-pane>
-      <el-tab-pane label="照片" name="photos"></el-tab-pane>
-      <el-tab-pane label="时间轴" name="timeline"></el-tab-pane>
-      <el-tab-pane label="数据" name="data"></el-tab-pane>
+        <el-tab-pane label="精选" name="featured"></el-tab-pane>
+        <el-tab-pane label="照片" name="photos"></el-tab-pane>
+        <el-tab-pane label="时间轴" name="timeline"></el-tab-pane>
+        <el-tab-pane label="数据" name="data"></el-tab-pane>
     </el-tabs>
-  
+
     <router-view v-slot="{ Component }">
-      <component :is="Component" @open-preview="openPreview" @open-full-preview="openFullImg" :photoType="photoType" />
+        <component :is="Component" @open-preview="openPreview" @open-full-preview="openFullImg"
+            :photoType="photoType" />
     </router-view>
-  
+
     <el-image-viewer :teleported="true" v-if="fullImgShow" :url-list="fullImgList" :initial-index="currentIndex"
-      @close="fullImgShow = false" />
+        @close="fullImgShow = false" />
 </template>
 
 <script setup lang="ts">
@@ -27,10 +28,11 @@ import { ElImageViewer } from 'element-plus';
 import type { TabsPaneContext } from 'element-plus';
 import Introduce from '@/components/introduce.vue';
 import { useRouter, useRoute } from 'vue-router'
+import { ElLoading, ElMessage } from 'element-plus'; // 引入 ElLoading
 
 const router = useRouter()
 const route = useRoute()
-
+const objectUrl = ref<string>('');
 // 当前激活的标签页
 const activeTab = ref('featured')
 
@@ -71,17 +73,29 @@ const fullImgList = ref<string[]>([]);
 const currentIndex = ref(0);
 // 打开全屏
 const openFullImg = async (id: string, images: Ref<WaterfallItem[]>) => {
+    const loading = ElLoading.service({
+        fullscreen: true,
+        text: '加载中...',
+        background: 'rgba(0, 0, 0, 0.7)',
+    });
     try {
-        const response = await axios.get('/api/QingDai/photo/getFullSizePhoto', {
-            params: { id },
+        fullImgList.value = []
+        // const response = await axios.get('/api/QingDai/photo/getCompressedPhoto', {
+            const response = await axios.get('/api/QingDai/photo/getFullSizePhoto', {
+            params: { id, _: new Date().getTime()  },
             responseType: 'blob',
         });
         fullImgList.value = [URL.createObjectURL(response.data)];
+        fullImgShow.value = true;
     } catch (error) {
         console.error('获取全尺寸照片失败:', error);
+        fullImgList.value = [];
+        fullImgShow.value = false;
+    } finally {
+        loading.close();
     }
     currentIndex.value = 0;
-    fullImgShow.value = true;
+
 };
 //页面打开时禁止滚动
 watch(fullImgShow, (newVal: boolean) => {

@@ -12,7 +12,6 @@ server:
   servlet:
     context-path: /QingDai
   port: 8080
-
 springdoc:
   swagger-ui:
     path: /swagger-ui.html # 文档页面路径
@@ -45,6 +44,10 @@ spring:
         enabled: true
   aop:
     auto: true
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
 #  data:
 #    redis: localhost
 #    host: 6379

@@ -55,24 +55,30 @@ public class FileUtils {
 
     // 获取封装好文件的响应体
     public static ResponseEntity<Resource> getFileResource(String filePath, String fileName) {
-        File file = new File(filePath + fileName);
-        if (!file.exists()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        File file = Paths.get(filePath).resolve(fileName).toFile();
+        if (!file.exists() || !file.canRead()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
+
+        long contentLength = file.length();
         Resource resource = new FileSystemResource(file);
+
         String fileExtension = getFileExtension(fileName).toLowerCase();
+        MediaType mediaType;
         if (fileExtension.equals("jpg") || fileExtension.equals("jpeg")) {
-            return ResponseEntity.ok()
-                    .contentType(MediaType.IMAGE_JPEG)
-                    .body(resource);
+            mediaType = MediaType.IMAGE_JPEG;
         } else if (fileExtension.equals("png")) {
-            return ResponseEntity.ok()
-                    .contentType(MediaType.IMAGE_PNG)
-                    .body(resource);
+            mediaType = MediaType.IMAGE_PNG;
         } else {
-            return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).body(null);
+            return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).build();
         }
+
+        return ResponseEntity.ok()
+                .contentType(mediaType)
+                .contentLength(contentLength)
+                .body(resource);
     }
+
 
     // 保存MultipartFile到指定目录
     public static void saveFile(MultipartFile file, File destDir) throws IOException {

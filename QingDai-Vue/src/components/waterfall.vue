@@ -1,8 +1,10 @@
 <template>
     <div class="container" ref="containerRef">
-        <div class="container-in">
+        <el-empty v-if="images.length === 0" description="暂无照片数据"></el-empty>
+
+        <div class="container-in" v-else>
             <div class="image-row" v-for="(row, rowIndex) in rows" :key="rowIndex"
-                :style="{ height: `${row.height}px`, flex: '0 0 auto' }">
+                :style="{ height: `${row.height}px`, width: `${rowWidth}px`, flex: '0 0 auto', margin: `0 ${sideMarginStyle} ${sideMarginStyle} ${sideMarginStyle}` }">
                 <div class="image-item" v-for="(item, index) in row.items" :key="item.id"
                     @click="openFatherFullImg(item.id)">
                     <el-image :src="item.compressedSrc" :key="item.id" lazy
@@ -24,7 +26,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
+import { ref, onMounted, onUnmounted, watch, nextTick, computed } from 'vue';
 import type { Ref } from 'vue';
 import type { WaterfallItem } from '@/types';
 import { ElImage, ElIcon } from 'element-plus';
@@ -115,7 +117,7 @@ const getPhotos = async () => {
         }
     } catch (error) {
         console.error('获取照片数据失败:', error);
-    } 
+    }
 };
 
 // 新增滚动事件处理
@@ -134,27 +136,42 @@ const handleScroll = debounce(() => {
 const dynamicRowHeightMax = ref<number>(props.rowHeightMax);
 const dynamicRowHeightMin = ref<number>(props.rowHeightMin);
 
-// 监听窗口大小变化
+const sideMargin = ref(8); // 边距
+
+const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+const gap = ref(props.gap); // 因为每行设置了justify-content: space-between;  所以gap实际为最小间隙（当照片+间隙刚好填满一行时）
+const rowWidth = ref(window.innerWidth - scrollbarWidth - 2 * sideMargin.value);   
+
+
+// // 监听窗口大小变化
 const handleResize = () => {
-    if (window.innerWidth < 600) {
+    if (window.innerWidth <= 600) {
         dynamicRowHeightMax.value = 200;
         dynamicRowHeightMin.value = 100;
+        gap.value = 4; // 图片间隙
+        sideMargin.value = 4; // 更新 sideMargin 变量
+        rowWidth.value = window.innerWidth - 2 * sideMargin.value; // 调整 rowWidth   
     } else {
         dynamicRowHeightMax.value = props.rowHeightMax;
         dynamicRowHeightMin.value = props.rowHeightMin;
+        gap.value = props.gap; // 图片间隙
+        sideMargin.value = 8; // 更新 sideMargin 变量
+        rowWidth.value = window.innerWidth - scrollbarWidth - 2 * sideMargin.value; // 恢复 rowWidth
     }
 };
 
 // 在 onMounted 中添加滚动监听
 onMounted(async () => {
-    handleResize(); 
+    handleResize();
     await getPhotos();
     window.addEventListener('scroll', handleScroll);
+    window.addEventListener('resize', handleResize); // 添加 resize 事件监听
 });
 
 // 在 onUnmounted 中移除监听
 onUnmounted(() => {
     window.removeEventListener('scroll', handleScroll);
+    window.removeEventListener('resize', handleResize); // 移除 resize 事件监听
 });
 
 // 修改 photoType 的 watch 处理
@@ -217,9 +234,8 @@ interface RowData {
 
 const rows = ref<RowData[]>([]);
 
-const rowWidth = window.innerWidth - 20;   //总宽度减去瀑布流两侧20px
-// 因为每行设置了justify-content: space-around;  所以gap实际为最小间隙（当照片+间隙刚好填满一行时）
-const gap = props.gap; // 图片间隙
+// 定义计算属性
+const sideMarginStyle = computed(() => `${sideMargin.value}px`);
 
 const calculateLayout = () => {
     const rowsData: RowData[] = [];       // 存储所有行数据
@@ -229,15 +245,15 @@ const calculateLayout = () => {
     images.value.forEach((item) => {
         const aspectRatio = item.aspectRatio ?? item.width / item.height;// 计算宽高比（若未预计算）
         const newAspectSum = currentAspectRatioSum + aspectRatio;// 当前行所有图片宽高比之和
-        const newGap = (currentRow.length) * gap; // 当前行图片的间隙总和
+        const newGap = (currentRow.length) * gap.value; // 当前行图片的间隙总和
 
-        const idealH = (rowWidth - newGap) / newAspectSum;// 计算理想行高
+        const idealH = (rowWidth.value - newGap) / newAspectSum;// 计算理想行高
         let clampedH = Math.min(dynamicRowHeightMax.value, Math.max(dynamicRowHeightMin.value, idealH));// 限制行高
 
         const totalWidth = newAspectSum * clampedH + newGap; // 计算当前行总宽度
 
-        if (totalWidth > rowWidth && currentRow.length > 0) { // 如果当前行总宽度超页面总宽度，则将当前行加入结果并开始新行
-            const rowHeight = (rowWidth - (currentRow.length - 1) * gap) / currentAspectRatioSum;// 计算当前行总高度
+        if (totalWidth > rowWidth.value && currentRow.length > 0) { // 如果当前行总宽度超页面总宽度，则将当前行加入结果并开始新行
+            const rowHeight = (rowWidth.value - (currentRow.length - 1) * gap.value) / currentAspectRatioSum;// 计算当前行总高度
             rowsData.push({
                 items: [...currentRow],
                 height: Math.min(dynamicRowHeightMax.value, Math.max(dynamicRowHeightMin.value, rowHeight)) // 限制行高
@@ -255,7 +271,7 @@ const calculateLayout = () => {
 
     // 处理最后一行
     if (currentRow.length > 0) {
-        const rowHeight = (rowWidth - (currentRow.length - 1) * gap) / currentAspectRatioSum;// 计算当前行总高度
+        const rowHeight = (rowWidth.value - (currentRow.length - 1) * gap.value) / currentAspectRatioSum;// 计算当前行总高度
         rowsData.push({
             items: currentRow,
             height: Math.min(dynamicRowHeightMax.value, Math.max(dynamicRowHeightMin.value, rowHeight))
@@ -294,16 +310,6 @@ const calculateLayout = () => {
     background-color: black;
 }
 
-.container-in {
-    padding: 10px 0;
-}
-
-.image-row {
-    display: flex;
-    margin-bottom: 10px;
-    /* gap: 10px; */
-    justify-content: space-around;
-}
 
 .image-item {
     position: relative;
@@ -357,5 +363,22 @@ const calculateLayout = () => {
 
 .image-slot .el-icon {
     font-size: 30px;
+}
+
+.container-in {
+    padding: 8px 0;
+}
+
+.image-row {
+    display: flex;
+    justify-content: space-between;
+}
+
+@media (max-width: 600px) {
+    .container-in {
+        padding: 4px 0;
+    }
+
+    .image-row {}
 }
 </style>

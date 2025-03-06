@@ -1,5 +1,6 @@
 <template>
   <div class="timelineContainer">
+    <el-empty v-if="timelines.length === 0" description="暂无时间轴数据"></el-empty>
     <el-timeline>
       <el-timeline-item v-for="(timelineItem, index) in timelines" :key="index" :timestamp="timelineItem.time" placement="top">
         <el-card>

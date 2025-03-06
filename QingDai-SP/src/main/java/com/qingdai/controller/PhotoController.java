@@ -1,6 +1,7 @@
 package com.qingdai.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.qingdai.entity.Photo;
 import com.qingdai.service.PhotoProcessingService;
@@ -29,10 +30,9 @@ import java.io.IOException;
 import java.time.Year;
 import java.time.YearMonth;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import java.util.Arrays; // 添加缺失的导入语句
 
 /**
  * <p>
@@ -200,12 +200,12 @@ public class PhotoController {
         try {
             String fileName = imageService.getFileNameById(Long.valueOf(id));
             if (fileName == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
             }
             return FileUtils.getFileResource(fullSizeUrl, fileName);
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
@@ -336,20 +336,20 @@ public class PhotoController {
     public ResponseEntity<Page<Photo>> getVisiblePhotosByPage(
             @RequestParam int page,
             @RequestParam int pageSize) {
-try {
-    if (page < 1) {
-        page = 1;
-    }
-    Page<Photo> photoPage = new Page<>(page, pageSize);
-    photoService.page(photoPage, new LambdaQueryWrapper<Photo>()
-            .orderByDesc(Photo::getTime)
-            .in(Photo::getStart, Arrays.asList(0, 1))
-    );
-    return ResponseEntity.ok().body(photoPage);
-} catch (Exception e) {
-    e.printStackTrace();
-    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-}
+        try {
+            if (page < 1) {
+                page = 1;
+            }
+            Page<Photo> photoPage = new Page<>(page, pageSize);
+            photoService.page(photoPage, new LambdaQueryWrapper<Photo>()
+                    .orderByDesc(Photo::getTime)
+                    .in(Photo::getStart, Arrays.asList(0, 1))
+            );
+            return ResponseEntity.ok().body(photoPage);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
     }
 
     @GetMapping("/getPhotosByPage")
