@@ -244,6 +244,20 @@ public class PhotoController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+    @GetMapping("/getPhotoInfo")
+    @Operation(summary = "获取照片元数据", description = "根据ID获取照片的完整元数据信息")
+    public ResponseEntity<Photo> getPhotoById(@RequestParam String id) {
+        try {
+            Photo photo = photoService.getById(Long.valueOf(id));
+            if (photo == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
+            return ResponseEntity.ok(photo);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 
     @GetMapping("/getPhotoCount")
     @Operation(summary = "获取照片总数", description = "从数据库获取所有照片的总数")

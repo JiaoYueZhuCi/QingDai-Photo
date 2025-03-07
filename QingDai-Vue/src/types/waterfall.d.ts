@@ -13,6 +13,7 @@ export interface WaterfallItem {
   title: string         // 标题
   introduce: string     // 介绍
   start: number         //代表作
+
   aspectRatio?: number  // 自动计算的宽高比
   calcWidth?: number    // 自动计算的宽度（像素）
   calcHeight?: number   // 自动计算的高度（像素）

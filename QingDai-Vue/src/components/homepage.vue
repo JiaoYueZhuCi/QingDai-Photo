@@ -11,12 +11,10 @@
     </el-tabs>
 
     <router-view v-slot="{ Component }">
-        <component :is="Component" @open-preview="openPreview" @open-full-preview="openFullImg"
+        <component :is="Component" 
             :photoType="photoType" />
     </router-view>
 
-    <el-image-viewer :teleported="true" v-if="fullImgShow" :url-list="fullImgList" :initial-index="currentIndex"
-        @close="fullImgShow = false" />
 </template>
 
 <script setup lang="ts">
@@ -32,7 +30,6 @@ import { ElLoading, ElMessage } from 'element-plus'; // 引入 ElLoading
 
 const router = useRouter()
 const route = useRoute()
-const objectUrl = ref<string>('');
 // 当前激活的标签页
 const activeTab = ref('featured')
 
@@ -55,57 +52,6 @@ const handleTabClick = (tab: TabsPaneContext) => {
     }
 }
 
-// 预览弹窗
-const previewVisible = ref(false);
-const previewImage = ref(0);
-///打开关闭图片预览卡片
-const handlePreviewClose = () => {
-    previewVisible.value = false;
-};
-const openPreview = (item: WaterfallItem) => {
-    // previewImage.value = item.id; // 修改为使用存储路径
-    previewVisible.value = true;
-};
-
-//// 全屏显示
-const fullImgShow = ref(false);
-const fullImgList = ref<string[]>([]);
-const currentIndex = ref(0);
-// 打开全屏
-const openFullImg = async (id: string, images: Ref<WaterfallItem[]>) => {
-    const loading = ElLoading.service({
-        fullscreen: true,
-        text: '加载中...',
-        background: 'rgba(0, 0, 0, 0.7)',
-    });
-    try {
-        fullImgList.value = []
-        // const response = await axios.get('/api/QingDai/photo/getCompressedPhoto', {
-        const response = await axios.get('/api/QingDai/photo/getFullSizePhoto', {
-            params: { id, _: new Date().getTime() },
-            responseType: 'blob',
-        });
-        fullImgList.value = [URL.createObjectURL(response.data)];
-        fullImgShow.value = true;
-    } catch (error) {
-        console.error('获取全尺寸照片失败:', error);
-        ElMessage.error('获取全尺寸照片失败');
-        fullImgList.value = [];
-        fullImgShow.value = false;
-    } finally {
-        loading.close();
-    }
-    currentIndex.value = 0;
-
-};
-//页面打开时禁止滚动
-watch(fullImgShow, (newVal: boolean) => {
-    if (newVal === true) {
-        document.body.classList.add('body-no-scroll');
-    } else {
-        document.body.classList.remove('body-no-scroll');
-    }
-});
 
 // 定义 photoType 变量
 const photoType = ref(0);
@@ -121,9 +67,7 @@ watch(activeTab, (newTab) => {
 </script>
 
 <style>
-.body-no-scroll {
-    overflow: hidden;
-}
+
 
 .el-tabs--border-card>.el-tabs__content {
     padding: 0

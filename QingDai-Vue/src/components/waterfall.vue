@@ -1,12 +1,23 @@
 <template>
     <div class="container" ref="containerRef">
+        <PreviewDialog v-model="previewVisible" :photo-id="currentPreviewId" @close="previewVisible = false"
+            @image-click="openFullImg" />
+
         <el-empty v-if="images.length === 0" description="暂无照片数据"></el-empty>
+
+        <el-image-viewer :teleported="true" v-if="fullImgShow" :url-list="fullImgList" :initial-index="currentIndex"
+            hide-on-click-modal="true" @close="fullImgShow = false" />
 
         <div class="container-in" v-else>
             <div class="image-row" v-for="(row, rowIndex) in rows" :key="rowIndex"
                 :style="{ height: `${row.height}px`, width: `${rowWidth}px`, flex: '0 0 auto', margin: `0 ${sideMarginStyle} ${sideMarginStyle} ${sideMarginStyle}` }">
                 <div class="image-item" v-for="(item, index) in row.items" :key="item.id"
-                    @click="openFatherFullImg(item.id)">
+                    @click="handleImageClick(item)">
+                    <div class="fullscreen-icon" @click.stop="openFullImg(item.id)">
+                        <el-icon>
+                            <FullScreen />
+                        </el-icon>
+                    </div>
                     <el-image :src="item.compressedSrc" :key="item.id" lazy
                         :style="{ width: item.calcWidth + 'px', height: item.calcHeight + 'px' }">
                         <template #error>
@@ -29,11 +40,12 @@
 import { ref, onMounted, onUnmounted, watch, nextTick, computed } from 'vue';
 import type { Ref } from 'vue';
 import type { WaterfallItem } from '@/types';
-import { ElImage, ElIcon } from 'element-plus';
-import { Picture as IconPicture } from '@element-plus/icons-vue'
+import { ElImage, ElIcon, ElMessage, ElLoading } from 'element-plus';
+import { Picture as IconPicture, FullScreen } from '@element-plus/icons-vue'
 import axios from 'axios'; // 引入 axios
 import { debounce } from 'lodash';
 import JSZip from 'jszip';
+import PreviewDialog from "@/components/PreviewDialog.vue";
 
 // 添加 props 来接收父组件传递的值
 const props = defineProps({
@@ -57,8 +69,6 @@ const props = defineProps({
 
 //// 照片流数据
 const images = ref<WaterfallItem[]>([]);
-
-//
 const currentPage = ref(1);
 const pageSize = ref(50);
 const hasMore = ref(true);
@@ -141,7 +151,7 @@ const sideMargin = ref(8); // 边距
 
 const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
 const gap = ref(props.gap); // 因为每行设置了justify-content: space-between;  所以gap实际为最小间隙（当照片+间隙刚好填满一行时）
-const rowWidth = ref(window.innerWidth - scrollbarWidth - 2 * sideMargin.value);   
+const rowWidth = ref(window.innerWidth - scrollbarWidth - 2 * sideMargin.value);
 
 
 // // 监听窗口大小变化
@@ -199,7 +209,7 @@ const getThumbnailPhotos = async (start: number, end: number) => {
         });
 
         const zip = await JSZip.loadAsync(response.data);
-        
+
         await Promise.all(newItems.map(async item => {
             const file = zip.file(`${item.fileName}`);
             if (file) {
@@ -216,37 +226,23 @@ const getThumbnailPhotos = async (start: number, end: number) => {
     }
 };
 
-//// 定义 Emits
-const emit = defineEmits<{
-    (e: 'open-preview', item: WaterfallItem): void
-    (e: 'open-full-preview', id: string, images: Ref<WaterfallItem[]>): void
-}>();
-
-//// 打开预览方法
-const openFatherPreview = (item: WaterfallItem) => {
-    // console.log('请求预览打开图片地址为:', item.fullSize);
-    emit('open-preview', item); // 触发事件
+//// 预览相关状态
+const previewVisible = ref(false);
+const currentPreviewId = ref('');
+const handleImageClick = (item: WaterfallItem) => {
+    currentPreviewId.value = item.id;
+    previewVisible.value = true;
 };
-
-//// 打开全屏
-const openFatherFullImg = (id: string) => {
-    emit('open-full-preview', id, images); // 触发事件
-};
-
 
 
 ////计算图片宽度
-
 interface RowData {
     items: WaterfallItem[];
     height: number;
 }
-
 const rows = ref<RowData[]>([]);
-
 // 定义计算属性
 const sideMarginStyle = computed(() => `${sideMargin.value}px`);
-
 const calculateLayout = () => {
     const rowsData: RowData[] = [];       // 存储所有行数据
     let currentRow: WaterfallItem[] = []; // 当前行的图片集合
@@ -301,18 +297,63 @@ const calculateLayout = () => {
     rows.value = rowsData;
 };
 
-//组件挂载时计算一次布局，并监听窗口resize事件
-// onMounted(() => {
-//     fetchCompressedPhotos(); // 添加此行
-//     calculateLayout();
 
-//     window.addEventListener('resize', calculateLayout);
-// });
+const fullImgShow = ref(false);
+const fullImgList = ref<string[]>([]);
+const currentIndex = ref(0);
+
+const openFullImg = async (id: string) => {
+    const loading = ElLoading.service({
+        fullscreen: true,
+        text: '加载中...',
+        background: 'rgba(0, 0, 0, 0.7)',
+    });
+
+    try {
+        fullImgList.value = []
+        const response = await axios.get('/api/QingDai/photo/getFullSizePhoto', {
+            params: { id, _: new Date().getTime() },
+            responseType: 'blob',
+        });
+        fullImgList.value = [URL.createObjectURL(response.data)];
+        fullImgShow.value = true;
+    } catch (error) {
+        console.error('获取全尺寸照片失败:', error);
+        ElMessage.error('获取全尺寸照片失败');
+        fullImgList.value = [];
+        fullImgShow.value = false;
+    } finally {
+        loading.close();
+    }
+    currentIndex.value = 0;
+
+};
+//页面打开时禁止滚动
+const currentScrollY = ref(0);
+
+watch(fullImgShow, (newVal: boolean) => {
+    if (newVal === true) {
+        currentScrollY.value = window.scrollY;
+        document.body.classList.add('body-no-scroll');
+    } else {
+        document.body.classList.remove('body-no-scroll');
+        window.scrollTo(0, currentScrollY.value);
+    }
+});
 
 </script>
 
+<style>
+.el-image-viewer__mask {
+  opacity: 1 !important;
+}
+</style>
 
 <style scoped>
+.body-no-scroll {
+    overflow: hidden;
+}
+
 .container {
     width: 100%;
     margin: 0 0;
@@ -335,6 +376,25 @@ const calculateLayout = () => {
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
 }
 
+
+.fullscreen-icon {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 2;
+    cursor: pointer;
+    border-radius: 4px;
+    padding: 4px;
+    transition: all 0.3s;
+    opacity: 0;
+    color: white;
+}
+
+.image-item:hover .fullscreen-icon {
+    background: rgba(0, 0, 0, 0.7);
+    transform: scale(1.1);
+    opacity: 1;
+}
 
 .image-info {
     position: absolute;
@@ -389,6 +449,7 @@ const calculateLayout = () => {
         padding: 4px 0;
     }
 
-    .image-row {}
 }
+
+
 </style>
