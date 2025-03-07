@@ -16,7 +16,16 @@ public class CorsConfig implements WebMvcConfigurer {
                 // 允许携带 Cookie、Authorization 等头
                 .allowCredentials(true)
                 // 允许所有请求头
-                .allowedHeaders("*");
+                .allowedHeaders("*")
+                // 允许前端读取特定响应头（如 Content-Length、Vary 等）
+                .exposedHeaders(
+                        "Content-Type",
+                        "Content-Length",
+                        "Content-Disposition",
+                        "Vary"
+                )
+                .maxAge(3600);
+        ;
     }
 }
 

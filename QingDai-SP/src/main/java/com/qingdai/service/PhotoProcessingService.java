@@ -30,7 +30,6 @@ import java.util.stream.Collectors;
 @Service
 public class PhotoProcessingService {
 
-    
     @Autowired
     PhotoService photoService;
     @Value("${qingdai.defaultAuthor}")
@@ -41,8 +40,8 @@ public class PhotoProcessingService {
 
     // 处理指定文件夹中的图片文件，返回一个包含处理后照片信息的 Photo 对象列表
     public List<Photo> getPhotosByFolder(File folder) {
-        return Arrays.stream(FileUtils.getImageFiles(folder))  // 返回 Stream<File>
-                .parallel()  // 并行处理
+        return Arrays.stream(FileUtils.getImageFiles(folder)) // 返回 Stream<File>
+                .parallel() // 并行处理
                 .map(this::getPhotoObjectByFile)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
@@ -58,22 +57,22 @@ public class PhotoProcessingService {
     }
 
     // 压缩文件夹内所有图片到指定目录
-    public void compressPhotosFromFolderToFolder(File srcDir, File thumbnailDir, int maxSizeKB, boolean overwrite) {
-        Arrays.stream(Objects.requireNonNull(srcDir.listFiles()))
+    public void thumbnailPhotosFromFolderToFolder(File fullSizeDir, File thumbnailSizeDir, int maxSizeKB, boolean overwrite) {
+        Arrays.stream(Objects.requireNonNull(fullSizeDir.listFiles()))
                 .parallel()
                 .filter(this::isSupportedPhoto)
-                .forEach(file -> compressPhoto(file, thumbnailDir, maxSizeKB, overwrite));
+                .forEach(file -> thumbnailPhoto(file.getAbsoluteFile(), thumbnailSizeDir, maxSizeKB, overwrite));
     }
 
-    public void compressPhotosFromMultipartFileToFolder(MultipartFile[] photos,
-                                                        File pendingDir,
-                                                        File thumbnailDir,
-                                                        int maxSizeKB,
-                                                        boolean overwrite) throws IOException {
+    public void thumbnailPhotosFromMultipartFileToFolder(MultipartFile[] photos,
+            File pendingDir,
+            File thumbnailDir,
+            int maxSizeKB,
+            boolean overwrite) throws IOException {
         // 创建随机名称的临时目录
         File tempDir = FileUtils.createTempDir(pendingDir);
 
-        //保存所有图片到临时目录
+        // 保存所有图片到临时目录
         Arrays.stream(photos)
                 .parallel()
                 .forEach(photo -> {
@@ -86,12 +85,11 @@ public class PhotoProcessingService {
                 });
 
         // 调用压缩方法处理临时目录中的文件
-        compressPhoto(tempDir, thumbnailDir, maxSizeKB, overwrite);
+        thumbnailPhoto(tempDir, thumbnailDir, maxSizeKB, overwrite);
 
         // 删除临时目录及其内容
         FileUtils.deleteFolder(tempDir);
     }
-
 
     // 根据照片ID获取文件名
     public String getFileNameById(Long photoId) {
@@ -109,16 +107,19 @@ public class PhotoProcessingService {
                 || name.endsWith(".png") || name.endsWith(".webp");
     }
 
-    /*获取文件名、格式和基础名称。
-    将PNG格式转换为JPEG格式。
-    检查目标文件是否存在且是否允许覆盖。
-    计算最大字节数。
-    优先调整图片质量以满足大小要求。
-    如果调整质量不达标，则尝试缩小图片尺寸。
-    如果仍不达标，抛出异常。*/
-    private void compressPhoto(File fullSizeDir, File thumbnailDir, int maxSizeKB, boolean overwrite) {
+    /*
+     * 获取文件名、格式和基础名称。
+     * 将PNG格式转换为JPEG格式。
+     * 检查目标文件是否存在且是否允许覆盖。
+     * 计算最大字节数。
+     * 优先调整图片质量以满足大小要求。
+     * 如果调整质量不达标，则尝试缩小图片尺寸。
+     * 如果仍不达标，抛出异常。
+     */
+    private void thumbnailPhoto(File fileUrl, File thumbnailDir, int maxSizeKB, boolean overwrite) {
         try {
-            String fileName = fullSizeDir.getName();
+
+            String fileName = fileUrl.getName();
             String formatName = FileUtils.getFileExtension(fileName).toLowerCase();
             String baseName = FileUtils.getBaseName(fileName);
 
@@ -128,26 +129,28 @@ public class PhotoProcessingService {
                 formatName = "jpg";
             }
 
-            File thumbnailFile = new File(thumbnailDir, fileName);
+            File thumbnailUrl = new File(thumbnailDir, fileName);//E:\QingDaiPhotos\Photos\Thumbnail\20211107-DSC_1895.jpg
+        
 
-            if (thumbnailFile.exists() && !overwrite) return;
+            if (thumbnailUrl.exists() && !overwrite)
+                return;
 
             long maxSizeBytes = maxSizeKB * 1024L;
             boolean sizeMet = false;
 
             // 优先调整质量参数
-            sizeMet = adjustPhotoQuality(fullSizeDir, thumbnailDir, formatName, maxSizeBytes);
+            sizeMet = adjustPhotoQuality(fileUrl, thumbnailUrl, formatName, maxSizeBytes);
 
             // 若未达标，调整尺寸
             if (!sizeMet) {
-                sizeMet = scaleDownPhoto(fullSizeDir, thumbnailDir, formatName, maxSizeBytes);
+                sizeMet = scaleDownPhoto(fileUrl, thumbnailUrl, formatName, maxSizeBytes);
             }
 
             if (!sizeMet) {
-                throw new IOException("无法压缩到指定大小: " + fullSizeDir.getName());
+                throw new IOException("无法压缩到指定大小: " + fileUrl.getName());
             }
         } catch (IOException e) {
-            throw new RuntimeException("文件处理失败: " + fullSizeDir.getName(), e);
+            throw new RuntimeException("文件处理失败: " + fileUrl.getName(), e);
         }
     }
 
@@ -180,11 +183,12 @@ public class PhotoProcessingService {
     private Photo getPhotoObjectByFile(File PhotoFile) {
         try {
             BufferedImage image = ImageIO.read(PhotoFile);
-            if (image == null) return null;
+            if (image == null)
+                return null;
 
-            //Id 原图 作者 宽度 高度 压缩图 简介 精选
+            // Id 原图 作者 宽度 高度 压缩图 简介 精选
             Photo photo = buildBasicPhoto(PhotoFile, image);
-            //拍摄时间 拍摄参数
+            // 拍摄时间 拍摄参数
             processExifData(PhotoFile, photo);
 
             return photo;
@@ -195,21 +199,22 @@ public class PhotoProcessingService {
     }
 
     // 循环逐步降低图片质量，直到满足文件大小要求 如果质量低于最小值仍未满足要求，则返回false
-    private boolean adjustPhotoQuality(File fullSizeDir, File thumbnailDir, String formatName, long maxSizeBytes) throws IOException {
+    private boolean adjustPhotoQuality(File fileUrl, File thumbnailUrl, String formatName, long maxSizeBytes)
+            throws IOException {
         double quality = 0.85;
         double minQuality = 0.2;
         double step = 0.05;
 
         while (quality >= minQuality) {
-            Thumbnails.of(fullSizeDir)
+            Thumbnails.of(fileUrl)
                     .scale(1)
                     .outputFormat(formatName)
                     .outputQuality(quality)
                     // 处理PNG透明背景
                     .imageType(BufferedImage.TYPE_INT_RGB)
-                    .toFile(thumbnailDir);
+                    .toFile(thumbnailUrl);
 
-            if (thumbnailDir.length() <= maxSizeBytes) {
+            if (thumbnailUrl.length() <= maxSizeBytes) {
                 return true;
             }
             quality = BigDecimal.valueOf(quality).subtract(BigDecimal.valueOf(step)).doubleValue();
@@ -217,8 +222,9 @@ public class PhotoProcessingService {
         return false;
     }
 
-    //图片按比例缩小
-    private boolean scaleDownPhoto(File fullSizeDir, File thumbnailDir, String formatName, long maxSizeBytes) throws IOException {
+    // 图片按比例缩小
+    private boolean scaleDownPhoto(File fullSizeDir, File thumbnailDir, String formatName, long maxSizeBytes)
+            throws IOException {
         double scale = 1.0;
         double step = 0.1;
 
@@ -257,7 +263,8 @@ public class PhotoProcessingService {
         Metadata metadata = ImageMetadataReader.readMetadata(PhotoFile);
         ExifSubIFDDirectory exif = metadata.getFirstDirectoryOfType(ExifSubIFDDirectory.class);
 
-        if (exif == null) return;
+        if (exif == null)
+            return;
 
         processShootingTime(exif, photo);
         processCameraSettings(exif, photo);
@@ -308,7 +315,7 @@ public class PhotoProcessingService {
         }
     }
 
-    // 处理相机型号  需要getFirstDirectoryOfType(ExifIFD0Directory.class);
+    // 处理相机型号 需要getFirstDirectoryOfType(ExifIFD0Directory.class);
     private void processCameraModel(Metadata metadata, Photo photo) {
         // 从 Metadata 中获取 ExifIFD0 目录（存储相机制造商和型号）
         ExifIFD0Directory exifIFD0 = metadata.getFirstDirectoryOfType(ExifIFD0Directory.class);
@@ -330,7 +337,7 @@ public class PhotoProcessingService {
         photo.setCamera(model);
     }
 
-    public void deletePhotoFiles(String fullSizeUrl,String thumbnailSizeUrl,String fileName) throws IOException {
+    public void deletePhotoFiles(String fullSizeUrl, String thumbnailSizeUrl, String fileName) throws IOException {
         FileUtils.deleteFile(new File(fullSizeUrl, fileName));
         FileUtils.deleteFile(new File(thumbnailSizeUrl, fileName));
     }

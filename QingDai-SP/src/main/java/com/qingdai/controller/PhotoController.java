@@ -29,10 +29,8 @@ import java.io.File;
 import java.io.IOException;
 import java.time.Year;
 import java.time.YearMonth;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -151,11 +149,11 @@ public class PhotoController {
     }
 
     @Operation(summary = "批量图片压缩", description = "将原图目录中的图片压缩到缩略图目录", parameters = {
-            @Parameter(name = "maxSizeKB", in = ParameterIn.QUERY, description = "最大文件大小(KB)", schema = @Schema(type = "integer", minimum = "100", maximum = "10240", example = "1024")),
+            @Parameter(name = "maxSizeKB", in = ParameterIn.QUERY, description = "最大文件大小(KB)", schema = @Schema(type = "integer", minimum = "10", maximum = "10240", example = "1024")),
             @Parameter(name = "overwrite", in = ParameterIn.QUERY, description = "覆盖已存在文件", schema = @Schema(type = "boolean"))
     })
-    @GetMapping("/compress")
-    public ResponseEntity<String> compressImages(
+    @GetMapping("/thumbnail")
+    public ResponseEntity<String> thumbnailImages(
             @RequestParam(defaultValue = "1024") int maxSizeKB,
             @RequestParam(defaultValue = "false") boolean overwrite) {
 
@@ -163,15 +161,21 @@ public class PhotoController {
             // 参数校验
             ValidationUtils.validateMaxSize(maxSizeKB);
 
-            File srcDir = new File(fullSizeUrl);
-            File destDir = new File(thumbnailSizeUrl);
+            File fullSizeDir = new File(fullSizeUrl);
+            File thumbnailSizeDir = new File(thumbnailSizeUrl);
 
             // 目录验证
-            FileUtils.validateDirectory(srcDir);
-            FileUtils.validateDirectory(destDir);
+            FileUtils.validateDirectory(fullSizeDir);
+            FileUtils.validateDirectory(thumbnailSizeDir);
 
             // 执行处理
-            imageService.compressPhotosFromFolderToFolder(srcDir, destDir, maxSizeKB, overwrite);
+            imageService.thumbnailPhotosFromFolderToFolder(fullSizeDir, thumbnailSizeDir, maxSizeKB, overwrite);
+
+            // 检查目标文件夹是否包含压缩后的文件
+            if (thumbnailSizeDir.listFiles() == null || thumbnailSizeDir.listFiles().length == 0) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("压缩任务失败，目标文件夹未生成任何文件");
+            }
 
             return ResponseEntity.ok("压缩任务已完成");
         } catch (IllegalArgumentException e) {
@@ -179,8 +183,8 @@ public class PhotoController {
         }
     }
 
-    @GetMapping("/getCompressedPhoto")
-    @Operation(summary = "获取指定压缩照片文件", description = "根据接收到的照片ID获取压缩照片文件并返回")
+    @GetMapping("/getThumbnailPhoto")
+    @Operation(summary = "获取指定压缩照片文件", description = "根据接收到的的照片ID获取压缩照片文件并返回")
     public ResponseEntity<Resource> getThumbnailPhotoById(@RequestParam String id) {
         try {
             String fileName = imageService.getFileNameById(Long.valueOf(id));
@@ -188,6 +192,38 @@ public class PhotoController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
             }
             return FileUtils.getFileResource(thumbnailSizeUrl, fileName);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @GetMapping("/getThumbnailPhotos")
+    @Operation(summary = "批量获取压缩照片文件", description = "根据ID列表获取多个压缩照片文件")
+    public ResponseEntity<Resource> getThumbnailPhotosByIds(@RequestParam List<String> ids) {
+        try {
+            List<File> validFiles = new ArrayList<>();
+            
+            for (String id : ids) {
+                try {
+                    Long photoId = Long.parseLong(id);
+                    String fileName = imageService.getFileNameById(photoId);
+                    if (fileName != null) {
+                        File file = new File(thumbnailSizeUrl, fileName);
+                        if (file.exists()) {
+                            validFiles.add(file);
+                        }
+                    }
+                } catch (NumberFormatException e) {
+                    System.out.println("无效的ID格式: " + id);
+                }
+            }
+            
+            if (validFiles.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
+            
+            return FileUtils.getFilesResource(validFiles);
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
@@ -343,8 +379,7 @@ public class PhotoController {
             Page<Photo> photoPage = new Page<>(page, pageSize);
             photoService.page(photoPage, new LambdaQueryWrapper<Photo>()
                     .orderByDesc(Photo::getTime)
-                    .in(Photo::getStart, Arrays.asList(0, 1))
-            );
+                    .in(Photo::getStart, Arrays.asList(0, 1)));
             return ResponseEntity.ok().body(photoPage);
         } catch (Exception e) {
             e.printStackTrace();
@@ -438,7 +473,7 @@ public class PhotoController {
             // 1. 存入数据库
             photoService.saveBatch(photos);
             // 2. 压缩图片
-            imageService.compressPhotosFromFolderToFolder(pendingDir, thumbnailDir, maxSizeKB, overwrite);
+            imageService.thumbnailPhotosFromFolderToFolder(pendingDir, thumbnailDir, maxSizeKB, overwrite);
             // 3. 复制图片到fullSizeUrl
             FileUtils.copyFiles(pendingDir, fullSizeDir);
             // 4. 删除pendingUrl图片
@@ -495,7 +530,7 @@ public class PhotoController {
             // 1. 存入数据库
             photoService.saveBatch(photos);
             // 2. 压缩图片
-            imageService.compressPhotosFromMultipartFileToFolder(files, pendingDir, thumbnailDir, maxSizeKB, overwrite);
+            imageService.thumbnailPhotosFromMultipartFileToFolder(files, pendingDir, thumbnailDir, maxSizeKB, overwrite);
             // 3. 复制图片到fullSizeUrl
             for (MultipartFile file : files) {
                 FileUtils.saveFile(file, fullSizeDir);

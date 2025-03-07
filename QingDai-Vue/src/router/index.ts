@@ -38,6 +38,7 @@ const router = createRouter({
             }
           ]
         },
+        
         {
           path: '/manage',
           component: () => import('@/components/managePage.vue').catch(() => errorPage),

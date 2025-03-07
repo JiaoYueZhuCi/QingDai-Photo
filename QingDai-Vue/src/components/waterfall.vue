@@ -33,6 +33,7 @@ import { ElImage, ElIcon } from 'element-plus';
 import { Picture as IconPicture } from '@element-plus/icons-vue'
 import axios from 'axios'; // 引入 axios
 import { debounce } from 'lodash';
+import JSZip from 'jszip';
 
 // 添加 props 来接收父组件传递的值
 const props = defineProps({
@@ -59,7 +60,7 @@ const images = ref<WaterfallItem[]>([]);
 
 //
 const currentPage = ref(1);
-const pageSize = ref(100);
+const pageSize = ref(50);
 const hasMore = ref(true);
 const containerRef = ref<HTMLElement | null>(null);
 
@@ -184,26 +185,35 @@ watch(() => props.photoType, (newVal, oldVal) => {
     }
 });
 
-// 缩略图获取方法（并行请求）
+// 缩略图获取方法
 const getThumbnailPhotos = async (start: number, end: number) => {
-    const requests = [];
-    for (let i = start; i <= end; i++) {
-        const item = images.value[i];
-        if (!item.compressedSrc) { // 避免重复请求
-            requests.push(
-                axios.get('/api/QingDai/photo/getCompressedPhoto', {
-                    params: { id: item.id },
-                    responseType: 'blob',
-                }).then(response => {
-                    item.compressedSrc = URL.createObjectURL(response.data);
-                }).catch(error => {
-                    console.error('未找到照片:', error);
-                    item.compressedSrc = ''; // 设置默认错误
-                })
-            );
-        }
+    const newItems = images.value.slice(start, end + 1).filter(item => !item.compressedSrc);
+    if (newItems.length === 0) return;
+
+    try {
+        const response = await axios.get('/api/QingDai/photo/getThumbnailPhotos', {
+            params: {
+                ids: newItems.map(item => item.id).join(',')
+            },
+            responseType: 'arraybuffer'
+        });
+
+        const zip = await JSZip.loadAsync(response.data);
+        
+        await Promise.all(newItems.map(async item => {
+            const file = zip.file(`${item.fileName}`);
+            if (file) {
+                const blob = await file.async('blob');
+                item.compressedSrc = URL.createObjectURL(blob);
+            } else {
+                item.compressedSrc = '';
+                console.error('ZIP包中未找到照片:', item.id);
+            }
+        }));
+    } catch (error) {
+        console.error('批量获取压缩图失败:', error);
+        newItems.forEach(item => item.compressedSrc = '');
     }
-    await Promise.all(requests);
 };
 
 //// 定义 Emits

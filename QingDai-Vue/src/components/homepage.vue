@@ -81,14 +81,15 @@ const openFullImg = async (id: string, images: Ref<WaterfallItem[]>) => {
     try {
         fullImgList.value = []
         // const response = await axios.get('/api/QingDai/photo/getCompressedPhoto', {
-            const response = await axios.get('/api/QingDai/photo/getFullSizePhoto', {
-            params: { id, _: new Date().getTime()  },
+        const response = await axios.get('/api/QingDai/photo/getFullSizePhoto', {
+            params: { id, _: new Date().getTime() },
             responseType: 'blob',
         });
         fullImgList.value = [URL.createObjectURL(response.data)];
         fullImgShow.value = true;
     } catch (error) {
         console.error('获取全尺寸照片失败:', error);
+        ElMessage.error('获取全尺寸照片失败');
         fullImgList.value = [];
         fullImgShow.value = false;
     } finally {

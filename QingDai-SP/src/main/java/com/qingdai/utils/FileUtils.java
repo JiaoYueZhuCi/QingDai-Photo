@@ -13,9 +13,54 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.UUID;
+import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+import java.io.FileOutputStream;
+import java.io.FileInputStream;
+import java.util.List;
 
 public class FileUtils {
+    private static final int ZIP_BUFFER_SIZE = 4096;
+
+    public static ResponseEntity<Resource> getFilesResource(List<File> files) throws IOException {
+        if (files == null || files.isEmpty()) {
+            throw new IllegalArgumentException("文件列表不能为空");
+        }
+
+        File tempDir = createTempDir(new File(System.getProperty("java.io.tmpdir")));
+        File zipFile = new File(tempDir, "package_" + System.currentTimeMillis() + ".zip");
+
+        try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipFile))) {
+            for (File file : files) {
+                if (!file.exists() || !file.canRead()) continue;
+                
+                ZipEntry entry = new ZipEntry(file.getName());
+                zos.putNextEntry(entry);
+                
+                try (FileInputStream fis = new FileInputStream(file)) {
+                    byte[] buffer = new byte[ZIP_BUFFER_SIZE];
+                    int length;
+                    while ((length = fis.read(buffer)) > 0) {
+                        zos.write(buffer, 0, length);
+                    }
+                }
+                zos.closeEntry();
+            }
+        } catch (IOException e) {
+            deleteFolder(tempDir);
+            throw new IOException("压缩文件创建失败: " + e.getMessage());
+        }
+
+        Resource resource = new FileSystemResource(zipFile);
+        return ResponseEntity.ok()
+                .header("Content-Disposition", "attachment; filename=\"" + zipFile.getName() + "\"")
+                .contentType(MediaType.parseMediaType("application/zip"))
+                .contentLength(zipFile.length())
+                .body(resource);
+    }
     //   判断目录是否存在，不存在直接异常
     public static void validateDirectory(File dir) {
         if (!dir.exists() || !dir.isDirectory()) {
@@ -52,6 +97,7 @@ public class FileUtils {
         return folder.listFiles((dir, name) ->
                 name.toLowerCase().matches(pattern));
     }
+    
 
     // 获取封装好文件的响应体
     public static ResponseEntity<Resource> getFileResource(String filePath, String fileName) {
