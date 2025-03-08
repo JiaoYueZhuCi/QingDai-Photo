@@ -4,6 +4,8 @@ spring.application.name: QingDai-SP
 qingdai:
   url: E:/QingDaiPhotos/
   fullSizeUrl: E:/QingDaiPhotos/Photos/FullSize/
+  thumbnail1000KUrl: E:/QingDaiPhotos/Photos/Thumbnail-1000K/
+  thumbnail100KUrl: E:/QingDaiPhotos/Photos/Thumbnail-100K/
   thumbnailSizeUrl: E:/QingDaiPhotos/Photos/Thumbnail/
   pendingUrl: E:/QingDaiPhotos/Photos/Pending/
   defaultAuthor: 皎月祝辞

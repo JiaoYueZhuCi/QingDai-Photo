@@ -6,7 +6,7 @@
         <el-empty v-if="images.length === 0" description="暂无照片数据"></el-empty>
 
         <el-image-viewer :teleported="true" v-if="fullImgShow" :url-list="fullImgList" :initial-index="currentIndex"
-            hide-on-click-modal="true" @close="fullImgShow = false" />
+            :hide-on-click-modal="true" @close="fullImgShow = false" />
 
         <div class="container-in" v-else>
             <div class="image-row" v-for="(row, rowIndex) in rows" :key="rowIndex"
@@ -201,7 +201,7 @@ const getThumbnailPhotos = async (start: number, end: number) => {
     if (newItems.length === 0) return;
 
     try {
-        const response = await axios.get('/api/QingDai/photo/getThumbnailPhotos', {
+        const response = await axios.get('/api/QingDai/photo/getThumbnail100KPhotos', {
             params: {
                 ids: newItems.map(item => item.id).join(',')
             },
@@ -311,8 +311,8 @@ const openFullImg = async (id: string) => {
 
     try {
         fullImgList.value = []
-        const response = await axios.get('/api/QingDai/photo/getFullSizePhoto', {
-            params: { id, _: new Date().getTime() },
+        const response = await axios.get('/api/QingDai/photo/getThumbnail1000KPhoto', {
+            params: { id },
             responseType: 'blob',
         });
         fullImgList.value = [URL.createObjectURL(response.data)];
@@ -328,16 +328,17 @@ const openFullImg = async (id: string) => {
     currentIndex.value = 0;
 
 };
+
 //页面打开时禁止滚动
 const currentScrollY = ref(0);
 
 watch(fullImgShow, (newVal: boolean) => {
     if (newVal === true) {
-        currentScrollY.value = window.scrollY;
+        currentScrollY.value = window.scrollY;  //修补性措施
         document.body.classList.add('body-no-scroll');
     } else {
         document.body.classList.remove('body-no-scroll');
-        window.scrollTo(0, currentScrollY.value);
+        nextTick(() => window.scrollTo({ top: currentScrollY.value, behavior: 'auto' }));
     }
 });
 
@@ -347,12 +348,14 @@ watch(fullImgShow, (newVal: boolean) => {
 .el-image-viewer__mask {
   opacity: 1 !important;
 }
-</style>
 
-<style scoped>
 .body-no-scroll {
     overflow: hidden;
 }
+</style>
+
+<style scoped>
+
 
 .container {
     width: 100%;

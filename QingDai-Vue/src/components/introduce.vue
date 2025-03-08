@@ -92,6 +92,9 @@
                     <el-tag size="large">Nikkor 50mm-250mm f4.5-6.3</el-tag>
                     <el-tag size="large">Nikkor 50mm f1.8</el-tag>
                     <el-tag size="large">DJI Air3S</el-tag>
+                    <el-button type="primary" @click="loginDialogVisible = true" style="margin-left:12px">登录</el-button>
+
+                    <LoginDialog v-model="loginDialogVisible" />
                 </div>
 
 
@@ -110,10 +113,12 @@ import {
     Tickets,
     User,
 } from '@element-plus/icons-vue'
+import LoginDialog from './LoginDialog.vue'
 
 
 const backgroundImageUrl = '/img/introduce/background.jpg'
 const avatarImageUrl = '/img/introduce/avatar.jpg'
+const loginDialogVisible = ref(false)
 
 const iconStyle = computed(() => {
     const marginMap = {

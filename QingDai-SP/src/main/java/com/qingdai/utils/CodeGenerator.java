@@ -31,7 +31,7 @@ public class CodeGenerator {
                                 "D:/Code/qingdai-photo/QingDai-SP/src/main/resources/mapper"))
                 )
                 .strategyConfig(builder -> {
-                    builder.addInclude("timeline")
+                    builder.addInclude("user")
                             .entityBuilder()
                             .enableLombok()
 //                            .enableFileOverride()  //!!!

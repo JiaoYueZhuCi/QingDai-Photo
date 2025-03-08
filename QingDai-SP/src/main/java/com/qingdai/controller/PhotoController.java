@@ -51,10 +51,14 @@ public class PhotoController {
     private PhotoProcessingService imageService;
     @Value("${qingdai.fullSizeUrl}")
     private String fullSizeUrl;
-    @Value("${qingdai.thumbnailSizeUrl}")
-    private String thumbnailSizeUrl;
     @Value("${qingdai.pendingUrl}")
     private String pendingUrl;
+    @Value("${qingdai.thumbnailSizeUrl}")
+    private String thumbnailSizeUrl;
+    @Value("${qingdai.thumbnail1000KUrl}")
+    private String thumbnail1000KUrl;
+    @Value("${qingdai.thumbnail100KUrl}")
+    private String thumbnail100KUrl;
 
     @GetMapping("/getAllPhotos")
     @Operation(summary = "获取全部照片信息(时间倒叙)", description = "从数据库获取所有照片的详细信息(时间倒叙)")
@@ -162,7 +166,7 @@ public class PhotoController {
             ValidationUtils.validateMaxSize(maxSizeKB);
 
             File fullSizeDir = new File(fullSizeUrl);
-            File thumbnailSizeDir = new File(thumbnailSizeUrl);
+            File thumbnailSizeDir = new File(thumbnailSizeUrl);  //临时路径
 
             // 目录验证
             FileUtils.validateDirectory(fullSizeDir);
@@ -183,24 +187,39 @@ public class PhotoController {
         }
     }
 
-    @GetMapping("/getThumbnailPhoto")
-    @Operation(summary = "获取指定压缩照片文件", description = "根据接收到的的照片ID获取压缩照片文件并返回")
-    public ResponseEntity<Resource> getThumbnailPhotoById(@RequestParam String id) {
+    @GetMapping("/getThumbnail100KPhoto")
+    @Operation(summary = "获取指定100K压缩照片文件", description = "根据接收到的的照片ID获取100K压缩照片文件并返回")
+    public ResponseEntity<Resource> getThumbnail100KPhotoById(@RequestParam String id) {
         try {
             String fileName = imageService.getFileNameById(Long.valueOf(id));
             if (fileName == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
             }
-            return FileUtils.getFileResource(thumbnailSizeUrl, fileName);
+            return FileUtils.getFileResource(thumbnail100KUrl, fileName);
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 
-    @GetMapping("/getThumbnailPhotos")
+    @GetMapping("/getThumbnail1000KPhoto")
+    @Operation(summary = "获取指定1000K压缩照片文件", description = "根据接收到的的照片ID获取1000K压缩照片文件并返回")
+    public ResponseEntity<Resource> getThumbnail1000KPhotoById(@RequestParam String id) {
+        try {
+            String fileName = imageService.getFileNameById(Long.valueOf(id));
+            if (fileName == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            }
+            return FileUtils.getFileResource(thumbnail1000KUrl, fileName);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @GetMapping("/getThumbnail100KPhotos")
     @Operation(summary = "批量获取压缩照片文件", description = "根据ID列表获取多个压缩照片文件")
-    public ResponseEntity<Resource> getThumbnailPhotosByIds(@RequestParam List<String> ids) {
+    public ResponseEntity<Resource> getThumbnail100KPhotosByIds(@RequestParam List<String> ids) {
         try {
             List<File> validFiles = new ArrayList<>();
             
@@ -209,7 +228,7 @@ public class PhotoController {
                     Long photoId = Long.parseLong(id);
                     String fileName = imageService.getFileNameById(photoId);
                     if (fileName != null) {
-                        File file = new File(thumbnailSizeUrl, fileName);
+                        File file = new File(thumbnail100KUrl, fileName);
                         if (file.exists()) {
                             validFiles.add(file);
                         }
@@ -339,7 +358,7 @@ public class PhotoController {
             }
 
             // 3. 删除文件
-            imageService.deletePhotoFiles(fullSizeUrl, thumbnailSizeUrl, fileName);
+            imageService.deletePhotoFiles(fullSizeUrl, thumbnail100KUrl, fileName);
 
             return ResponseEntity.ok("照片删除成功");
         } catch (Exception e) {
@@ -468,7 +487,7 @@ public class PhotoController {
             ValidationUtils.validateMaxSize(maxSizeKB);
 
             File pendingDir = new File(pendingUrl);
-            File thumbnailDir = new File(thumbnailSizeUrl);
+            File thumbnailDir = new File(thumbnail100KUrl);
             File fullSizeDir = new File(fullSizeUrl);
 
             // 目录验证
@@ -513,7 +532,7 @@ public class PhotoController {
             // 参数校验
             ValidationUtils.validateMaxSize(maxSizeKB);
 
-            File thumbnailDir = new File(thumbnailSizeUrl);
+            File thumbnailDir = new File(thumbnail100KUrl);
             File pendingDir = new File(pendingUrl);
             File fullSizeDir = new File(fullSizeUrl);
 
