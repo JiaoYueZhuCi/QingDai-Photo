@@ -104,6 +104,7 @@
         </div>
       </el-col>
     </el-row>
+
   </div>
 </template>
 
@@ -115,6 +116,7 @@ import {
   CaretTop,
   Warning,
 } from '@element-plus/icons-vue';
+import { ElMessage } from 'element-plus';
 
 const startPhotoCount = ref<number>(0);
 const photoCount = ref<number>(0);
@@ -159,6 +161,8 @@ onMounted(() => {
   fetchStartPhotoCount();
   fetchPhotoCount();
 });
+
+
 </script>
 
 <style scoped>

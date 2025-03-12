@@ -3,8 +3,8 @@
         <el-table :data="tableData" style="width: 100%" border stripe>
             <el-table-column label="缩略图" width="220" fixed>
                 <template #default="scope">
-                    <el-image :src="`/api/QingDai/photo/getCompressedPhoto?id=${scope.row.id}`"
-                        :preview-src-list="[`/api/QingDai/photo/getCompressedPhoto?id=${scope.row.id}`]"
+                    <el-image :src="`/api/QingDai/photo/getThumbnail100KPhoto?id=${scope.row.id}`"
+                        :preview-src-list="[`/api/QingDai/photo/getThumbnail100KPhoto?id=${scope.row.id}`]"
                         style="height: 150px" fit="contain" />
                 </template>
             </el-table-column>
@@ -78,14 +78,6 @@
                 </template>
             </el-table-column>
 
-            <el-table-column label="相机信息" width="200">
-                <template #default="scope">
-                    <div v-if="scope.row.camera || scope.row.lens">
-                        {{ scope.row.camera }} / {{ scope.row.lens }}
-                    </div>
-                    <span v-else>-</span>
-                </template>
-            </el-table-column>
             <el-table-column prop="start" label="精选标记" width="110">
                 <template #default="scope">
                     <el-select v-model="scope.row.start" :disabled="!scope.row.isEditing" placeholder="选择状态"
@@ -103,12 +95,21 @@
                         <el-button size="small" type="danger" @click="handleDelete(scope.row)">删除</el-button>
                     </div>
                     <div v-else>
-                        <el-button size="small" type="success" @click="submitStatusEdit(scope.row)">保存</el-button>
+                        <el-button size="small" type="success" @click="submitEdit(scope.row)">保存</el-button>
                         <el-button size="small" @click="cancelEdit(scope.row)">取消</el-button>
                     </div>
                 </template>
             </el-table-column>
         </el-table>
+
+        <div class="floating-action">
+            <el-button type="primary" round @click="photoUpdateRef.dialogVisible = true">
+                <el-icon>
+                    <Upload />
+                </el-icon>上传照片
+            </el-button>
+        </div>
+        <PhotoUpdate ref="photoUpdateRef" />
 
         <div class="pagination-wrapper">
             <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize"
@@ -119,15 +120,19 @@
 </template>
 
 <script setup lang="ts">
+import PhotoUpdate from '@/components/photoUpdate.vue'
 import { ref, watchEffect } from 'vue'
 import axios from 'axios'
 import type { WaterfallItem } from '@/types'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Upload } from '@element-plus/icons-vue'
+
+const photoUpdateRef = ref()
 
 const tableData = ref<WaterfallItem[]>([])
 const editOriginData = ref<any>({})
 const currentPage = ref(1)
-const pageSize = ref(100)
+const pageSize = ref(50)
 const total = ref(0)
 
 const fetchData = async () => {
@@ -213,7 +218,7 @@ const handleDelete = async (row: any) => {
                 type: 'warning',
             }
         )
-        await axios.delete(`/api/QingDai/photo/deletePhotoById/${row.id}`)
+        await axios.delete('/api/QingDai/photo/deletePhotoById', { params: { id: row.id } })
         ElMessage.success('删除成功')
         fetchData()
     } catch (error) {
@@ -221,6 +226,8 @@ const handleDelete = async (row: any) => {
         ElMessage.error('取消删除')
     }
 }
+
+
 
 const submitStatusEdit = async (row: any) => {
     try {
@@ -242,6 +249,13 @@ const submitStatusEdit = async (row: any) => {
 .photo-list-container {
     padding: 0px;
     background: #fff;
+}
+
+.floating-action {
+    position: fixed;
+    right: 20px;
+    bottom: 80px;
+    z-index: 2000;
 }
 
 .pagination-wrapper {

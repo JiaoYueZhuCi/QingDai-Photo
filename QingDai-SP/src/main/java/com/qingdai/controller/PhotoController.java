@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,7 +22,6 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -31,8 +31,10 @@ import java.io.File;
 import java.io.IOException;
 import java.time.Year;
 import java.time.YearMonth;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * <p>
@@ -42,8 +44,9 @@ import java.util.stream.Collectors;
  * @author LiuZiMing
  * @since 2025-02-28
  */
-@Tag(name = "图片管理", description = "图片相关操作接口")
 @RestController
+@Tag(name = "图片管理", description = "图片相关操作接口")
+@SecurityRequirement(name = "BearerAuth")
 @RequestMapping("/photo")
 public class PhotoController {
 
@@ -92,6 +95,7 @@ public class PhotoController {
 
     @GetMapping("/getStartPhotos")
     @Operation(summary = "获取代表作照片信息(时间倒叙)", description = "从数据库获取所有代表作的详细信息(时间倒叙)")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<Photo>> getStartPhotos() {
         try {
             // 1. 使用MyBatis Plus的list方法获取所有记录
@@ -119,6 +123,7 @@ public class PhotoController {
 
     @GetMapping("/toMysql")
     @Operation(summary = "所有图片信息自动入数据库", description = "所有图片信息自动入数据库")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> FullSizePhototoMysql() {
         // 1. 获取验证后的文件夹
         File folder = FileUtils.validateFolder(fullSizeUrl);
@@ -160,6 +165,7 @@ public class PhotoController {
             @Parameter(name = "overwrite", in = ParameterIn.QUERY, description = "覆盖已存在文件", schema = @Schema(type = "boolean"))
     })
     @GetMapping("/thumbnail")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> thumbnailImages(
             @RequestParam(defaultValue = "1024") int maxSizeKB,
             @RequestParam(defaultValue = "false") boolean overwrite) {
@@ -168,15 +174,15 @@ public class PhotoController {
             // 参数校验
             ValidationUtils.validateMaxSize(maxSizeKB);
 
-            File fullSizeDir = new File(fullSizeUrl);
-            File thumbnailSizeDir = new File(thumbnailSizeUrl);  //临时路径
+            File pendingDir = new File(pendingUrl);
+            File thumbnailSizeDir = new File(thumbnailSizeUrl); // 临时路径
 
             // 目录验证
-            FileUtils.validateDirectory(fullSizeDir);
+            FileUtils.validateDirectory(pendingDir);
             FileUtils.validateDirectory(thumbnailSizeDir);
 
             // 执行处理
-            imageService.thumbnailPhotosFromFolderToFolder(fullSizeDir, thumbnailSizeDir, maxSizeKB, overwrite);
+            imageService.thumbnailPhotosFromFolderToFolder(pendingDir, thumbnailSizeDir, maxSizeKB, overwrite);
 
             // 检查目标文件夹是否包含压缩后的文件
             if (thumbnailSizeDir.listFiles() == null || thumbnailSizeDir.listFiles().length == 0) {
@@ -192,6 +198,7 @@ public class PhotoController {
 
     @GetMapping("/getThumbnail100KPhoto")
     @Operation(summary = "获取指定100K压缩照片文件", description = "根据接收到的的照片ID获取100K压缩照片文件并返回")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<Resource> getThumbnail100KPhotoById(@RequestParam String id) {
         try {
             String fileName = imageService.getFileNameById(Long.valueOf(id));
@@ -207,6 +214,7 @@ public class PhotoController {
 
     @GetMapping("/getThumbnail1000KPhoto")
     @Operation(summary = "获取指定1000K压缩照片文件", description = "根据接收到的的照片ID获取1000K压缩照片文件并返回")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<Resource> getThumbnail1000KPhotoById(@RequestParam String id) {
         try {
             String fileName = imageService.getFileNameById(Long.valueOf(id));
@@ -221,11 +229,12 @@ public class PhotoController {
     }
 
     @GetMapping("/getThumbnail100KPhotos")
+    @PreAuthorize("permitAll()")
     @Operation(summary = "批量获取压缩照片文件", description = "根据ID列表获取多个压缩照片文件")
     public ResponseEntity<Resource> getThumbnail100KPhotosByIds(@RequestParam List<String> ids) {
         try {
             List<File> validFiles = new ArrayList<>();
-            
+
             for (String id : ids) {
                 try {
                     Long photoId = Long.parseLong(id);
@@ -240,11 +249,11 @@ public class PhotoController {
                     System.out.println("无效的ID格式: " + id);
                 }
             }
-            
+
             if (validFiles.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
             }
-            
+
             return FileUtils.getFilesResource(validFiles);
         } catch (Exception e) {
             e.printStackTrace();
@@ -253,6 +262,7 @@ public class PhotoController {
     }
 
     @GetMapping("/getFullSizePhoto")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "获取指定原图照片文件", description = "根据接收到的照片ID获取原图照片文件并返回")
     public ResponseEntity<Resource> getFullSizePhotoById(@RequestParam String id) {
         try {
@@ -266,7 +276,9 @@ public class PhotoController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-    @GetMapping("/getPhotoInfo")
+
+    @GetMapping("/getPhotoInfoById")
+    @PreAuthorize("permitAll()")
     @Operation(summary = "获取照片元数据", description = "根据ID获取照片的完整元数据信息")
     public ResponseEntity<Photo> getPhotoById(@RequestParam String id) {
         try {
@@ -282,6 +294,7 @@ public class PhotoController {
     }
 
     @GetMapping("/getPhotoCount")
+    @PreAuthorize("permitAll()")
     @Operation(summary = "获取照片总数", description = "从数据库获取所有照片的总数")
     public ResponseEntity<Long> getPhotoCount() {
         try {
@@ -294,6 +307,7 @@ public class PhotoController {
     }
 
     @GetMapping("/getStartPhotoCount")
+    @PreAuthorize("permitAll()")
     @Operation(summary = "获取代表作照片总数", description = "从数据库获取start字段为1的照片总数")
     public ResponseEntity<Long> getStartPhotoCount() {
         try {
@@ -306,6 +320,7 @@ public class PhotoController {
     }
 
     @GetMapping("/getMonthlyPhotoCountChange")
+    @PreAuthorize("permitAll()")
     @Operation(summary = "获取本月照片数量相比上个月照片数量的变化", description = "根据time字段计算本月照片数量相比上个月照片数量的变化")
     public ResponseEntity<Long> getMonthlyPhotoCountChange() {
         try {
@@ -319,6 +334,7 @@ public class PhotoController {
     }
 
     @GetMapping("/getYearlyPhotoCountChange")
+    @PreAuthorize("permitAll()")
     @Operation(summary = "获取今年照片数量相比去年照片数量的变化", description = "根据time字段计算今年照片数量相比去年照片数量的变化")
     public ResponseEntity<Long> getYearlyPhotoCountChange() {
         try {
@@ -332,7 +348,8 @@ public class PhotoController {
     }
 
     @GetMapping("/getMonthlyStartPhotoCountChange")
-    @Operation(summary = "获取本月start=1照片数量相比上个月照片数量的变化", description = "根据time字段计算本月代表作照片数量相比上个月照片数量的变化")
+    @Operation(summary = "获取本月精选照片数量相比上个月照片数量的变化", description = "根据time字段计算本月代表作照片数量相比上个月照片数量的变化")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<Long> getMonthlyStartPhotoCountChange() {
         try {
             long currentMonthCount = photoService.countByMonthAndStart(YearMonth.now(), 1);
@@ -345,11 +362,12 @@ public class PhotoController {
     }
 
     @DeleteMapping("/deletePhotoById")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "根据ID删除照片", description = "根据ID删除数据库记录及对应的原图和压缩图文件")
-    public ResponseEntity<String> deletePhotoById(@RequestParam Long id) {
+    public ResponseEntity<String> deletePhotoById(@RequestParam String id) {
         try {
             // 1. 获取文件名
-            String fileName = imageService.getFileNameById(id);
+            String fileName = imageService.getFileNameById(Long.valueOf(id));
             if (fileName == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("未找到对应照片");
             }
@@ -361,7 +379,7 @@ public class PhotoController {
             }
 
             // 3. 删除文件
-            imageService.deletePhotoFiles(fullSizeUrl, thumbnail100KUrl, fileName);
+            imageService.deletePhotoFiles(fullSizeUrl, thumbnail100KUrl, thumbnail1000KUrl, fileName);
 
             return ResponseEntity.ok("照片删除成功");
         } catch (Exception e) {
@@ -371,6 +389,7 @@ public class PhotoController {
     }
 
     @PutMapping("/updatePhotoInfo")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "更新照片信息", description = "根据ID更新照片元数据信息")
     public ResponseEntity<String> updatePhotoInfo(@RequestBody Photo photo) {
         try {
@@ -391,7 +410,7 @@ public class PhotoController {
     }
 
     @GetMapping("/getYearlyStartPhotoCountChange")
-    @Operation(summary = "获取今年start=1照片数量相比去年照片数量的变化", description = "根据time字段计算今年代表作照片数量相比去年照片数量的变化")
+    @Operation(summary = "获取今年精选照片数量相比去年照片数量的变化", description = "根据time字段计算今年代表作照片数量相比去年照片数量的变化")
     public ResponseEntity<Long> getYearlyStartPhotoCountChange() {
         try {
             long currentYearCount = photoService.countByYearAndStart(Year.now(), 1);
@@ -405,6 +424,7 @@ public class PhotoController {
 
     @GetMapping("/getVisiblePhotosByPage")
     @Operation(summary = "获取可见图片分页信息", description = "从数据库获取start=0或1的分页照片信息(时间倒叙)")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<Page<Photo>> getVisiblePhotosByPage(
             @RequestParam int page,
             @RequestParam int pageSize) {
@@ -424,8 +444,8 @@ public class PhotoController {
     }
 
     @GetMapping("/getPhotosByPage")
-    @Operation(summary = "获取分页照片信息(时间倒叙)", description = "从数据库获取分页照片的详细信息(时间倒叙)")
-    // @Cacheable(value = "photos", key = "#page + '_' + #pageSize")
+    @Operation(summary = "获取分页照片信息(时间倒叙)", description = "从数据库获取分页照片的信息(时间倒叙)")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Page<Photo>> getPhotosByPage(
             @RequestParam int page,
             @RequestParam int pageSize) {
@@ -456,7 +476,7 @@ public class PhotoController {
 
     @GetMapping("/getStartPhotosByPage")
     @Operation(summary = "获取分页代表作照片信息(时间倒叙)", description = "从数据库获取分页代表作的详细信息(时间倒叙)")
-    // @Cacheable(value = "startPhotos", key = "#page + '_' + #pageSize")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<Page<Photo>> getStartPhotosByPage(
             @RequestParam int page,
             @RequestParam int pageSize) {
@@ -480,22 +500,21 @@ public class PhotoController {
 
     @Transactional
     @Operation(summary = "处理待处理图片", description = "将pendingUrl内的图片添加到数据库，压缩到thumbnailSizeUrl，复制到fullSizeUrl，删除pendingUrl图片")
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/processPendingPhotos")
     public ResponseEntity<String> processPendingPhotos(
-            @RequestParam(defaultValue = "1024") int maxSizeKB,
             @RequestParam(defaultValue = "false") boolean overwrite) {
 
         try {
-            // 参数校验
-            ValidationUtils.validateMaxSize(maxSizeKB);
-
             File pendingDir = new File(pendingUrl);
-            File thumbnailDir = new File(thumbnail100KUrl);
+            File thumbnail100KDir = new File(thumbnail100KUrl);
+            File thumbnail1000KDir = new File(thumbnail1000KUrl);
             File fullSizeDir = new File(fullSizeUrl);
 
             // 目录验证
             FileUtils.validateDirectory(pendingDir);
-            FileUtils.validateDirectory(thumbnailDir);
+            FileUtils.validateDirectory(thumbnail100KDir);
+            FileUtils.validateDirectory(thumbnail1000KDir);
             FileUtils.validateDirectory(fullSizeDir);
 
             // 获取图片
@@ -509,7 +528,8 @@ public class PhotoController {
             // 1. 存入数据库
             photoService.saveBatch(photos);
             // 2. 压缩图片
-            imageService.thumbnailPhotosFromFolderToFolder(pendingDir, thumbnailDir, maxSizeKB, overwrite);
+            imageService.thumbnailPhotosFromFolderToFolder(pendingDir, thumbnail100KDir, 100, overwrite);
+            imageService.thumbnailPhotosFromFolderToFolder(pendingDir, thumbnail1000KDir, 1000, overwrite);
             // 3. 复制图片到fullSizeUrl
             FileUtils.copyFiles(pendingDir, fullSizeDir);
             // 4. 删除pendingUrl图片
@@ -526,34 +546,43 @@ public class PhotoController {
     @Transactional
     @Operation(summary = "处理前端传入的待处理图片", description = "将前端传入的图片添加到数据库，压缩到thumbnailSizeUrl，复制到fullSizeUrl")
     @PostMapping("/processPhotosFromFrontend")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> processPhotosFromFrontend(
-            @RequestParam(defaultValue = "1024") int maxSizeKB,
             @RequestParam(defaultValue = "false") boolean overwrite,
-            @Parameter(description = "上传的图片文件数组", content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE, array = @ArraySchema(arraySchema = @Schema(type = "array", implementation = File.class), schema = @Schema(type = "string", format = "binary")))) @RequestParam("files") MultipartFile[] files) {
+            @Parameter(description = "上传的图片文件数组", content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE,
+                    array = @ArraySchema(arraySchema = @Schema(type = "array", implementation = File.class),
+                            schema = @Schema(type = "string", format = "binary")))) @RequestParam("files") MultipartFile[] files) {
 
         try {
-            // 参数校验
-            ValidationUtils.validateMaxSize(maxSizeKB);
 
-            File thumbnailDir = new File(thumbnail100KUrl);
-            File pendingDir = new File(pendingUrl);
+            File thumbnail100KDir = new File(thumbnail100KUrl);
+            File thumbnail1000KDir = new File(thumbnail1000KUrl);
             File fullSizeDir = new File(fullSizeUrl);
+            File pendingDir = new File(pendingUrl);
 
             // 目录验证
-            FileUtils.validateDirectory(thumbnailDir);
+            FileUtils.validateDirectory(pendingDir);
+            FileUtils.validateDirectory(thumbnail100KDir);
+            FileUtils.validateDirectory(thumbnail1000KDir);
             FileUtils.validateDirectory(fullSizeDir);
 
             // 获取并处理图片
             List<Photo> photos = new ArrayList<>();
             for (MultipartFile multipartfile : files) {
                 // 检查文件是否为支持的图片格式
-                if (imageService.isSupportedPhoto(new File(multipartfile.getOriginalFilename()))) {
+                if (imageService.multipartFileIsSupportedPhoto(multipartfile)){
+                    // 先保存原始文件到fullSize目录
+                    FileUtils.saveFile(multipartfile, fullSizeDir);
+                    // 压缩双图片
+                    imageService.thumbnailPhotoFromMultipartFileToFolder(multipartfile, pendingDir, thumbnail100KDir, 100, overwrite);
+                    imageService.thumbnailPhotoFromMultipartFileToFolder(multipartfile, pendingDir, thumbnail1000KDir, 1000, overwrite);
+                    // 生成Photo对象
                     Photo photo = imageService.getPhotoObjectByMultipartFile(multipartfile);
                     if (photo != null) {
                         photos.add(photo);
                     }
-                } else {
-                    System.out.println("文件格式不支持: " + multipartfile.getOriginalFilename());
+                } else{
+                    return ResponseEntity.badRequest().body("文件格式不支持: " + multipartfile.getOriginalFilename());
                 }
             }
 
@@ -563,25 +592,24 @@ public class PhotoController {
                         .body("没有有效照片可保存");
             }
 
-            // 1. 存入数据库
+
+            // 存入数据库
             photoService.saveBatch(photos);
-            // 2. 压缩图片
-            imageService.thumbnailPhotosFromMultipartFileToFolder(files, pendingDir, thumbnailDir, maxSizeKB, overwrite);
-            // 3. 复制图片到fullSizeUrl
-            for (MultipartFile file : files) {
-                FileUtils.saveFile(file, fullSizeDir);
-            }
+
 
             return ResponseEntity.ok("处理任务已完成");
         } catch (IllegalArgumentException e) {
+            System.out.println("处理文件失败: " + e);
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (IOException e) {
+            System.out.println("文件IO失败: " + e);
             return ResponseEntity.internalServerError().body(e.getMessage());
         }
     }
 
     @PutMapping("/updatePhotoStartStatus")
     @Operation(summary = "更新照片星标状态", description = "根据ID更新照片的星标状态")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> updatePhotoStartStatus(
             @RequestParam Long id,
             @RequestParam Integer start) {

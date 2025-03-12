@@ -14,22 +14,24 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Collections;
 import java.util.List;
-import org.springframework.web.bind.annotation.PutMapping; 
-import org.springframework.web.bind.annotation.PostMapping; 
-import org.springframework.web.bind.annotation.DeleteMapping; 
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestBody; // 添加缺失的导入语句
 import org.springframework.web.bind.annotation.PathVariable; // 添加缺失的导入语句
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 /**
  * <p>
- *  前端控制器
+ * 前端控制器
  * </p>
  *
  * @author LiuZiMing
  * @since 2025-03-01
  */
-@Tag(name = "时间线管理", description = "时间线相关操作接口")
 @RestController
+@Tag(name = "时间线管理", description = "时间线相关操作接口")
+@SecurityRequirement(name = "BearerAuth")
 @RequestMapping("/timeline")
 public class TimelineController {
 
@@ -62,7 +64,7 @@ public class TimelineController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
-    
+
     @PostMapping("/addTimeline")
     @Operation(summary = "添加时间线信息", description = "向数据库中添加一条时间线信息")
     public ResponseEntity<Timeline> addTimeline(@RequestBody Timeline timeline) {
