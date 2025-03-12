@@ -13,4 +13,5 @@ public class MyBatisPlusConfig {
         interceptor.addInnerInterceptor(new PaginationInnerInterceptor());
         return interceptor;
     }
+
 }

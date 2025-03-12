@@ -21,6 +21,8 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -62,6 +64,7 @@ public class PhotoController {
 
     @GetMapping("/getAllPhotos")
     @Operation(summary = "获取全部照片信息(时间倒叙)", description = "从数据库获取所有照片的详细信息(时间倒叙)")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<Photo>> getAllPhotos() {
         try {
             // 1. 使用MyBatis Plus的list方法获取所有记录

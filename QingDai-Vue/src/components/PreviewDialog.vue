@@ -88,7 +88,7 @@ const handleOpen = async () => {
     isLoading.value = true
     try {
         // 获取缩略图
-        const thumbRes = await axios.get(`/api/QingDai/photo/getThumbnailPhoto?id=${props.photoId}`, {
+        const thumbRes = await axios.get(`/api/QingDai/photo/getThumbnail1000KPhoto?id=${props.photoId}`, {
             responseType: 'blob'
         })
         thumbnailUrl.value = URL.createObjectURL(thumbRes.data)

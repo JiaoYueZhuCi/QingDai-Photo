@@ -31,7 +31,7 @@ public class CodeGenerator {
                                 "D:/Code/qingdai-photo/QingDai-SP/src/main/resources/mapper"))
                 )
                 .strategyConfig(builder -> {
-                    builder.addInclude("user")
+                    builder.addInclude("sys_user_role")
                             .entityBuilder()
                             .enableLombok()
 //                            .enableFileOverride()  //!!!
@@ -39,8 +39,9 @@ public class CodeGenerator {
                             .addTableFills() // 可选字段填充配置
                             .versionColumnName("version") // 乐观锁字段
                             .enableTableFieldAnnotation() // 启用字段注解
-//                            .formatFileName("%sEntity") // 实体类命名格式
+//                            .formatFileName("%s")  //去前缀
                             .enableActiveRecord()
+                        
                             .controllerBuilder()
                             .enableRestStyle()
 //                        .enableFileOverride()  //!!!

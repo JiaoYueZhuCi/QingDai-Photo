@@ -15,21 +15,18 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("sys_user")
-@Schema(name = "User实体")
-public class User {
+@TableName("sys_role")
+@Schema(name = "Role实体")
+public class Role {
     @TableId(value = "id", type = IdType.AUTO)
     @Schema(description = "")
     private Long id;
-    @TableField(value = "username")
+    @TableField(value = "name")
     @Schema(description = "")
-    private String username;
-    @TableField(value = "password")
+    private String name;
+    @TableField(value = "description")
     @Schema(description = "")
-    private String password;
-    @TableField(value = "status")
-    @Schema(description = "0-禁用, 1-启用")
-    private Byte status;
+    private String description;
     @TableField(value = "created_time")
     @Schema(description = "")
     private LocalDateTime createdTime;

@@ -1,9 +1,10 @@
 package com.qingdai.service;
 
-import com.qingdai.entity.User;
-import com.baomidou.mybatisplus.extension.service.IService;
 
-import javax.naming.AuthenticationException;
+import com.baomidou.mybatisplus.extension.service.IService;
+import com.qingdai.entity.User;
+
+import java.util.List;
 
 /**
  * <p>
@@ -14,5 +15,7 @@ import javax.naming.AuthenticationException;
  * @since 2025-03-08
  */
 public interface UserService extends IService<User> {
-    User authenticate(String username, String password) throws AuthenticationException;
+    List<String> getRolesByUserId(Long userId);
+
+    User getByUsername(String username);
 }
