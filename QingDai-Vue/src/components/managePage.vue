@@ -9,8 +9,9 @@
           <el-menu-item index="/manage/photoList" style="width: 100px;">
             照片管理
           </el-menu-item>
-          <el-menu-item index="1">Processing Center</el-menu-item>
-          <el-menu-item index="1">Processing Center</el-menu-item>
+          <el-menu-item index="/manage/timelineList" style="width: 100px;">
+            时间线管理
+          </el-menu-item>
 
         </el-menu>
       </el-header>

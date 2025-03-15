@@ -103,13 +103,13 @@
         </el-table>
 
         <div class="floating-action">
-            <el-button type="primary" round @click="photoUpdateRef.dialogVisible = true">
+            <el-button type="primary" round @click="showPhotoUpload">
                 <el-icon>
                     <Upload />
                 </el-icon>上传照片
             </el-button>
         </div>
-        <PhotoUpdate ref="photoUpdateRef" />
+        <PhotoUpdate v-model="photoUploadVisible" ref="photoUpdateRef" />
 
         <div class="pagination-wrapper">
             <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize"
@@ -122,12 +122,14 @@
 <script setup lang="ts">
 import PhotoUpdate from '@/components/photoUpdate.vue'
 import { ref, watchEffect } from 'vue'
-import axios from 'axios'
 import type { WaterfallItem } from '@/types'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Upload } from '@element-plus/icons-vue'
+import { getPhotosByPage, updatePhotoInfo, deletePhotoById, updatePhotoStartStatus } from '@/api/photo'
+import type { PhotoResponse } from '@/api/photo'
 
 const photoUpdateRef = ref()
+const photoUploadVisible = ref(false)
 
 const tableData = ref<WaterfallItem[]>([])
 const editOriginData = ref<any>({})
@@ -135,16 +137,18 @@ const currentPage = ref(1)
 const pageSize = ref(50)
 const total = ref(0)
 
+const showPhotoUpload = () => {
+    photoUploadVisible.value = true
+}
+
 const fetchData = async () => {
     try {
-        const response = await axios.get('/api/QingDai/photo/getPhotosByPage', {
-            params: {
-                page: currentPage.value,
-                pageSize: pageSize.value
-            }
+        const response: PhotoResponse = await getPhotosByPage({
+            page: currentPage.value,
+            pageSize: pageSize.value
         })
 
-        tableData.value = response.data.records.map((item: any) => ({
+        tableData.value = response.records.map((item: any) => ({
             isEditing: false,
             id: item.id,
             fileName: item.fileName,
@@ -162,7 +166,7 @@ const fetchData = async () => {
             height: item.height || 0
         }))
 
-        total.value = response.data.total
+        total.value = response.total
     } catch (error) {
         console.error('获取数据失败:', error)
         ElMessage.error('数据加载失败')
@@ -195,7 +199,7 @@ const cancelEdit = (row: any) => {
 
 const submitEdit = async (row: any) => {
     try {
-        await axios.put('/api/QingDai/photo/updatePhotoInfo', row)
+        await updatePhotoInfo(row)
         ElMessage.success('更新成功')
         row.isEditing = false
         delete editOriginData.value[row.id]
@@ -218,7 +222,7 @@ const handleDelete = async (row: any) => {
                 type: 'warning',
             }
         )
-        await axios.delete('/api/QingDai/photo/deletePhotoById', { params: { id: row.id } })
+        await deletePhotoById(row.id)
         ElMessage.success('删除成功')
         fetchData()
     } catch (error) {
@@ -227,11 +231,9 @@ const handleDelete = async (row: any) => {
     }
 }
 
-
-
 const submitStatusEdit = async (row: any) => {
     try {
-        await axios.post('/api/QingDai/photo/updatePhotoStartStatus', {
+        await updatePhotoStartStatus({
             id: row.id,
             start: row.start
         });

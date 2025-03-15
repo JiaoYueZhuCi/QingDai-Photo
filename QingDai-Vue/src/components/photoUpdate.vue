@@ -43,16 +43,39 @@
 </template>
 
 <script setup lang="ts">
-import axios from 'axios';
 import { ElMessage, ElLoading } from 'element-plus';
 import { UploadFilled, Delete } from '@element-plus/icons-vue'
-import { ref } from 'vue';
+import { ref, defineProps, defineEmits, watch, defineExpose } from 'vue';
+import { processPhotosFromFrontend } from '@/api/photo';
+
+// 定义props和emit用于支持v-model
+const props = defineProps({
+    modelValue: {
+        type: Boolean,
+        default: false
+    }
+});
+
+const emit = defineEmits(['update:modelValue']);
+
+// 本地的对话框可见性控制
+const dialogVisible = ref(false);
+
+// 同步内外部的状态
+watch(() => props.modelValue, (val) => {
+    dialogVisible.value = val;
+});
+
+watch(dialogVisible, (val) => {
+    emit('update:modelValue', val);
+});
+
 const uploadLoading = ref(false);
-const dialogVisible = defineModel<boolean>('visible', { default: false });
 
-
-
-defineExpose({ dialogVisible });
+// 暴露给父组件的属性和方法
+defineExpose({ 
+    dialogVisible
+});
 
 const previewUrls = ref<string[]>([]);
 
@@ -99,11 +122,7 @@ const handleSubmit = async () => {
 
     try {
         uploadLoading.value = true;
-        const response = await axios.post('/api/QingDai/photo/processPhotosFromFrontend', formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data'
-            }
-        });
+        await processPhotosFromFrontend(formData);
         ElMessage.success(`成功上传照片`);
         fileList.value = [];
         dialogVisible.value = false;

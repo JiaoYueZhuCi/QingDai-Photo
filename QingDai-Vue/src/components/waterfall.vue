@@ -13,6 +13,36 @@
                 :style="{ height: `${row.height}px`, width: `${rowWidth}px`, flex: '0 0 auto', margin: `0 ${sideMarginStyle} ${sideMarginStyle} ${sideMarginStyle}` }">
                 <div class="image-item" v-for="(item, index) in row.items" :key="item.id"
                     @click="handleImageClick(item)">
+                    <el-popover
+                        placement="top"
+                        :width="250"
+                        trigger="click"
+                        title="设置星标状态"
+                        :popper-style="{ padding: '12px' }"
+                        :teleported="true"
+                    >
+                        <template #reference>
+                            <div class="star-icon" @click.stop>
+                                <el-icon :color="getStarColor(item.start)">
+                                    <StarFilled v-if="item.start === 1" />
+                                    <Star v-else :class="{ 'star-disabled': item.start === -1 }" />
+                                </el-icon>
+                            </div>
+                        </template>
+                        <div class="star-selection">
+                            <p>请选择此照片的星标状态：</p>
+                            <div class="star-option" @click="updateStarStatus(item, 1)">
+                                <span style="color: #e6a23c; font-size: 16px;">★</span> 星标照片
+                            </div>
+                            <div class="star-option" @click="updateStarStatus(item, 0)">
+                                <span style="color: #ffffff; font-size: 16px;">☆</span> 普通照片
+                            </div>
+                            <div class="star-option" @click="updateStarStatus(item, -1)">
+                                <span style="color: #c0c4cc; font-size: 16px;">☆</span> 隐藏照片
+                            </div>
+                        </div>
+                    </el-popover>
+                    
                     <div class="fullscreen-icon" @click.stop="openFullImg(item.id)">
                         <el-icon>
                             <FullScreen />
@@ -40,9 +70,9 @@
 import { ref, onMounted, onUnmounted, watch, nextTick, computed } from 'vue';
 import type { Ref } from 'vue';
 import type { WaterfallItem } from '@/types';
-import { ElImage, ElIcon, ElMessage, ElLoading } from 'element-plus';
-import { Picture as IconPicture, FullScreen } from '@element-plus/icons-vue'
-import axios from 'axios'; // 引入 axios
+import { ElImage, ElIcon, ElMessage, ElLoading, ElPopover } from 'element-plus';
+import { Picture as IconPicture, FullScreen, Star, StarFilled } from '@element-plus/icons-vue'
+import { getVisiblePhotosByPage, getStartPhotosByPage, getThumbnail100KPhotos, getThumbnail1000KPhoto, updatePhotoStartStatus as updatePhotoStart } from '@/api/photo';
 import { debounce } from 'lodash';
 import JSZip from 'jszip';
 import PreviewDialog from "@/components/PreviewDialog.vue";
@@ -80,18 +110,16 @@ const getPhotos = async () => {
 
     try {
         const apiEndpoint = props.photoType === 0
-            ? '/api/QingDai/photo/getVisiblePhotosByPage'
-            : '/api/QingDai/photo/getStartPhotosByPage';
+            ? getVisiblePhotosByPage
+            : getStartPhotosByPage;
 
-        const response = await axios.get(apiEndpoint, {
-            params: {
-                page: currentPage.value,
-                pageSize: pageSize.value
-            }
+        const response = await apiEndpoint({
+            page: currentPage.value,
+            pageSize: pageSize.value
         });
 
         // 预处理数据，确保所有字段类型匹配
-        const processedData = response.data.records.map((item: any) => ({
+        const processedData = response.records.map((item: any) => ({
             id: item.id,
             fileName: item.fileName,
             author: item.author || '未知作者', // 设置默认值
@@ -123,7 +151,7 @@ const getPhotos = async () => {
         await getThumbnailPhotos(previousLength, images.value.length - 1);
 
         // 检查是否还有更多数据
-        if (response.data.current >= response.data.pages) {
+        if (response.current >= response.pages) {
             hasMore.value = false;
         }
     } catch (error) {
@@ -201,12 +229,9 @@ const getThumbnailPhotos = async (start: number, end: number) => {
     if (newItems.length === 0) return;
 
     try {
-        const response = await axios.get('/api/QingDai/photo/getThumbnail100KPhotos', {
-            params: {
-                ids: newItems.map(item => item.id).join(',')
-            },
-            responseType: 'arraybuffer'
-        });
+        const response = await getThumbnail100KPhotos(
+            newItems.map(item => item.id).join(',')
+        );
 
         const zip = await JSZip.loadAsync(response.data);
 
@@ -311,10 +336,7 @@ const openFullImg = async (id: string) => {
 
     try {
         fullImgList.value = []
-        const response = await axios.get('/api/QingDai/photo/getThumbnail1000KPhoto', {
-            params: { id },
-            responseType: 'blob',
-        });
+        const response = await getThumbnail1000KPhoto(id);
         fullImgList.value = [URL.createObjectURL(response.data)];
         fullImgShow.value = true;
     } catch (error) {
@@ -342,11 +364,36 @@ watch(fullImgShow, (newVal: boolean) => {
     }
 });
 
+// 获取星星颜色
+const getStarColor = (startValue: number) => {
+    if (startValue === 1) return '#e6a23c'; // 橙色
+    if (startValue === 0) return '#ffffff'; // 白色
+    return '#c0c4cc'; // 淡灰色
+};
+
+// 更新星标状态
+const updateStarStatus = async (item: WaterfallItem, newValue: number) => {
+    try {
+        await updatePhotoStartStatus(item.id, newValue);
+        // 更新本地数据
+        item.start = newValue;
+    } catch (error) {
+        console.error('更新照片星标状态失败:', error);
+        ElMessage.error('更新照片星标状态失败');
+    }
+};
+
+// 更新照片星标状态的API请求
+const updatePhotoStartStatus = async (id: string, start: number) => {
+    console.log(id, start);
+    return updatePhotoStart({ id, start });
+};
+
 </script>
 
 <style>
 .el-image-viewer__mask {
-  opacity: 1 !important;
+    opacity: 1 !important;
 }
 
 .body-no-scroll {
@@ -355,8 +402,6 @@ watch(fullImgShow, (newVal: boolean) => {
 </style>
 
 <style scoped>
-
-
 .container {
     width: 100%;
     margin: 0 0;
@@ -454,5 +499,42 @@ watch(fullImgShow, (newVal: boolean) => {
 
 }
 
+.star-icon {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 2;
+    cursor: pointer;
+    border-radius: 4px;
+    padding: 4px;
+    transition: all 0.3s;
+    opacity: 0;
+    color: white;
+}
 
+.image-item:hover .star-icon {
+    background: rgba(0, 0, 0, 0.7);
+    transform: scale(1.1);
+    opacity: 1;
+}
+
+.star-disabled {
+    opacity: 0.5;
+}
+
+.star-selection {
+    padding: 0;
+}
+
+.star-option {
+    padding: 10px;
+    cursor: pointer;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    transition: background-color 0.3s;
+}
+
+.star-option:hover {
+    background-color: #f5f7fa;
+}
 </style>

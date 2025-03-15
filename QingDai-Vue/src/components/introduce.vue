@@ -6,20 +6,32 @@
 
         <!-- 头像静态展示 -->
         <div class="avatar-section">
-            <div class="avatar-container">
-                <el-avatar :size="avatarSize" :src="avatarImageUrl" class="avatar-static">
-                    <template #default>
-                        <el-icon :size="50">
-                            <User />
-                        </el-icon>
-                    </template>
-                </el-avatar>
+            <div>
+                <div class="avatar-container">
+                    <el-avatar :size="avatarSize" :src="avatarImageUrl" class="avatar-static">
+                        <template #default>
+                            <el-icon :size="50">
+                                <User />
+                            </el-icon>
+                        </template>
+                    </el-avatar>
+                </div>
+                <div class="manage">
+                    <el-affix :offset="10">
+                        <el-button type="primary" @click="loginDialogVisible = true"
+                            style="margin-left:12px">登录</el-button>
+                        <el-button type="success" style="margin-left:12px"
+                            @click="$router.push('/manage')">管理</el-button>
+                    </el-affix>
+                </div>
+                <LoginDialog v-model="loginDialogVisible" />
             </div>
+
+
             <!-- 用户信息保持原样 -->
             <div class="profile-info">
                 <div class="profile-info-in">
                     <div class="username">皎月祝辞</div>
-                    <!-- <video src="/public/img/introduce/name.mp4" style="width: 200px;"/> -->
                     <div class="description">吾生本无乡 心安是归处</div>
                 </div>
             </div>
@@ -35,7 +47,10 @@
                         同名账号
                     </div>
                 </template>
-                500px,小红书
+                <div class="device">
+                    <el-tag size="large">500px</el-tag>
+                    <el-tag size="large">小红书</el-tag>
+                </div>
             </el-descriptions-item>
             <el-descriptions-item label-class-name="my-label" class-name="my-content">
                 <template #label>
@@ -46,7 +61,10 @@
                         微信
                     </div>
                 </template>
-                L3335308825
+                <div class="device">
+                    <el-tag size="large">L3335308825</el-tag>
+                </div>
+                
             </el-descriptions-item>
             <el-descriptions-item label-class-name="my-label" class-name="my-content">
                 <template #label>
@@ -57,7 +75,7 @@
                         地点
                     </div>
                 </template>
-                <div class="device" >
+                <div class="device">
                     <el-tag size="large">北京通州</el-tag>
                     <el-tag size="large">天津滨海</el-tag>
                 </div>
@@ -71,7 +89,7 @@
                         领域
                     </div>
                 </template>
-                <div class="device" >
+                <div class="device">
                     <el-tag size="large">风光</el-tag>
                     <el-tag size="large">人文</el-tag>
                     <el-tag size="large">动植物</el-tag>
@@ -86,15 +104,13 @@
                         设备
                     </div>
                 </template>
-                <div class="device" >
+                <div class="device">
                     <el-tag size="large">Nikon Z50</el-tag>
                     <el-tag size="large">Nikkor 16mm-50mm f3.5-6.3</el-tag>
                     <el-tag size="large">Nikkor 50mm-250mm f4.5-6.3</el-tag>
                     <el-tag size="large">Nikkor 50mm f1.8</el-tag>
                     <el-tag size="large">DJI Air3S</el-tag>
-                    <el-button type="primary" @click="loginDialogVisible = true" style="margin-left:12px">登录</el-button>
 
-                    <LoginDialog v-model="loginDialogVisible" />
                 </div>
 
 
@@ -104,7 +120,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import { ElIcon } from 'element-plus';
 import {
     Iphone,
@@ -143,14 +159,28 @@ const columnCount = computed(() => {
         return 3; // 大屏幕显示3列
     }
 })
+
+const scrollY = ref(0)
+
+const manageOpacity = computed(() => {
+  return scrollY.value > 650 ? 0.6 : 1
+})
+
+const handleScroll = () => {
+  scrollY.value = window.scrollY
+}
+
+onMounted(() => {
+  window.addEventListener('scroll', handleScroll)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('scroll', handleScroll)
+})
 </script>
 
 
 <style scoped>
-p {
-    color: white;
-}
-
 .cover-container {
     height: 400px;
     background-size: cover;
@@ -191,12 +221,14 @@ p {
 }
 
 .username {
-    font-size: 40px;
-    margin: 10px;
-    color: rgb(239, 243, 0);
-}
-.el-tag{
+    font-size: 48px;
     margin: 5px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.username:hover {
+    transform: scale(1.05);
+    text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
 }
 
 /* 添加媒体查询来调整列数 */
@@ -218,7 +250,19 @@ p {
     }
 }
 
-.el-descriptions__body .el-descriptions__table.is-bordered .el-descriptions__cell{
+.el-descriptions__body .el-descriptions__table.is-bordered .el-descriptions__cell {
     padding: 1px 1px;
+}
+
+.el-tag{
+    margin-right: 5px;
+}
+.manage {
+    position: absolute;
+    right: 10px;
+    top: 410px;
+    opacity: v-bind(manageOpacity);
+    z-index: 2;
+    transition: opacity 0.8s ease;
 }
 </style>

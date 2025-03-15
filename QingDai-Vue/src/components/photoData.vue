@@ -71,10 +71,14 @@
       </el-col>
       <el-col :span="8">
         <div class="statistic-card">
-          <el-statistic :value="693700">
+          <el-statistic :value="cameraCount + droneCount">
             <template #title>
               <div style="display: inline-flex; align-items: center">
                 累积照片总数
+                <div class="sub-counts">
+                  <span class="sub-count">相机 {{ cameraCount }}</span>
+                  <span class="sub-count">无人机 {{ droneCount }}</span>
+                </div>
                 <el-tooltip effect="dark" content="参考快门数累计和" placement="top">
                   <el-icon style="margin-left: 4px" :size="12">
                     <Warning />
@@ -110,13 +114,21 @@
 
 <script lang="ts" setup>
 import { ref, onMounted } from 'vue';
-import axios from 'axios';
 import {
   CaretBottom,
   CaretTop,
   Warning,
+  SemiSelect
 } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
+import { 
+  getStartPhotoCount, 
+  getMonthlyStartPhotoCountChange, 
+  getYearlyStartPhotoCountChange,
+  getPhotoCount,
+  getMonthlyPhotoCountChange,
+  getYearlyPhotoCountChange
+} from '@/api/photo'
 
 const startPhotoCount = ref<number>(0);
 const photoCount = ref<number>(0);
@@ -129,14 +141,14 @@ const photoAccumulateYearlyChange = ref<number>(1);
 
 const fetchStartPhotoCount = async () => {
   try {
-    const response = await axios.get('/api/QingDai/photo/getStartPhotoCount');
-    startPhotoCount.value = response.data;
+    const response = await getStartPhotoCount();
+    startPhotoCount.value = Number(response);
     // 获取本月变化数据
-    const monthlyChangeResponse = await axios.get('/api/QingDai/photo/getMonthlyStartPhotoCountChange');
-    startPhotoMonthlyChange.value = monthlyChangeResponse.data;
+    const monthlyChangeResponse = await getMonthlyStartPhotoCountChange();
+    startPhotoMonthlyChange.value = Number(monthlyChangeResponse);
     // 获取年度变化数据
-    const yearlyChangeResponse = await axios.get('/api/QingDai/photo/getYearlyStartPhotoCountChange');
-    startPhotoYearlyChange.value = yearlyChangeResponse.data;
+    const yearlyChangeResponse = await getYearlyStartPhotoCountChange();
+    startPhotoYearlyChange.value = Number(yearlyChangeResponse);
   } catch (error) {
     console.error('获取代表作照片总数失败:', error);
   }
@@ -144,22 +156,36 @@ const fetchStartPhotoCount = async () => {
 
 const fetchPhotoCount = async () => {
   try {
-    const response = await axios.get('/api/QingDai/photo/getPhotoCount');
-    photoCount.value = response.data;
+    const response = await getPhotoCount();
+    photoCount.value = Number(response);
     // 获取本月变化数据
-    const monthlyChangeResponse = await axios.get('/api/QingDai/photo/getMonthlyPhotoCountChange');
-    photoMonthlyChange.value = monthlyChangeResponse.data;
+    const monthlyChangeResponse = await getMonthlyPhotoCountChange();
+    photoMonthlyChange.value = Number(monthlyChangeResponse);
     // 获取年度变化数据
-    const yearlyChangeResponse = await axios.get('/api/QingDai/photo/getYearlyPhotoCountChange');
-    photoYearlyChange.value = yearlyChangeResponse.data;
+    const yearlyChangeResponse = await getYearlyPhotoCountChange();
+    photoYearlyChange.value = Number(yearlyChangeResponse);
   } catch (error) {
     console.error('获取精选照片总数失败:', error);
   }
 };
 
+const cameraCount = ref<number>(71765);
+const droneCount = ref<number>(7405);
+
+// 在fetchPhotoCount方法中添加
+const fetchDeviceCounts = async () => {
+  try {
+  } catch (error) {
+    console.error('获取设备数量失败:', error);
+  }
+};
+
+
+// 在onMounted中添加调用
 onMounted(() => {
   fetchStartPhotoCount();
   fetchPhotoCount();
+  fetchDeviceCounts();
 });
 
 
@@ -220,5 +246,26 @@ onMounted(() => {
 
 .el-col {
   padding: 0;
+}
+</style>
+
+<style>
+.sub-counts {
+  margin-left: 8px;
+  display: flex;
+  gap: 6px;
+}
+
+.sub-count {
+  font-size: 12px;
+  color: #999;
+  position: relative;
+  padding-right: 8px;
+}
+
+.sub-count:not(:last-child)::after {
+  content: '+';
+  position: absolute;
+  right: -2px;
 }
 </style>

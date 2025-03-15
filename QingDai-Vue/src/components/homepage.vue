@@ -20,7 +20,6 @@
 <script setup lang="ts">
 import { watch, ref, onMounted } from 'vue';
 import type { Ref } from 'vue';
-import axios from 'axios'; // 引入 axios
 import type { WaterfallItem } from '@/types';
 import { ElImageViewer } from 'element-plus';
 import type { TabsPaneContext } from 'element-plus';

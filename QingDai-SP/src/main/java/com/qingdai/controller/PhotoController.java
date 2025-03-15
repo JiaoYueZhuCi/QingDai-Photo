@@ -3,6 +3,7 @@ package com.qingdai.controller;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.qingdai.dto.PhotoStartStatusDTO;
 import com.qingdai.entity.Photo;
 import com.qingdai.service.PhotoProcessingService;
 import com.qingdai.service.PhotoService;
@@ -277,7 +278,7 @@ public class PhotoController {
         }
     }
 
-    @GetMapping("/getPhotoInfoById")
+    @GetMapping("/getPhotoInfo")
     @PreAuthorize("permitAll()")
     @Operation(summary = "获取照片元数据", description = "根据ID获取照片的完整元数据信息")
     public ResponseEntity<Photo> getPhotoById(@RequestParam String id) {
@@ -611,9 +612,11 @@ public class PhotoController {
     @Operation(summary = "更新照片星标状态", description = "根据ID更新照片的星标状态")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> updatePhotoStartStatus(
-            @RequestParam Long id,
-            @RequestParam Integer start) {
+            @RequestBody PhotoStartStatusDTO photoStartStatusDTO) {
         try {
+            String id = photoStartStatusDTO.getId();
+            Integer start = photoStartStatusDTO.getStart();
+            System.out.println(photoStartStatusDTO);
             // 参数校验
             if (id == null) {
                 return ResponseEntity.badRequest().body("ID不能为空");
@@ -624,7 +627,7 @@ public class PhotoController {
 
             // 使用LambdaUpdateWrapper构建更新条件
             boolean updated = photoService.update(new LambdaUpdateWrapper<Photo>()
-                    .eq(Photo::getId, id)
+                    .eq(Photo::getId, Long.parseLong(id))
                     .set(Photo::getStart, start));
 
             if (!updated) {

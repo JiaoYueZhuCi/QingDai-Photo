@@ -6,12 +6,8 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.IdType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
-import com.baomidou.mybatisplus.extension.activerecord.Model;
-import java.io.Serializable;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 
 @Data
 @TableName("timeline")
@@ -19,6 +15,7 @@ import java.io.Serializable;
 public class Timeline {
     @TableId(value = "id", type = IdType.ASSIGN_ID)
     @Schema(description = "id")
+    @JsonSerialize(using = ToStringSerializer.class)
     private Long id;
     @TableField(value = "time")
     @Schema(description = "时间")

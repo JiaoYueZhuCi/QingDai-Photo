@@ -50,6 +50,10 @@ const router = createRouter({
             {
               path: '/manage/photoList',
               component: () => import('@/components/photoList.vue').catch(() => errorPage)
+            },
+            {
+              path: '/manage/timelineList',
+              component: () => import('@/components/timelineList.vue').catch(() => errorPage)
             }
           ]
         },

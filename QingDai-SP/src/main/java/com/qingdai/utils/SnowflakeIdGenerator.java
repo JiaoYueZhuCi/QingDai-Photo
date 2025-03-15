@@ -1,5 +1,7 @@
 package com.qingdai.utils;
 
+import org.springframework.stereotype.Component;
+
 public class SnowflakeIdGenerator {
     // 起始时间戳（2023-01-01 00:00:00）
     private static final long START_TIMESTAMP = 1672531200000L;

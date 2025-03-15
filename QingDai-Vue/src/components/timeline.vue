@@ -14,17 +14,23 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import axios from 'axios';
 import type { TimelineItem } from '@/types';
+import { getAllTimelines } from '@/api/timeline';
 
 const timelines = ref<TimelineItem[]>([]);
 
 const fetchTimelines = async () => {
   try {
-    const response = await axios.get('/api/QingDai/timeline/getAllTimelines');
-    timelines.value = response.data;
+    const response = await getAllTimelines();
+    if (Array.isArray(response)) {
+      timelines.value = response;
+    } else {
+      console.error('获取时间线失败: 响应不是数组');
+      timelines.value = [];
+    }
   } catch (error) {
     console.error('获取时间线失败:', error);
+    timelines.value = [];
   }
 };
 

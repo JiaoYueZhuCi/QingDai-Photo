@@ -19,10 +19,13 @@
                     <el-descriptions-item label="介绍">
                         {{ previewData.introduce || '暂无介绍' }}
                     </el-descriptions-item>
-                    <el-descriptions-item label="相机型号">
+                    <el-descriptions-item label="文件">
+                        {{ previewData.fileName || '未知' }}
+                    </el-descriptions-item>
+                    <el-descriptions-item label="相机">
                         {{ previewData.camera || '未知' }}
                     </el-descriptions-item>
-                    <el-descriptions-item label="镜头型号">
+                    <el-descriptions-item label="镜头">
                         {{ previewData.lens || '未知' }}
                     </el-descriptions-item>
                     <el-descriptions-item label="拍摄时间">
@@ -47,13 +50,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watchEffect } from 'vue'
-import { ElDialog, ElImage, ElDescriptions, ElDescriptionsItem, ElIcon, ElLoading } from 'element-plus'
+import { ref, computed, watch, defineProps, defineEmits } from 'vue'
+import { ElDialog, ElImage, ElDescriptions, ElDescriptionsItem, ElIcon, ElLoading, ElEmpty, ElTag } from 'element-plus'
 import { Picture as IconPicture, Loading } from '@element-plus/icons-vue'
 import type { WaterfallItem } from '@/types'
-import axios from 'axios'
-
-
+import { getThumbnail1000KPhoto, getPhotoInfo } from '@/api/photo'
 
 const props = defineProps<{
     photoId: string
@@ -88,14 +89,12 @@ const handleOpen = async () => {
     isLoading.value = true
     try {
         // 获取缩略图
-        const thumbRes = await axios.get(`/api/QingDai/photo/getThumbnail1000KPhoto?id=${props.photoId}`, {
-            responseType: 'blob'
-        })
+        const thumbRes = await getThumbnail1000KPhoto(props.photoId)
         thumbnailUrl.value = URL.createObjectURL(thumbRes.data)
 
         // 获取元数据
-        const infoRes = await axios.get(`/api/QingDai/photo/getPhotoInfo?id=${props.photoId}`)
-        previewData.value = { ...previewData.value, ...infoRes.data }
+        const infoRes = await getPhotoInfo(props.photoId)
+        previewData.value = { ...previewData.value, ...infoRes }
     } catch (error) {
         console.error('数据加载失败:', error)
     } finally {
@@ -193,5 +192,4 @@ const handleClose = () => {
         width: 100%;
     }
 }
-
 </style>
