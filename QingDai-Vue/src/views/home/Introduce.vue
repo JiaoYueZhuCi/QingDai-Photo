@@ -129,7 +129,7 @@ import {
     Tickets,
     User,
 } from '@element-plus/icons-vue'
-import LoginDialog from './LoginDialog.vue'
+import LoginDialog from '@/components/LoginDialog.vue'
 
 
 const backgroundImageUrl = '/img/introduce/background.jpg'

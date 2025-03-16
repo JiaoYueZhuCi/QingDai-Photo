@@ -19,13 +19,9 @@
 
 <script setup lang="ts">
 import { watch, ref, onMounted } from 'vue';
-import type { Ref } from 'vue';
-import type { WaterfallItem } from '@/types';
-import { ElImageViewer } from 'element-plus';
 import type { TabsPaneContext } from 'element-plus';
-import Introduce from '@/components/introduce.vue';
+import Introduce from '@/views/home/Introduce.vue';
 import { useRouter, useRoute } from 'vue-router'
-import { ElLoading, ElMessage } from 'element-plus'; // 引入 ElLoading
 
 const router = useRouter()
 const route = useRoute()
@@ -66,8 +62,6 @@ watch(activeTab, (newTab) => {
 </script>
 
 <style>
-
-
 .el-tabs--border-card>.el-tabs__content {
     padding: 0
 }
@@ -88,4 +82,4 @@ watch(activeTab, (newTab) => {
     border-right-color: white;
     color: var(--el-color-primary);
 } */
-</style>
+</style> 

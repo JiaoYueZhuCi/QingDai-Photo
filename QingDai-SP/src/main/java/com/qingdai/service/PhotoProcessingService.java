@@ -77,7 +77,6 @@ public class PhotoProcessingService {
         }
 
         // 保存所有图片到临时目录
-        System.out.println("!!!!thumbnailPhotosFromMultipartFileToFolder");
         File thumbnailUrl = new File(tempDir, photo.getOriginalFilename());
         try {
             FileUtils.saveFile(photo, tempDir);
@@ -90,7 +89,7 @@ public class PhotoProcessingService {
         compressPhoto(thumbnailUrl, thumbnailDir, maxSizeKB, overwrite);
 
         // 删除临时目录及其内容
-//        FileUtils.deleteFolder(tempDir);
+        FileUtils.deleteFolder(tempDir);
     }
 
     // 根据照片ID获取文件名
@@ -157,8 +156,6 @@ public class PhotoProcessingService {
      * 如果仍不达标，抛出异常。
      */
     private void compressPhoto(File fullSizeUrl, File thumbnailDir, int maxSizeKB, boolean overwrite) {
-        System.out.println(fullSizeUrl);
-        System.out.println(thumbnailDir);
         try {
             String fileName = fullSizeUrl.getName();
             String formatName = FileUtils.getFileExtension(fileName).toLowerCase();
@@ -170,20 +167,23 @@ public class PhotoProcessingService {
                 formatName = "jpg";
             }
 
-            File thumbnailFile = new File(thumbnailDir, fileName);
+            File thumbnailUrl = new File(thumbnailDir, fileName);
 
-            if (thumbnailFile.exists() && !overwrite)
+            if (thumbnailUrl.exists() && !overwrite)
                 return;
 
             long maxSizeBytes = maxSizeKB * 1024L;
             boolean sizeMet = false;
 
+            System.out.println(fullSizeUrl);
+            System.out.println(thumbnailUrl);
+
             // 优先调整质量参数
-            sizeMet = adjustPhotoQuality(fullSizeUrl, thumbnailDir, formatName, maxSizeBytes);
+            sizeMet = adjustPhotoQuality(fullSizeUrl, thumbnailUrl, formatName, maxSizeBytes);
 
             // 若未达标，调整尺寸
             if (!sizeMet) {
-                sizeMet = scaleDownPhoto(fullSizeUrl, thumbnailDir, formatName, maxSizeBytes);
+                sizeMet = scaleDownPhoto(fullSizeUrl, thumbnailUrl, formatName, maxSizeBytes);
             }
 
             if (!sizeMet) {
@@ -195,27 +195,31 @@ public class PhotoProcessingService {
     }
 
     public Photo getPhotoObjectByMultipartFile(MultipartFile file) {
+        File tempFile = null;
         try {
             String fileName = file.getOriginalFilename();
-
-            String formatName = FileUtils.getFileExtension(fileName).toLowerCase();
-            String baseName = FileUtils.getBaseName(fileName);
-
-            // 保存文件到临时目录
-            File tempFile = File.createTempFile(baseName, "." + formatName);
-            file.transferTo(tempFile);
+            
+            // 创建临时目录和文件
+            File tempDir = new File(System.getProperty("java.io.tmpdir"));
+            tempFile = new File(tempDir, fileName);
+            
+            // 确保目录存在并保存文件
+            Files.createDirectories(tempFile.getParentFile().toPath());
+            file.transferTo(tempFile);  // 添加文件传输操作
 
             Photo photo = getPhotoObjectByFile(tempFile);
-
-            // 删除临时文件
-            if (!tempFile.delete()) {
-                System.out.println("无法删除临时文件: " + tempFile.getAbsolutePath());
-            }
-
             return photo;
-        } catch (IOException e) {
-            System.out.println("处理文件失败: " + file.getOriginalFilename() + e);
+        } catch (Exception e) {
+            System.out.println("处理文件失败: " + (tempFile != null ? tempFile.getAbsolutePath() : "unknown") + "\n" + e);
             return null;
+        } finally {
+            if (tempFile != null && tempFile.exists()) {
+                try {
+                    Files.delete(tempFile.toPath());  // 使用NIO方式删除更可靠
+                } catch (IOException e) {
+                    System.out.println("删除临时文件失败: " + tempFile.getAbsolutePath());
+                }
+            }
         }
     }
 
@@ -239,22 +243,22 @@ public class PhotoProcessingService {
     }
 
     // 循环逐步降低图片质量，直到满足文件大小要求 如果质量低于最小值仍未满足要求，则返回false
-    private boolean adjustPhotoQuality(File fullSizeDir, File thumbnailDir, String formatName, long maxSizeBytes)
+    private boolean adjustPhotoQuality(File fullSizeUrl, File thumbnailUrl, String formatName, long maxSizeBytes)
             throws IOException {
         double quality = 0.85;
         double minQuality = 0.2;
         double step = 0.05;
 
         while (quality >= minQuality) {
-            Thumbnails.of(fullSizeDir)
+            Thumbnails.of(fullSizeUrl)
                     .scale(1)
                     .outputFormat(formatName)
                     .outputQuality(quality)
                     // 处理PNG透明背景
                     .imageType(BufferedImage.TYPE_INT_RGB)
-                    .toFile(thumbnailDir);
+                    .toFile(thumbnailUrl);
 
-            if (thumbnailDir.length() <= maxSizeBytes) {
+            if (thumbnailUrl.length() <= maxSizeBytes) {
                 return true;
             }
             quality = BigDecimal.valueOf(quality).subtract(BigDecimal.valueOf(step)).doubleValue();
@@ -263,20 +267,20 @@ public class PhotoProcessingService {
     }
 
     // 图片按比例缩小
-    private boolean scaleDownPhoto(File fullSizeDir, File thumbnailDir, String formatName, long maxSizeBytes)
+    private boolean scaleDownPhoto(File fullSizeUrl, File thumbnailUrl, String formatName, long maxSizeBytes)
             throws IOException {
         double scale = 1.0;
         double step = 0.1;
 
         while (scale >= 0.1) {
-            Thumbnails.of(fullSizeDir)
+            Thumbnails.of(fullSizeUrl)
                     .scale(scale)
                     .outputFormat(formatName)
                     .outputQuality(0.7) // 适当质量值
                     .imageType(BufferedImage.TYPE_INT_RGB)
-                    .toFile(thumbnailDir);
+                    .toFile(thumbnailUrl);
 
-            if (thumbnailDir.length() <= maxSizeBytes) {
+            if (thumbnailUrl.length() <= maxSizeBytes) {
                 return true;
             }
             scale -= step;

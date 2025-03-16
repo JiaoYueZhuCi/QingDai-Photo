@@ -375,11 +375,12 @@ const getStarColor = (startValue: number) => {
 const updateStarStatus = async (item: WaterfallItem, newValue: number) => {
     try {
         await updatePhotoStartStatus(item.id, newValue);
+        ElMessage.success('更新照片状态成功');
         // 更新本地数据
         item.start = newValue;
     } catch (error) {
-        console.error('更新照片星标状态失败:', error);
-        ElMessage.error('更新照片星标状态失败');
+        console.error('更新照片状态失败:', error);
+        ElMessage.error('更新照片状态失败');
     }
 };
 

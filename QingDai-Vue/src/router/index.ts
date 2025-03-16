@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import errorPage from '@/components/errorpage.vue' // 新增错误页面组件
+import errorPage from '@/components/ErrorPage.vue' // 新增错误页面组件
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -14,7 +14,7 @@ const router = createRouter({
         },
         {
           path: '/home',
-          component: () => import('@/components/homepage.vue').catch(() => errorPage),
+          component: () => import('@/views/home/Home.vue').catch(() => errorPage),
           children: [
             {
               path: '',
@@ -22,26 +22,26 @@ const router = createRouter({
             },
             {
               path: '/home/featured',
-              component: () => import('@/components/waterfall.vue').catch(() => errorPage)
+              component: () => import('@/views/home/Waterfall.vue').catch(() => errorPage)
             },
             {
               path: '/home/photos',
-              component: () => import('@/components/waterfall.vue').catch(() => errorPage)
+              component: () => import('@/views/home/Waterfall.vue').catch(() => errorPage)
             },
             {
               path: '/home/timeline',
-              component: () => import('@/components/timeline.vue').catch(() => errorPage)
+              component: () => import('@/views/home/Timeline.vue').catch(() => errorPage)
             },
             {
               path: '/home/data',
-              component: () => import('@/components/data.vue').catch(() => errorPage)
+              component: () => import('@/views/home/Data.vue').catch(() => errorPage)
             }
           ]
         },
         
         {
           path: '/manage',
-          component: () => import('@/components/managePage.vue').catch(() => errorPage),
+          component: () => import('@/views/manage/Manage.vue').catch(() => errorPage),
           children: [
             {
               path: '',
@@ -49,11 +49,11 @@ const router = createRouter({
             },
             {
               path: '/manage/photoList',
-              component: () => import('@/components/photoList.vue').catch(() => errorPage)
+              component: () => import('@/views/manage/PhotoList.vue').catch(() => errorPage)
             },
             {
               path: '/manage/timelineList',
-              component: () => import('@/components/timelineList.vue').catch(() => errorPage)
+              component: () => import('@/views/manage/TimelineList.vue').catch(() => errorPage)
             }
           ]
         },

@@ -125,7 +125,6 @@ public class FileUtils {
 
     // 保存MultipartFile到指定目录
     public static void saveFile(MultipartFile file, File destDir) throws IOException {
-        System.out.println("进入saveFile方法");
         if (!destDir.exists() && !destDir.mkdirs()) {
             throw new IOException("无法创建目标目录: " + destDir.getAbsolutePath());
         }
@@ -137,7 +136,6 @@ public class FileUtils {
 
         File destFile = new File(destDir, fileName);
         try {
-            System.out.println("尝试将文件转移到: " + destFile.getAbsolutePath());
             if (file.isEmpty()) {
                 throw new IOException("上传的文件内容为空");
             }
@@ -152,7 +150,6 @@ public class FileUtils {
                 System.out.println("Files.copy:" + e);
             }
 
-            System.out.println("文件成功保存到: " + destFile.getAbsolutePath());
         } catch (IOException e) {
             throw new IOException("文件保存失败: " + destFile.getName() + ", 错误原因: " + e.getMessage(), e);
         }

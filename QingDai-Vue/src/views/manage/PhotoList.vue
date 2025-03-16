@@ -120,7 +120,7 @@
 </template>
 
 <script setup lang="ts">
-import PhotoUpdate from '@/components/photoUpdate.vue'
+import PhotoUpdate from '@/views/manage/PhotoUpdate.vue'
 import { ref, watchEffect } from 'vue'
 import type { WaterfallItem } from '@/types'
 import { ElMessage, ElMessageBox } from 'element-plus'

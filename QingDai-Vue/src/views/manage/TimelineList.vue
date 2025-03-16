@@ -65,7 +65,7 @@
 </template>
 
 <script setup lang="ts">
-import TimelineUpdate from '@/components/timelineUpdate.vue'
+import TimelineUpdate from '@/views/manage/TimelineUpdate.vue'
 import { ref, watchEffect } from 'vue'
 import type { TimelineItem } from '@/types'
 import { ElMessage, ElMessageBox } from 'element-plus'

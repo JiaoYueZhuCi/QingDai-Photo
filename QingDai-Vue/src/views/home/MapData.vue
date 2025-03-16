@@ -2,24 +2,20 @@
   <div class="map-group">
     <div class="card mapCard">
       <el-affix :offset="120">
-
-        <div  ref="mapContainer" class="map-container"></div>
-    
-    </el-affix>
+        <div ref="mapContainer" class="map-container"></div>
+      </el-affix>
+    </div>
+    <div class="card" :style="{ width: timelineCard + 'px' }">
+      <Timeline />
+    </div>
   </div>
-  <div class="card" :style="{ width: timelineCard + 'px' }">
-    <timeline />
-  </div>
-  </div>
-
 </template>
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount, nextTick, watch } from 'vue';
 import * as echarts from 'echarts';
 import chinaJson from '@/map-data/china.json';
-import timeline from '@/components/timeline.vue';
-
+import Timeline from '@/views/home/Timeline.vue';
 
 const activatedProvinces = ref([
   110000, // 北京市
@@ -42,7 +38,6 @@ const activatedProvinces = ref([
   430000, // 湖南省
   370000, // 山东省
 ]);
-
 
 const mapContainer = ref(null);
 let chart = null;
@@ -133,8 +128,6 @@ const getProvinceName = (adcode) => {   //根据省份代码返回省份名称
 };
 
 const timelineCard = ref(window.innerWidth - 500) // 窗口宽度-固定的地图宽度
-
-
 </script>
 
 <style scoped>
@@ -162,4 +155,4 @@ const timelineCard = ref(window.innerWidth - 500) // 窗口宽度-固定的地�
   background-color: rgb(250, 250, 250);
   /* margin: 0 10px 0 0; */
 }
-</style>
+</style> 
