@@ -252,7 +252,7 @@ onMounted(() => {
   }
 
   .statistic-card {
-    height: 160px;
+    height: 95%;
     min-height: 130px;
     padding: 5px;
   }
@@ -276,7 +276,7 @@ onMounted(() => {
   }
 
   .phopoDataContainer {
-    height: 25%;
+    /* height: 200px; */
   }
 }
 </style>
@@ -303,8 +303,6 @@ onMounted(() => {
 
 /* 添加移动端响应式样式 */
 @media screen and (max-width: 768px) {
-  .el-col {
-    margin-bottom: 10px;
-  }
+ 
 }
 </style>

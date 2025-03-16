@@ -5,7 +5,7 @@
         <div ref="mapContainer" class="map-container"></div>
       </div>
     </el-affix>
-    <div class="card timelineCard" >
+    <div class="card timelineCard">
       <Timeline />
     </div>
   </div>
@@ -154,6 +154,7 @@ const getProvinceName = (adcode) => {   //根据省份代码返回省份名称
   width: 40vw;
   height: 94vh;
 }
+
 .timelineCard {
   width: 54vw;
 }
@@ -162,22 +163,34 @@ const getProvinceName = (adcode) => {   //根据省份代码返回省份名称
   border-radius: 4px;
   background-color: rgb(250, 250, 250);
 }
+
 /* 添加媒体查询，当屏幕宽度小于等于 768px 时（通常为手机屏幕），调整 mapCard 的样式 */
 @media (max-width: 600px) {
   .map-group {
     flex-direction: column;
   }
+
   .map-container {
-    top: -6vh;
+    top: -40px;
   }
+
+  .map-container {
+    width: 90vw;
+    height: 300px;
+  }
+
   .mapCard {
     width: 90vw;
-    height: 33vh;
+    height: 240px;
   }
+
   .timelineCard {
     width: 100%;
     margin-top: 10px;
   }
-}
 
+  .map-group {
+    gap: 0;
+  }
+}
 </style>

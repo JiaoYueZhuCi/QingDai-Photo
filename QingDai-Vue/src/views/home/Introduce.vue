@@ -64,7 +64,7 @@
                 <div class="device">
                     <el-tag size="large">L3335308825</el-tag>
                 </div>
-                
+
             </el-descriptions-item>
             <el-descriptions-item label-class-name="my-label" class-name="my-content">
                 <template #label>
@@ -163,19 +163,19 @@ const columnCount = computed(() => {
 const scrollY = ref(0)
 
 const manageOpacity = computed(() => {
-  return scrollY.value > 650 ? 0.6 : 1
+    return scrollY.value > 650 ? 0.6 : 1
 })
 
 const handleScroll = () => {
-  scrollY.value = window.scrollY
+    scrollY.value = window.scrollY
 }
 
 onMounted(() => {
-  window.addEventListener('scroll', handleScroll)
+    window.addEventListener('scroll', handleScroll)
 })
 
 onBeforeUnmount(() => {
-  window.removeEventListener('scroll', handleScroll)
+    window.removeEventListener('scroll', handleScroll)
 })
 </script>
 
@@ -254,9 +254,12 @@ onBeforeUnmount(() => {
     padding: 1px 1px;
 }
 
-.el-tag{
+.el-tag {
     margin-right: 5px;
+    margin-bottom: 5px;
 }
+
+
 .manage {
     position: absolute;
     right: 10px;
@@ -264,5 +267,11 @@ onBeforeUnmount(() => {
     opacity: v-bind(manageOpacity);
     z-index: 2;
     transition: opacity 0.8s ease;
+}
+
+@media (max-width: 600px) {
+    /* .el-tag{
+        margin-bottom: 5px;
+    } */
 }
 </style>
