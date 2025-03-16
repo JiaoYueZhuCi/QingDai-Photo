@@ -5,8 +5,8 @@
         <div ref="mapContainer" class="map-container"></div>
       </el-affix>
     </div>
-    <div class="card" :style="{ width: timelineCard + 'px' }">
-      <Timeline />
+    <div class="card" >
+      <Timeline :style="{ width: timelineCard + 'px' }"/>
     </div>
   </div>
 </template>
@@ -127,7 +127,7 @@ const getProvinceName = (adcode) => {   //根据省份代码返回省份名称
   return feature?.properties?.name || '';
 };
 
-const timelineCard = ref(window.innerWidth - 500) // 窗口宽度-固定的地图宽度
+const timelineCard = ref(window.innerWidth - 500 - 85) // 窗口宽度-固定的地图宽度
 </script>
 
 <style scoped>
@@ -155,4 +155,7 @@ const timelineCard = ref(window.innerWidth - 500) // 窗口宽度-固定的地�
   background-color: rgb(250, 250, 250);
   /* margin: 0 10px 0 0; */
 }
-</style> 
+/* .timeline-card {
+  width: 100%;
+} */
+</style>

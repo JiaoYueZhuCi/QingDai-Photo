@@ -3,12 +3,11 @@
         <el-table :data="tableData" style="width: 100%" border stripe>
             <el-table-column label="缩略图" width="220" fixed>
                 <template #default="scope">
-                    <el-image :src="`/api/QingDai/photo/getThumbnail100KPhoto?id=${scope.row.id}`"
-                        :preview-src-list="[`/api/QingDai/photo/getThumbnail100KPhoto?id=${scope.row.id}`]"
+                    <el-image :src="scope.row.compressedSrc" :preview-src-list="[scope.row.compressedSrc]"
                         style="height: 150px" fit="contain" />
                 </template>
             </el-table-column>
-            <el-table-column prop="fileName" label="文件名" width="180">
+            <el-table-column prop="fileName" label="文件名" width="95" >
                 <template #default="scope">
                     <!-- <el-input v-if="scope.row.isEditing" v-model="scope.row.fileName" /> -->
                     <span>{{ scope.row.fileName }}</span>
@@ -50,7 +49,7 @@
                     <span v-else>{{ scope.row.aperture }}</span>
                 </template>
             </el-table-column>
-            <el-table-column prop="time" label="拍摄时间">
+            <el-table-column prop="time" label="拍摄时间" width="105">
                 <template #default="scope">
                     <el-input v-if="scope.row.isEditing" v-model="scope.row.time" />
                     <span v-else>{{ scope.row.time }}</span>
@@ -88,7 +87,7 @@
                     </el-select>
                 </template>
             </el-table-column>
-            <el-table-column label="操作" width="100" fixed>
+            <el-table-column label="操作" width="75" fixed>
                 <template #default="scope">
                     <div v-if="!scope.row.isEditing">
                         <el-button size="small" @click="startEdit(scope.row)">编辑</el-button>
@@ -122,10 +121,11 @@
 <script setup lang="ts">
 import PhotoUpdate from '@/views/manage/PhotoUpdate.vue'
 import { ref, watchEffect } from 'vue'
+import JSZip from 'jszip'
 import type { WaterfallItem } from '@/types'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Upload } from '@element-plus/icons-vue'
-import { getPhotosByPage, updatePhotoInfo, deletePhotoById, updatePhotoStartStatus } from '@/api/photo'
+import { getPhotosByPage, updatePhotoInfo, deletePhotoById, updatePhotoStartStatus, getThumbnail100KPhotos } from '@/api/photo'
 import type { PhotoResponse } from '@/api/photo'
 
 const photoUpdateRef = ref()
@@ -163,13 +163,38 @@ const fetchData = async () => {
             title: item.title || '',
             introduce: item.introduce || '',
             width: item.width || 0,
-            height: item.height || 0
+            height: item.height || 0,
+            compressedSrc: ''
         }))
 
         total.value = response.total
+        await getThumbnailPhotos()
     } catch (error) {
         console.error('获取数据失败:', error)
         ElMessage.error('数据加载失败')
+    }
+}
+
+const getThumbnailPhotos = async () => {
+    try {
+        const response = await getThumbnail100KPhotos(
+            tableData.value.map(item => item.id).join(',')
+        )
+
+        const zip = await JSZip.loadAsync(response.data)
+
+        await Promise.all(tableData.value.map(async item => {
+            const file = zip.file(`${item.fileName}`)
+            if (file) {
+                const blob = await file.async('blob')
+                item.compressedSrc = URL.createObjectURL(blob)
+            } else {
+                console.warn('ZIP包中未找到照片:', item.fileName)
+            }
+        }))
+    } catch (error) {
+        console.error('批量获取缩略图失败:', error)
+        ElMessage.error('缩略图加载失败')
     }
 }
 

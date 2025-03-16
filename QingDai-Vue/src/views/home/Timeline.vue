@@ -5,7 +5,7 @@
       <el-timeline-item v-for="(timelineItem, index) in timelines" :key="index" :timestamp="timelineItem.time" placement="top">
         <el-card>
           <h4>{{ timelineItem.title }}</h4>
-          <p>{{ timelineItem.text }}</p>
+          <p class="content-cell">{{ timelineItem.text }}</p>
         </el-card>
       </el-timeline-item>
     </el-timeline>
@@ -36,5 +36,8 @@ onMounted(() => {
 <style lang="css" scoped>
 .timelineContainer {
   padding: 10px;
+}
+.content-cell {
+    word-break: break-word;
 }
 </style>

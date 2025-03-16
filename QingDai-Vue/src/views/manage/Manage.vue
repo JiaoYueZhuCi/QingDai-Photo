@@ -25,5 +25,6 @@
 <style scoped>
 .el-main {
   padding: 0;
+  position: relative;
 }
 </style> 

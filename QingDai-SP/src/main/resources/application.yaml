@@ -53,6 +53,13 @@ spring:
   output:
     ansi:
       enabled: always
+  http:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+  tomcat:
+    uri-encoding: UTF-8
 #  data:
 #    redis: localhost
 #    host: 6379

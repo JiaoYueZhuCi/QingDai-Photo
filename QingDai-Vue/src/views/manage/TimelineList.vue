@@ -10,14 +10,14 @@
             <el-table-column prop="title" label="标题" width="180">
                 <template #default="scope">
                     <el-input v-if="scope.row.isEditing" v-model="scope.row.title" />
-                    <span v-else>{{ scope.row.title || '无标题' }}</span>
+                    <div  v-else>{{ scope.row.title || '无标题' }}</div>
                 </template>
             </el-table-column>
             <el-table-column prop="text" label="内容">
                 <template #default="scope">
                     <el-input v-if="scope.row.isEditing" v-model="scope.row.text" type="textarea"
                         :autosize="{ minRows: 2, maxRows: 4 }" />
-                    <span v-else>{{ scope.row.text || '无内容' }}</span>
+                    <div  v-else>{{ scope.row.text || '无内容' }}</div>
                 </template>
             </el-table-column>
             <el-table-column label="操作" width="180" fixed="right">
@@ -88,7 +88,7 @@ const showTimelineAdd = () => {
 const fetchData = async () => {
     try {
         const response = await getAllTimelines()
-        
+
         // 处理响应数据
         if (response && Array.isArray(response)) {
             tableData.value = response.map((item: any) => ({
@@ -98,7 +98,7 @@ const fetchData = async () => {
                 title: item.title || '',
                 text: item.text || ''
             }))
-            
+
             total.value = response.length
         } else {
             tableData.value = []
@@ -142,7 +142,7 @@ const submitEdit = async (row: any) => {
             title: row.title,
             text: row.text
         })
-        
+
         ElMessage.success('更新成功')
         row.isEditing = false
         delete editOriginData.value[row.id]
@@ -165,7 +165,7 @@ const handleDelete = async (row: any) => {
                 type: 'warning',
             }
         )
-        
+
         await deleteTimeline(row.id)
         ElMessage.success('删除成功')
         await fetchData()
@@ -213,4 +213,6 @@ const handleDelete = async (row: any) => {
 .el-button {
     margin: 0;
 }
+
+
 </style>
