@@ -1,7 +1,7 @@
 <template>
   <div class="timelineContainer">
-    <el-empty v-if="timelines.length === 0" description="暂无时间轴数据"></el-empty>
-    <el-timeline>
+    <el-empty v-if="!timelines || timelines.length === 0" description="暂无时间轴数据"></el-empty>
+    <el-timeline v-else>
       <el-timeline-item v-for="(timelineItem, index) in timelines" :key="index" :timestamp="timelineItem.time" placement="top">
         <el-card>
           <h4>{{ timelineItem.title }}</h4>
@@ -21,13 +21,7 @@ const timelines = ref<TimelineItem[]>([]);
 
 const fetchTimelines = async () => {
   try {
-    const response = await getAllTimelines();
-    if (Array.isArray(response)) {
-      timelines.value = response;
-    } else {
-      console.error('获取时间线失败: 响应不是数组');
-      timelines.value = [];
-    }
+    timelines.value = await getAllTimelines();
   } catch (error) {
     console.error('获取时间线失败:', error);
     timelines.value = [];

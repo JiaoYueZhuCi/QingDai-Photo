@@ -47,9 +47,8 @@ const handleTabClick = (tab: TabsPaneContext) => {
     }
 }
 
-
-// 定义 photoType 变量
-const photoType = ref(0);
+// 照片类型：0-所有照片，1-星标照片
+const photoType = ref(0)
 
 // 初始化时根据当前标签页设置 photoType
 watch(activeTab, (newTab) => {

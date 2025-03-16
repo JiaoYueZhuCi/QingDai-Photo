@@ -151,9 +151,8 @@ const getPhotos = async () => {
         await getThumbnailPhotos(previousLength, images.value.length - 1);
 
         // 检查是否还有更多数据
-        if (response.current >= response.pages) {
-            hasMore.value = false;
-        }
+        hasMore.value = response.current < response.pages;
+        currentPage.value = response.current;
     } catch (error) {
         console.error('获取照片数据失败:', error);
     }

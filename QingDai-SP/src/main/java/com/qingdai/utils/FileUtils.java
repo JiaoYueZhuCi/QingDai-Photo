@@ -23,6 +23,7 @@ import java.util.zip.ZipOutputStream;
 public class FileUtils {
     private static final int ZIP_BUFFER_SIZE = 4096;
 
+    // 获取文件列表的资源响应
     public static ResponseEntity<Resource> getFilesResource(List<File> files) throws IOException {
         if (files == null || files.isEmpty()) {
             throw new IllegalArgumentException("文件列表不能为空");
@@ -230,6 +231,7 @@ public class FileUtils {
         }
     }
 
+    // 删除文件夹中的所有文件
     public static void deleteFiles(File dir) throws IOException {
         if (!dir.exists() || !dir.isDirectory()) {
             throw new IOException("目录不存在或不是目录: " + dir.getAbsolutePath());

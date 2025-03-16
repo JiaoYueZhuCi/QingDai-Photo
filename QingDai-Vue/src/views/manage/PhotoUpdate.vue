@@ -37,7 +37,7 @@
                     提交全部照片
                 </el-button>
             </div>
-            <el-loading :fullscreen="true" v-model="uploadLoading" />
+            <el-loading :fullscreen="true" v-model="uploadLoading" :text="'上传中，请稍候...'" :background-alpha="0.8" />
         </el-dialog>
     </div>
 </template>
