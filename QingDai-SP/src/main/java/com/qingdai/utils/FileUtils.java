@@ -123,6 +123,31 @@ public class FileUtils {
                 .body(resource);
     }
 
+    // 获取单个文件的资源响应
+    public static ResponseEntity<Resource> getFileResource(File file) {
+        if (!file.exists() || !file.canRead()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
+        long contentLength = file.length();
+        Resource resource = new FileSystemResource(file);
+
+        String fileExtension = getFileExtension(file.getName()).toLowerCase();
+        MediaType mediaType;
+        if (fileExtension.equals("jpg") || fileExtension.equals("jpeg")) {
+            mediaType = MediaType.IMAGE_JPEG;
+        } else if (fileExtension.equals("png")) {
+            mediaType = MediaType.IMAGE_PNG;
+        } else {
+            return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).build();
+        }
+
+        return ResponseEntity.ok()
+                .contentType(mediaType)
+                .contentLength(contentLength)
+                .body(resource);
+    }
+
     // 保存MultipartFile到指定目录
     public static void saveFile(MultipartFile file, File destDir) throws IOException {
         if (!destDir.exists() && !destDir.mkdirs()) {
@@ -176,6 +201,26 @@ public class FileUtils {
         }
     }
 
+    // 复制单个文件到目标位置，支持是否覆盖选项
+    public static void copyFile(File sourceFile, File destFile, boolean overwrite) throws IOException {
+        if (!sourceFile.exists() || !sourceFile.isFile()) {
+            throw new IOException("源文件不存在或不是文件: " + sourceFile.getAbsolutePath());
+        }
+        
+        if (destFile.exists() && !overwrite) {
+            // 如果目标文件存在且不允许覆盖，则不进行操作
+            return;
+        }
+        
+        // 确保目标文件的父目录存在
+        if (!destFile.getParentFile().exists() && !destFile.getParentFile().mkdirs()) {
+            throw new IOException("无法创建目标目录: " + destFile.getParentFile().getAbsolutePath());
+        }
+        
+        // 执行文件复制
+        Files.copy(sourceFile.toPath(), destFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+    }
+
     // 删除文件夹中的所有文件
     public static void deleteFile(File file) throws IOException {
         if (!file.exists())
@@ -198,6 +243,33 @@ public class FileUtils {
                         throw new IOException("无法删除文件: " + file.getAbsolutePath());
                     }
                 }
+            }
+        }
+    }
+
+    // 清空文件夹内的所有内容，可选是否保留文件夹本身
+    public static void clearFolder(File dir, boolean keepDir) throws IOException {
+        if (!dir.exists() || !dir.isDirectory()) {
+            throw new IOException("目录不存在或不是目录: " + dir.getAbsolutePath());
+        }
+
+        File[] files = dir.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    deleteFolder(file); // 递归删除子目录
+                } else {
+                    if (!file.delete()) {
+                        throw new IOException("无法删除文件: " + file.getAbsolutePath());
+                    }
+                }
+            }
+        }
+
+        // 如果不需要保留目录本身，则删除目录
+        if (!keepDir) {
+            if (!dir.delete()) {
+                throw new IOException("无法删除目录: " + dir.getAbsolutePath());
             }
         }
     }
