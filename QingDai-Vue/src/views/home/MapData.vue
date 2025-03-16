@@ -1,12 +1,12 @@
 <template>
   <div class="map-group">
-    <div class="card mapCard">
-      <el-affix :offset="120">
+    <el-affix :offset="10">
+      <div class="card mapCard">
         <div ref="mapContainer" class="map-container"></div>
-      </el-affix>
-    </div>
-    <div class="card" >
-      <Timeline :style="{ width: timelineCard + 'px' }"/>
+      </div>
+    </el-affix>
+    <div class="card timelineCard" >
+      <Timeline />
     </div>
   </div>
 </template>
@@ -65,8 +65,8 @@ const initChart = async () => {
     const option = {
       geo: {
         map: 'china',
-        width: 500,
-        height: 500,
+        // width: '40vh',
+        // height: '40vh',
         roam: false,
         itemStyle: {
           areaColor: '#EEEEEE',
@@ -127,7 +127,6 @@ const getProvinceName = (adcode) => {   //根据省份代码返回省份名称
   return feature?.properties?.name || '';
 };
 
-const timelineCard = ref(window.innerWidth - 500 - 85) // 窗口宽度-固定的地图宽度
 </script>
 
 <style scoped>
@@ -137,25 +136,48 @@ const timelineCard = ref(window.innerWidth - 500 - 85) // 窗口宽度-固定的
   padding: 0 10px 10px 10px;
   justify-content: space-around;
   gap: 10px;
-  min-width: 520px;
+  /* min-width: 520px; */
 }
 
 .map-container {
-  width: 500px;
-  height: 500px;
+  /* width: 40vw;
+  height: 70vh; */
+  width: 100%;
+  height: 100%;
   padding: 10px 0 0 0;
+  position: relative;
+  top: -1vh;
 }
 
 .mapCard {
   padding: 10px;
+  width: 40vw;
+  height: 94vh;
+}
+.timelineCard {
+  width: 54vw;
 }
 
 .card {
   border-radius: 4px;
   background-color: rgb(250, 250, 250);
-  /* margin: 0 10px 0 0; */
 }
-/* .timeline-card {
-  width: 100%;
-} */
+/* 添加媒体查询，当屏幕宽度小于等于 768px 时（通常为手机屏幕），调整 mapCard 的样式 */
+@media (max-width: 600px) {
+  .map-group {
+    flex-direction: column;
+  }
+  .map-container {
+    top: -6vh;
+  }
+  .mapCard {
+    width: 90vw;
+    height: 33vh;
+  }
+  .timelineCard {
+    width: 100%;
+    margin-top: 10px;
+  }
+}
+
 </style>

@@ -120,9 +120,9 @@ import {
   Warning,
   SemiSelect
 } from '@element-plus/icons-vue';
-import { 
-  getStartPhotoCount, 
-  getMonthlyStartPhotoCountChange, 
+import {
+  getStartPhotoCount,
+  getMonthlyStartPhotoCountChange,
   getYearlyStartPhotoCountChange,
   getPhotoCount,
   getMonthlyPhotoCountChange,
@@ -194,7 +194,6 @@ onMounted(() => {
 .phopoDataContainer {
   background-color: black;
   padding: 10px;
-  /* display: flex; */
 }
 
 :global(h2#card-usage ~ .example .example-showcase) {
@@ -207,7 +206,6 @@ onMounted(() => {
 
 .statistic-card {
   height: 150px;
-  /* width: 200px; */
   padding: 20px;
   border-radius: 4px;
   background-color: var(--el-bg-color-overlay);
@@ -246,6 +244,41 @@ onMounted(() => {
 .el-col {
   padding: 0;
 }
+
+/* 添加移动端响应式样式 */
+@media screen and (max-width: 768px) {
+  .el-statistic {
+    --el-statistic-content-font-size: 20px;
+  }
+
+  .statistic-card {
+    height: 160px;
+    min-height: 130px;
+    padding: 5px;
+  }
+
+  .statistic-footer {
+    font-size: 10px;
+    margin-top: 12px;
+  }
+
+  :deep(.el-statistic__title) {
+    font-size: 12px;
+  }
+
+  .sub-counts {
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .sub-count {
+    font-size: 10px;
+  }
+
+  .phopoDataContainer {
+    height: 25%;
+  }
+}
 </style>
 
 <style>
@@ -266,5 +299,12 @@ onMounted(() => {
   content: '+';
   position: absolute;
   right: -2px;
+}
+
+/* 添加移动端响应式样式 */
+@media screen and (max-width: 768px) {
+  .el-col {
+    margin-bottom: 10px;
+  }
 }
 </style>
