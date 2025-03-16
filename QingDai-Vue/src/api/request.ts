@@ -67,10 +67,10 @@ service.interceptors.response.use(
           message = '未授权，请重新登录';
           // 清除token并跳转到登录页
           localStorage.removeItem('token');
-          window.location.href = '/login';
+          // window.location.href = '/login';
           break;
         case 403:
-          message = '拒绝访问';
+          message = '拒绝访问,请重新登录';
           break;
         case 404:
           message = '请求的资源不存在';

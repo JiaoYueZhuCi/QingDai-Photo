@@ -10,8 +10,8 @@
             </el-table-column>
             <el-table-column prop="fileName" label="文件名" width="180">
                 <template #default="scope">
-                    <el-input v-if="scope.row.isEditing" v-model="scope.row.fileName" />
-                    <span v-else>{{ scope.row.fileName }}</span>
+                    <!-- <el-input v-if="scope.row.isEditing" v-model="scope.row.fileName" /> -->
+                    <span>{{ scope.row.fileName }}</span>
                 </template>
             </el-table-column>
             <el-table-column prop="author" label="作者">

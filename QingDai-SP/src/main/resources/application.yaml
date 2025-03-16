@@ -50,13 +50,15 @@ spring:
     multipart:
       max-file-size: 100MB
       max-request-size: 100MB
+  output:
+    ansi:
+      enabled: always
 #  data:
 #    redis: localhost
 #    host: 6379
 
 mybatis-plus:
   configuration:
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
     map-underscore-to-camel-case: true
   mapper-locations: com.qingdai.mapper/*.xml
   type-aliases-package: com.qingdai.pojo

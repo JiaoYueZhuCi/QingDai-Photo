@@ -141,7 +141,6 @@ const photoAccumulateYearlyChange = ref<number>(1);
 const fetchStartPhotoCount = async () => {
   try {
     const response = await getStartPhotoCount();
-    console.log(response);
     startPhotoCount.value = Number(response);
     // 获取本月变化数据
     const monthlyChangeResponse = await getMonthlyStartPhotoCountChange();

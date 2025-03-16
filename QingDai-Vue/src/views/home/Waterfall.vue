@@ -385,7 +385,6 @@ const updateStarStatus = async (item: WaterfallItem, newValue: number) => {
 
 // 更新照片星标状态的API请求
 const updatePhotoStartStatus = async (id: string, start: number) => {
-    console.log(id, start);
     return updatePhotoStart({ id, start });
 };
 
