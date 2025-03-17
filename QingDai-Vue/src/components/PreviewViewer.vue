@@ -6,7 +6,8 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
 import { ElImageViewer, ElLoading, ElMessage } from 'element-plus'
-import { getThumbnail1000KPhoto } from '@/api/photo';
+import { getThumbnail1000KPhoto, getFullSizePhoto } from '@/api/photo';
+import { getRolesPermissions } from '@/api/user';
 
 let originalBodyPadding = ''
 let scrollbarWidth = 0
@@ -33,13 +34,24 @@ onMounted(async () => {
     });
 
     if (props.photoId) {
+        let response;
         try {
-            const response = await getThumbnail1000KPhoto(props.photoId);
+            const token = localStorage.getItem('token');
+            if (token) {
+                const userRoleResponse = await getRolesPermissions();
+                const userRoles = userRoleResponse?.roles || '';
+                if (userRoles.includes('VIEWER')) {
+                    response = await getFullSizePhoto(props.photoId);
+                } else {
+                    response = await getThumbnail1000KPhoto(props.photoId);
+                }
+            } else {
+                response = await getThumbnail1000KPhoto(props.photoId);
+            }
             urlList.value = [URL.createObjectURL(response.data)];
         } catch (error) {
-            console.error('获取全尺寸照片失败:', error);
-            // 引入 ElMessage
-            ElMessage.error('获取全尺寸照片失败');
+            console.error('获取照片失败:', error);
+            ElMessage.error('获取照片失败');
             handleClose();
         }
     } else if (props.urlList?.length) {
@@ -47,7 +59,6 @@ onMounted(async () => {
     }
 
     loading.close();
-
 })
 
 onUnmounted(() => {

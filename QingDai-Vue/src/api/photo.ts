@@ -66,6 +66,14 @@ export const getThumbnail1000KPhoto = async (id: string) => {
   });
 };
 
+// 获取原图
+export const getFullSizePhoto = async (id: string) => {
+  return await request.get(`${BASE_URL}/getFullSizePhoto`, {
+    params: { id },
+    responseType: 'blob'
+  });
+};
+
 // 获取照片详细信息
 export const getPhotoInfo = async (id: string) => {
   return await request.get(`${BASE_URL}/getPhotoInfo`, { params: { id } });

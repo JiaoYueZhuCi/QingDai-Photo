@@ -66,6 +66,7 @@ public class PhotoController {
     @Value("${qingdai.thumbnail100KUrl}")
     private String thumbnail100KUrl;
 
+
     @GetMapping("/getAllPhotos")
     @Operation(summary = "获取全部照片信息(时间倒叙)", description = "从数据库获取所有照片的详细信息(时间倒叙)")
     @PreAuthorize("hasRole('ADMIN')")
@@ -268,7 +269,7 @@ public class PhotoController {
     }
 
     @GetMapping("/getFullSizePhoto")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('VIEWER')")
     @Operation(summary = "获取指定原图照片文件", description = "根据接收到的照片ID获取原图照片文件并返回")
     public ResponseEntity<Resource> getFullSizePhotoById(@RequestParam String id) {
         try {

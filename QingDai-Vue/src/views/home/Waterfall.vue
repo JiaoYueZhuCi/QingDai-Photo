@@ -61,11 +61,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, nextTick, computed } from 'vue';
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import type { WaterfallItem } from '@/types';
 import { ElImage, ElIcon, ElMessage, ElLoading, ElPopover } from 'element-plus';
 import { Picture as IconPicture, FullScreen, Star, StarFilled } from '@element-plus/icons-vue'
-import { getVisiblePhotosByPage, getStartPhotosByPage, getThumbnail100KPhotos, getThumbnail1000KPhoto, updatePhotoStartStatus as updatePhotoStart } from '@/api/photo';
+import { getVisiblePhotosByPage, getStartPhotosByPage, getThumbnail100KPhotos, updatePhotoStartStatus as updatePhotoStart } from '@/api/photo';
 import { debounce } from 'lodash';
 import JSZip from 'jszip';
 import PreviewDialog from "@/components/PreviewDialog.vue";

@@ -1,32 +1,33 @@
 package com.qingdai.controller;
 
 import com.qingdai.dto.LoginRequest;
+import com.qingdai.dto.UserCreateDTO;
 import com.qingdai.dto.UserInfoDTO;
 import com.qingdai.entity.User;
 import com.qingdai.service.UserService;
+import com.qingdai.utils.DateUtils;
 import com.qingdai.utils.JwtTokenUtil;
-import jakarta.validation.Valid;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
+import com.qingdai.utils.SnowflakeIdGenerator;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import io.jsonwebtoken.Jws;
-import io.jsonwebtoken.Claims;
-import java.util.Map;
+import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * <p>
@@ -48,6 +49,8 @@ public class UserController {
     private PasswordEncoder passwordEncoder;
     @Autowired
     private JwtTokenUtil jwtTokenUtil;
+ // 雪花算法生成器
+    private final SnowflakeIdGenerator idGenerator = new SnowflakeIdGenerator(1, 1);
 
     // 用户列表查询
     @Operation(summary = "获取所有用户", description = "需管理员权限")
@@ -91,10 +94,14 @@ public class UserController {
     @PostMapping("/register")
     @PreAuthorize("permitAll()")
     public ResponseEntity<User> register(
-            @Parameter(description = "用户注册信息", required = true) @Valid @RequestBody User user) {
+            @Parameter(description = "用户注册信息", required = true) @RequestBody UserCreateDTO userDTO) {
         try {
-            log.info("开始注册新用户，用户名: {}", user.getUsername());
-            user.setPassword(passwordEncoder.encode(user.getPassword()));
+            log.info("开始注册新用户，用户名: {}", userDTO.getUsername());
+            String encode = passwordEncoder.encode(userDTO.getPassword());
+            userDTO.setPassword(encode);
+
+            LocalDateTime nowWithZone = DateUtils.getLocalDateTime();
+            User user = new User(idGenerator.nextId(), userDTO.getUsername(), userDTO.getPassword(), (byte) 1, nowWithZone, nowWithZone);
             boolean isSaved = userService.save(user);
             if (isSaved) {
                 log.info("用户注册成功，用户名: {}", user.getUsername());
@@ -104,7 +111,7 @@ public class UserController {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
             }
         } catch (Exception e) {
-            log.error("用户注册过程中发生错误，用户名: {}, 错误: {}", user.getUsername(), e.getMessage(), e);
+            log.error("用户注册过程中发生错误，用户名: {}, 错误: {}", userDTO.getUsername(), e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
