@@ -1,7 +1,6 @@
-# QingDai 图片管理系统
+# 青黛图片
 
 ## 项目概述
-前后端分离的图片管理系统，包含：
 - 后端服务(QingDai-SP)：基于Spring Boot 3.4.3构建
 - 前端项目(QingDai-Vue)：基于Vue3 + Element Plus构建
 

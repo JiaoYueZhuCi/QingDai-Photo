@@ -45,7 +45,6 @@ service.interceptors.response.use(
     
     // 对于登录请求，保留完整的响应对象以便获取headers中的token
     if (response.config.url?.includes('/login')) {
-      console.log('登录请求响应:', response);
       return response;
     }
     

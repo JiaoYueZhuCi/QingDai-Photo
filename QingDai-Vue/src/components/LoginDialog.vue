@@ -51,7 +51,6 @@ const submitForm = async () => {
       password: form.password
     });
 
-    console.log('登录响应:', response);
 
     // 检查响应是否有token，支持多种可能的结构
     let token = null;

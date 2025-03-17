@@ -41,10 +41,32 @@ export const login = async (data: LoginParams): Promise<LoginResponse> => {
       }
     });
     
-    console.log('Login API response:', response);
+    console.log('登陆成功:', response);
     return response;
   } catch (error) {
-    console.error('Login API error:', error);
+    console.error('登陆失败', error);
     throw error;
   }
-}; 
+};
+
+export interface RolesPermissionsResponse {
+  roles: string[];
+  permissions: string[];
+}
+
+export const getRolesPermissions = async (): Promise<any> => {
+  try {
+    const response = await request.get<RolesPermissionsResponse>(
+      `${BASE_URL}/roles-permissions`,
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      }
+    );
+    return response;
+  } catch (error) {
+    console.error('获取角色权限失败:', error);
+    throw error;
+  }
+};
