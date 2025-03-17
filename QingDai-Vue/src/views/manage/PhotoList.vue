@@ -3,11 +3,11 @@
         <el-table :data="tableData" style="width: 100%" border stripe>
             <el-table-column label="缩略图" width="220" fixed>
                 <template #default="scope">
-                    <el-image :src="scope.row.compressedSrc" :preview-src-list="[scope.row.compressedSrc]"
-                        style="height: 150px" fit="contain" />
+                    <el-image :src="scope.row.compressedSrc" style="height: 150px" fit="contain"
+                        @click="openPreview(scope.row.id)" />
                 </template>
             </el-table-column>
-            <el-table-column prop="fileName" label="文件名" width="95" >
+            <el-table-column prop="fileName" label="文件名" width="95">
                 <template #default="scope">
                     <!-- <el-input v-if="scope.row.isEditing" v-model="scope.row.fileName" /> -->
                     <span>{{ scope.row.fileName }}</span>
@@ -108,7 +108,10 @@
                 </el-icon>上传照片
             </el-button>
         </div>
+
         <PhotoUpdate v-model="photoUploadVisible" ref="photoUpdateRef" />
+
+        <PreviewViewer v-if="previewVisible" :photo-id="currentPreviewId" @close="previewVisible = false" />
 
         <div class="pagination-wrapper">
             <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize"
@@ -120,6 +123,7 @@
 
 <script setup lang="ts">
 import PhotoUpdate from '@/views/manage/PhotoUpdate.vue'
+import PreviewViewer from '@/components/PreviewViewer.vue'
 import { ref, watchEffect } from 'vue'
 import JSZip from 'jszip'
 import type { WaterfallItem } from '@/types'
@@ -256,20 +260,15 @@ const handleDelete = async (row: any) => {
     }
 }
 
-const submitStatusEdit = async (row: any) => {
-    try {
-        await updatePhotoStartStatus({
-            id: row.id,
-            start: row.start
-        });
-        ElMessage.success('状态更新成功');
-        row.isEditing = false;
-        fetchData();
-    } catch (error) {
-        console.error('状态更新失败:', error);
-        ElMessage.error('状态更新失败');
-    }
-};
+
+// 添加预览相关变量
+const previewVisible = ref(false)
+const currentPreviewId = ref('')
+// 添加打开预览的方法
+const openPreview = (id: string) => {
+    previewVisible.value = true
+    currentPreviewId.value = id
+}
 </script>
 
 <style scoped>

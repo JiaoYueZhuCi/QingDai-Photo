@@ -2,6 +2,7 @@ package com.qingdai.service;
 
 import com.qingdai.entity.Role;
 import com.baomidou.mybatisplus.extension.service.IService;
+import java.util.List;
 
 /**
  * <p>
@@ -13,4 +14,5 @@ import com.baomidou.mybatisplus.extension.service.IService;
  */
 public interface RoleService extends IService<Role> {
 
+    List<String> getPermissionsByRole(Long roleId);
 }

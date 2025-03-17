@@ -1,6 +1,7 @@
 package com.qingdai.controller;
 
 import com.qingdai.dto.LoginRequest;
+import com.qingdai.dto.UserInfoDTO;
 import com.qingdai.entity.User;
 import com.qingdai.service.UserService;
 import com.qingdai.utils.JwtTokenUtil;
@@ -24,6 +25,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Claims;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * <p>
@@ -35,7 +38,7 @@ import io.jsonwebtoken.Claims;
  */
 @Slf4j
 @RestController
-@Tag(name = "用户管理", description = "用户增删改查接口") 
+@Tag(name = "用户管理", description = "用户增删改查接口")
 @SecurityRequirement(name = "BearerAuth")
 @RequestMapping("/user")
 public class UserController {
@@ -142,7 +145,7 @@ public class UserController {
             log.info("用户登录请求，用户名: {}", user.getUsername());
             User storedUser = userService.getByUsername(user.getUsername());
             Boolean matches = passwordEncoder.matches(user.getPassword(), storedUser.getPassword());
-            
+
             if (matches) {
                 String token = jwtTokenUtil.generateToken(storedUser);
                 log.info("用户登录成功，用户名: {}", user.getUsername());
@@ -162,8 +165,8 @@ public class UserController {
     @GetMapping("/info")
     // @PreAuthorize("permitAll()")
     @PreAuthorize("denyAll()")
-    public ResponseEntity<User> getUserInfo(
-            @RequestParam(value = "Authorization", required = false) String authorization) {
+    public ResponseEntity<UserInfoDTO> getUserInfo(
+            @RequestHeader(value = "Authorization", required = false) String authorization) {
         try {
             log.info("开始获取用户信息，Authorization: {}", authorization);
             if (authorization == null || !authorization.startsWith("Bearer ")) {
@@ -178,8 +181,14 @@ public class UserController {
                 User user = userService.getByUsername(username);
 
                 if (user != null) {
+                    Long userId = user.getId();
+                    List<String> roles = userService.getRolesByUserId(userId);
+                    List<String> permissions = userService.getPermissionsByUserId(userId);
+
+                    UserInfoDTO userInfoResponse = new UserInfoDTO(user, roles, permissions);
+
                     log.info("成功获取用户信息，用户名: {}", username);
-                    return ResponseEntity.ok(user);
+                    return ResponseEntity.ok(userInfoResponse);
                 } else {
                     log.warn("未找到用户名为{}的用户", username);
                     return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
@@ -193,4 +202,43 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
+    // 根据token获取用户角色及权限
+    @Operation(summary = "根据token获取用户角色及权限", description = "通过JWT令牌获取用户角色及权限信息")
+    @GetMapping("/roles-permissions")
+    @PreAuthorize("permitAll()")
+    public ResponseEntity<Map<String, Object>> getRolesAndPermissions(
+            @RequestHeader(value = "Authorization", required = false) String authorization) {
+        try {
+            log.info("开始获取用户角色及权限信息，Authorization: {}", authorization);
+            if (authorization == null || !authorization.startsWith("Bearer ")) {
+                log.warn("无效的Authorization头");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
+            String token = authorization.replace("Bearer ", "");
+            try {
+                Jws<Claims> claims = jwtTokenUtil.parseToken(token);
+                String username = claims.getBody().getSubject();
+                User user = userService.getByUsername(username);
+                Long userId = user.getId();
+                List<String> roles = userService.getRolesByUserId(userId);
+                List<String> permissions = userService.getPermissionsByUserId(userId);
+
+                Map<String, Object> result = new HashMap<>();
+                result.put("roles", roles);
+                result.put("permissions", permissions);
+
+                log.info("成功获取用户角色及权限信息，用户名: {}", username);
+                return ResponseEntity.ok(result);
+            } catch (io.jsonwebtoken.JwtException e) {
+                log.error("JWT Token解析失败: {}", e.getMessage());
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+        } catch (Exception e) {
+            log.error("获取用户角色及权限信息时发生错误: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 }
+

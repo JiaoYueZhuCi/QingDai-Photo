@@ -17,5 +17,7 @@ import java.util.List;
 public interface UserService extends IService<User> {
     List<String> getRolesByUserId(Long userId);
 
+    List<String> getPermissionsByUserId(Long userId);
+
     User getByUsername(String username);
 }

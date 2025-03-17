@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.qingdai.entity.UserRole;
 import com.qingdai.entity.Role;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,6 +29,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private UserRoleMapper userRoleMapper;
     @Autowired
     private RoleMapper roleMapper;
+    @Autowired
+    private RoleServiceImpl roleService;
 
     @Override
     public User getByUsername(String username) {
@@ -53,6 +56,21 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         return roleMapper.selectBatchIds(roleIds)
                 .stream()
                 .map(Role::getName) // 提取每个角色的名称
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<String> getPermissionsByUserId(Long userId) {
+        // 获取用户角色ID列表
+        List<Long> roleIds = userRoleMapper.selectList(new LambdaQueryWrapper<UserRole>()
+                .eq(UserRole::getUserId, userId))
+                .stream()
+                .map(UserRole::getRoleId)
+                .collect(Collectors.toList());
+
+        // 根据角色ID查询权限
+        return roleIds.stream()
+                .flatMap(roleId -> roleService.getPermissionsByRole(roleId).stream())
                 .collect(Collectors.toList());
     }
 }

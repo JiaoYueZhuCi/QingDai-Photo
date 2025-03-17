@@ -14,6 +14,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
@@ -52,19 +53,31 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             Jws<Claims> claims = jwtTokenUtil.parseToken(token);
             String username = claims.getBody().getSubject();
-            // 修改为获取角色列表
+            // 获取角色列表
             List<String> roles = claims.getBody().get("roles", List.class);
+            // 获取权限列表
+            List<String> permissions = claims.getBody().get("permissions", List.class);
 
             // 使用stream处理多个角色
             List<SimpleGrantedAuthority> authorities = roles.stream()
                 .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
                 .collect(Collectors.toList());
 
+            // 检查权限列表是否为空，如果不为空则处理多个权限
+            if (permissions != null && !permissions.isEmpty()) {
+                List<SimpleGrantedAuthority> permissionAuthorities = permissions.stream()
+                    .map(permission -> new SimpleGrantedAuthority(permission))
+                    .collect(Collectors.toList());
+
+                // 合并角色和权限
+                authorities.addAll(permissionAuthorities);
+            }
+
             UsernamePasswordAuthenticationToken authentication = 
                 new UsernamePasswordAuthenticationToken(
                     username, 
                     null, 
-                    authorities  // 替换为包含多个权限的列表
+                    authorities  // 包含多个权限的列表
                 );
             SecurityContextHolder.getContext().setAuthentication(authentication);
         } catch (JwtException e) {

@@ -3,24 +3,18 @@
         <PreviewDialog v-model="previewVisible" :photo-id="currentPreviewId" @close="previewVisible = false"
             @image-click="openFullImg" />
 
-        <el-empty v-if="images.length === 0" description="暂无照片数据"></el-empty>
+        <PreviewViewer v-if="fullImgShow" :photo-id="currentPreviewId" :initial-index="currentIndex"
+            @close="fullImgShow = false" />
 
-        <el-image-viewer :teleported="true" v-if="fullImgShow" :url-list="fullImgList" :initial-index="currentIndex"
-            :hide-on-click-modal="true" @close="fullImgShow = false" />
+        <el-empty v-if="images.length === 0" description="暂无照片数据"></el-empty>
 
         <div class="container-in" v-else>
             <div class="image-row" v-for="(row, rowIndex) in rows" :key="rowIndex"
                 :style="{ height: `${row.height}px`, width: `${rowWidth}px`, flex: '0 0 auto', margin: `0 ${sideMarginStyle} ${sideMarginStyle} ${sideMarginStyle}` }">
                 <div class="image-item" v-for="(item, index) in row.items" :key="item.id"
                     @click="handleImageClick(item)">
-                    <el-popover
-                        placement="top"
-                        :width="250"
-                        trigger="click"
-                        title="设置星标状态"
-                        :popper-style="{ padding: '12px' }"
-                        :teleported="true"
-                    >
+                    <el-popover placement="top" :width="200" trigger="click" title="设置星标状态"
+                        :popper-style="{ padding: '12px' }" :teleported="true">
                         <template #reference>
                             <div class="star-icon" @click.stop>
                                 <el-icon :color="getStarColor(item.start)">
@@ -30,7 +24,7 @@
                             </div>
                         </template>
                         <div class="star-selection">
-                            <p>请选择此照片的星标状态：</p>
+                            <!-- <p>请选择此照片的星标状态：</p> -->
                             <div class="star-option" @click="updateStarStatus(item, 1)">
                                 <span style="color: #e6a23c; font-size: 16px;">★</span> 星标照片
                             </div>
@@ -42,7 +36,7 @@
                             </div>
                         </div>
                     </el-popover>
-                    
+
                     <div class="fullscreen-icon" @click.stop="openFullImg(item.id)">
                         <el-icon>
                             <FullScreen />
@@ -68,7 +62,6 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, nextTick, computed } from 'vue';
-import type { Ref } from 'vue';
 import type { WaterfallItem } from '@/types';
 import { ElImage, ElIcon, ElMessage, ElLoading, ElPopover } from 'element-plus';
 import { Picture as IconPicture, FullScreen, Star, StarFilled } from '@element-plus/icons-vue'
@@ -76,6 +69,7 @@ import { getVisiblePhotosByPage, getStartPhotosByPage, getThumbnail100KPhotos, g
 import { debounce } from 'lodash';
 import JSZip from 'jszip';
 import PreviewDialog from "@/components/PreviewDialog.vue";
+import PreviewViewer from "@/components/PreviewViewer.vue";
 
 // 添加 props 来接收父组件传递的值
 const props = defineProps({
@@ -104,7 +98,7 @@ const pageSize = ref(50);
 const hasMore = ref(true);
 const containerRef = ref<HTMLElement | null>(null);
 
-// 修改后的 getPhotos 方法
+//  getPhotos 方法
 const getPhotos = async () => {
     if (!hasMore.value) return;
 
@@ -170,7 +164,7 @@ const handleScroll = debounce(() => {
     }
 }, 200);
 
-// 新增响应式变量来存储动态的行高
+// 响应式变量来存储动态的行高
 const dynamicRowHeightMax = ref<number>(props.rowHeightMax);
 const dynamicRowHeightMin = ref<number>(props.rowHeightMin);
 
@@ -323,45 +317,26 @@ const calculateLayout = () => {
 
 
 const fullImgShow = ref(false);
-const fullImgList = ref<string[]>([]);
 const currentIndex = ref(0);
 
-const openFullImg = async (id: string) => {
-    const loading = ElLoading.service({
-        fullscreen: true,
-        text: '加载中...',
-        background: 'rgba(0, 0, 0, 0.7)',
-    });
-
-    try {
-        fullImgList.value = []
-        const response = await getThumbnail1000KPhoto(id);
-        fullImgList.value = [URL.createObjectURL(response.data)];
-        fullImgShow.value = true;
-    } catch (error) {
-        console.error('获取全尺寸照片失败:', error);
-        ElMessage.error('获取全尺寸照片失败');
-        fullImgList.value = [];
-        fullImgShow.value = false;
-    } finally {
-        loading.close();
-    }
+const openFullImg = (id: string) => {
+    fullImgShow.value = true;
     currentIndex.value = 0;
-
+    currentPreviewId.value = id;
 };
 
-//页面打开时禁止滚动
-const currentScrollY = ref(0);
+// //页面打开时禁止滚动
+// const currentScrollY = ref(0);
 
-watch(fullImgShow, (newVal: boolean) => {
-    if (newVal === true) {
-        currentScrollY.value = window.scrollY;  //修补性措施
-        document.body.classList.add('body-no-scroll');
-    } else {
-        document.body.classList.remove('body-no-scroll');
-        nextTick(() => window.scrollTo({ top: currentScrollY.value, behavior: 'auto' }));
-    }
-});
+// watch(fullImgShow, (newVal: boolean) => {
+//     if (newVal === true) {
+//         currentScrollY.value = window.scrollY;  //修补性措施
+//         document.body.classList.add('body-no-scroll');
+//     } else {
+//         document.body.classList.remove('body-no-scroll');
+//         nextTick(() => window.scrollTo({ top: currentScrollY.value, behavior: 'auto' }));
+//     }
+// });
 
 // 获取星星颜色
 const getStarColor = (startValue: number) => {

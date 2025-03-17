@@ -1,14 +1,14 @@
 <template>
     <div>
         <!-- 背景图静态展示 -->
-        <div class="cover-container" :style="{ backgroundImage: `url(${backgroundImageUrl})` }">
+        <div class="cover-container" :style="{ backgroundImage: `url(${backgroundImageUrl})` }" @click="openPreview(backgroundImageUrl)">
         </div>
 
         <!-- 头像静态展示 -->
         <div class="avatar-section">
             <div>
                 <div class="avatar-container">
-                    <el-avatar :size="avatarSize" :src="avatarImageUrl" class="avatar-static">
+                    <el-avatar :size="avatarSize" :src="avatarImageUrl" class="avatar-static" @click="openPreview(avatarImageUrl)">
                         <template #default>
                             <el-icon :size="50">
                                 <User />
@@ -26,7 +26,6 @@
                 </div>
                 <LoginDialog v-model="loginDialogVisible" />
             </div>
-
 
             <!-- 用户信息保持原样 -->
             <div class="profile-info">
@@ -116,6 +115,8 @@
 
             </el-descriptions-item>
         </el-descriptions>
+
+        <PreviewViewer v-if="previewVisible" :urlList="[previewImageUrl]" @close="previewVisible = false" />
     </div>
 </template>
 
@@ -130,7 +131,7 @@ import {
     User,
 } from '@element-plus/icons-vue'
 import LoginDialog from '@/components/LoginDialog.vue'
-
+import PreviewViewer from '@/components/PreviewViewer.vue' // 引入预览组件
 
 const backgroundImageUrl = '/img/introduce/background.jpg'
 const avatarImageUrl = '/img/introduce/avatar.jpg'
@@ -177,6 +178,16 @@ onMounted(() => {
 onBeforeUnmount(() => {
     window.removeEventListener('scroll', handleScroll)
 })
+
+// 添加预览相关变量
+const previewVisible = ref(false)
+const previewImageUrl = ref('')
+
+// 添加打开预览的方法
+const openPreview = (url: string) => {
+    previewImageUrl.value = url
+    previewVisible.value = true
+}
 </script>
 
 
@@ -186,12 +197,12 @@ onBeforeUnmount(() => {
     background-size: cover;
     background-position: 50% 50%;
     background-repeat: no-repeat;
+    cursor: pointer; /* 添加鼠标指针样式 */
 }
-
 
 .avatar-static {
     margin-top: -66px;
-
+    cursor: pointer; /* 添加鼠标指针样式 */
 }
 
 .avatar-container {

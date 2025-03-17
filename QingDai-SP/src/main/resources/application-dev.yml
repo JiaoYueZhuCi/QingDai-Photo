@@ -1,0 +1,13 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/qingdai-photo?useUnicode=true&characterEncoding=utf-8&serverTimezoneGMT%2B8
+    username: root
+    password: 123456
+
+qingdai:
+  url: E:/QingDaiPhotos/
+  fullSizeUrl: E:/QingDaiPhotos/Photos/FullSize/
+  thumbnail1000KUrl: E:/QingDaiPhotos/Photos/Thumbnail-1000K/
+  thumbnail100KUrl: E:/QingDaiPhotos/Photos/Thumbnail-100K/
+  thumbnailSizeUrl: E:/QingDaiPhotos/Photos/Thumbnail/
+  pendingUrl: E:/QingDaiPhotos/Photos/Pending/

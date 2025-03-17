@@ -149,6 +149,7 @@ const handleClose = () => {
     flex: 0 0 320px;
     overflow-y: auto;
     padding-right: 8px;
+    word-break: break-word;
 }
 
 .metadata-descriptions {

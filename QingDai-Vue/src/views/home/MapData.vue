@@ -1,6 +1,6 @@
 <template>
   <div class="map-group">
-    <el-affix :offset="10">
+    <el-affix :offset="affixOffset">
       <div class="card mapCard">
         <div ref="mapContainer" class="map-container"></div>
       </div>
@@ -171,7 +171,7 @@ const getProvinceName = (adcode) => {   //根据省份代码返回省份名称
   }
 
   .map-container {
-    top: -40px;
+    top: -5vh;
   }
 
   .map-container {
@@ -181,16 +181,12 @@ const getProvinceName = (adcode) => {   //根据省份代码返回省份名称
 
   .mapCard {
     width: 90vw;
-    height: 240px;
+    height: 230px;
   }
 
   .timelineCard {
     width: 100%;
     margin-top: 10px;
-  }
-
-  .map-group {
-    gap: 0;
   }
 }
 </style>

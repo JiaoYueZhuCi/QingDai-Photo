@@ -36,10 +36,12 @@ public class JwtTokenUtil {
                 .claim("userId", user.getId())
                 // 在 JWT 中添加用户角色的声明
                 .claim("roles", userService.getRolesByUserId(user.getId()))
+                // 在 JWT 中添加用户权限的声明
+                .claim("permissions", userService.getPermissionsByUserId(user.getId()))
                 // 设置 JWT 的签发时间为当前时间
                 .setIssuedAt(new Date())
                 // 设置 JWT 的过期时间为当前时间加上配置的过期时间（单位：秒）
-                 .setExpiration(new Date(System.currentTimeMillis() + expiration * 1000))
+                .setExpiration(new Date(System.currentTimeMillis() + expiration * 1000))
 //                .setExpiration(null)
                 // 使用指定的密钥和签名算法对 JWT 进行签名
                 .signWith(key, SignatureAlgorithm.HS256)
