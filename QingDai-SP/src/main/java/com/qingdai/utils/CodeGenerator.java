@@ -31,7 +31,7 @@ public class CodeGenerator {
                                 "D:/Code/qingdai-photo/QingDai-SP/src/main/resources/mapper"))
                 )
                 .strategyConfig(builder -> {
-                    builder.addInclude("sys_user_role")
+                    builder.addInclude("group_photo")
                             .entityBuilder()
                             .enableLombok()
 //                            .enableFileOverride()  //!!!
