@@ -6,6 +6,7 @@
     <el-tabs type="border-card" v-model="activeTab" @tab-click="handleTabClick">
         <el-tab-pane label="精选" name="featured"></el-tab-pane>
         <el-tab-pane label="照片" name="photos"></el-tab-pane>
+        <el-tab-pane label="组图" name="groupPhotos"></el-tab-pane>
         <el-tab-pane label="时间轴" name="timeline"></el-tab-pane>
         <el-tab-pane label="数据" name="data"></el-tab-pane>
     </el-tabs>

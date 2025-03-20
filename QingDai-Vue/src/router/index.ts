@@ -36,6 +36,10 @@ const router = createRouter({
             {
               path: '/home/data',
               component: () => import('@/views/home/Data.vue').catch(() => errorPage)
+            },
+            {
+              path: '/home/groupPhotos',
+              component: () => import('@/views/home/GroupPhotos.vue').catch(() => errorPage)
             }
           ]
         },

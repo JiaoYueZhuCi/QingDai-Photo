@@ -4,4 +4,9 @@ export type {
 export type {
   TimelineItem
 } from './timeline'
-
+export type {
+  GroupPhoto,
+} from './groupPhoto'
+export type {
+  GroupPhotoDTO,
+} from './groupPhoto'
