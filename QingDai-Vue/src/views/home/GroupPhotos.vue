@@ -7,7 +7,7 @@
             <div class="image-row" v-for="(row, rowIndex) in rows" :key="rowIndex"
                 :style="{ height: `${row.height}px`, width: `${rowWidth}px`, flex: '0 0 auto', margin: `0 ${sideMarginStyle} ${sideMarginStyle} ${sideMarginStyle}` }">
                 <div class="image-item" v-for="(item, index) in row.items" :key="item.id"
-                    @click="">
+                    @click="openGroupPhotoPreview(item)">
                     <el-image :src="item.compressedSrc" :key="item.id" lazy
                         :style="{ width: item.calcWidth + 'px', height: item.calcHeight + 'px' }">
                         <template #error>
@@ -23,18 +23,52 @@
                 </div>
             </div>
         </div>
+
+        <!-- 组图预览组件 -->
+        <group-photo-preview
+            v-if="selectedGroupId !== null"
+            :group-id="selectedGroupId || ''"
+            :initial-photo-id="selectedPhotoId || undefined"
+            @close="closeGroupPhotoPreview"
+        />
     </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import type { WaterfallItem } from '@/types';
-import { ElImage, ElIcon, ElMessage, ElLoading, ElPopover } from 'element-plus';
+import { ElImage, ElIcon, ElMessage, ElLoading, ElPopover, ElEmpty } from 'element-plus';
 import { Picture as IconPicture, FullScreen, Star, StarFilled } from '@element-plus/icons-vue'
-import { getVisiblePhotosByPage, getStartPhotosByPage, getThumbnail100KPhotos, updatePhotoStartStatus as updatePhotoStart } from '@/api/photo';
+import { getVisiblePhotosByPage, getStartPhotosByPage, getThumbnail100KPhotos, updatePhotoStartStatus as updatePhotoStart  } from '@/api/photo';
+import { getAllGroupPhotoPreviews } from '@/api/groupPhoto';
 import { debounce } from 'lodash';
 import JSZip from 'jszip';
+import type { GroupPhotoDTO } from '@/types/groupPhoto';
+import GroupPhotoPreview from '@/components/GroupPhotoPreview.vue';
 
+// 添加新的状态保存选中的组图和照片
+const selectedGroupId = ref<string | null>(null);
+const selectedPhotoId = ref<string | null>(null);
+
+// 打开组图预览的方法
+const openGroupPhotoPreview = (item: WaterfallItem) => {
+    // 在处理后的数据中，我们需要找到这个照片对应的组图ID
+    const groupId = item.groupId; 
+    
+    if (groupId) {
+        selectedGroupId.value = groupId;
+        selectedPhotoId.value = item.id;
+    } else {
+        console.error('缺少组图ID，item:', item);
+        ElMessage.warning('无法找到对应的组图信息');
+    }
+};
+
+// 关闭组图预览
+const closeGroupPhotoPreview = () => {
+    selectedGroupId.value = null;
+    selectedPhotoId.value = null;
+};
 
 // 添加 props 来接收父组件传递的值
 const props = defineProps({
@@ -68,35 +102,30 @@ const getPhotos = async () => {
     if (!hasMore.value) return;
 
     try {
-        const apiEndpoint = props.photoType === 0
-            ? getVisiblePhotosByPage
-            : getStartPhotosByPage;
-
-        const response = await apiEndpoint({
-            page: currentPage.value,
-            pageSize: pageSize.value
-        });
+        // 使用类型断言
+        const response = await getAllGroupPhotoPreviews() as unknown as GroupPhotoDTO[];
 
         // 预处理数据，确保所有字段类型匹配
-        const processedData = response.records.map((item: any) => ({
-            id: item.id,
-            fileName: item.fileName,
-            author: item.author || '未知作者', // 设置默认值
-            width: item.width || 0,
-            height: item.height || 0,
-            aperture: item.aperture || '',
-            iso: item.iso || '',
-            shutter: item.shutter || '',
-            camera: item.camera || '', // 设置默认值
-            lens: item.lens || '', // 设置默认值
-            time: item.time || '',
-            title: item.title || '', // 设置默认值
-            introduce: item.introduce || '', // 设置默认值
-            start: item.start || 0,
-            aspectRatio: item.width / item.height, // 计算宽高比
-            calcWidth: 0, // 初始化
-            calcHeight: 0, // 初始化
-            compressedSrc: '' // 初始化
+        const processedData = response.map((item: GroupPhotoDTO) => ({
+            id: item.photo.id,
+            fileName: item.photo.fileName,
+            author: item.photo.author || '未知作者',
+            width: item.photo.width || 0,
+            height: item.photo.height || 0,
+            aperture: item.photo.aperture || '',
+            iso: item.photo.iso || '',
+            shutter: item.photo.shutter || '',
+            camera: item.photo.camera || '',
+            lens: item.photo.lens || '',
+            time: item.photo.time || '',
+            title: item.groupPhoto.title || '',
+            introduce: item.groupPhoto.introduce || '',
+            start: item.photo.start || 0,
+            aspectRatio: item.photo.width / item.photo.height,
+            calcWidth: 0,
+            calcHeight: 0,
+            compressedSrc: '',
+            groupId: item.groupPhoto.id // 添加组图ID
         }));
 
         // 记录添加前的长度
@@ -109,9 +138,8 @@ const getPhotos = async () => {
         // 仅处理新增的数据项
         await getThumbnailPhotos(previousLength, images.value.length - 1);
 
-        // 检查是否还有更多数据
-        hasMore.value = response.current < response.pages;
-        currentPage.value = response.current;
+        // 由于API一次性返回所有数据，设置hasMore为false
+        hasMore.value = false;
     } catch (error) {
         console.error('获取照片数据失败:', error);
     }

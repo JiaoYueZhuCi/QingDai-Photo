@@ -84,9 +84,9 @@ router.beforeEach(async (to, from, next) => {
     return next(false); // 阻止路由处理
   }
 
-  try {
-    // 权限检查逻辑
-    if (to.path.startsWith('/manage')) {
+  // 权限检查逻辑
+  if (to.path.startsWith('/manage')) {
+    try {
       // 获取用户角色
       const userRoleResponse = await getRolesPermissions();
       const userRoles = userRoleResponse?.roles || '';
@@ -94,16 +94,23 @@ router.beforeEach(async (to, from, next) => {
         ElMessage.success("授权访问");
         return next(); // 如果是 ADMIN，继续处理路由
       }
-      ElMessage.error("请登录");
-      return next('/'); // 如果不是 ADMIN，重定向到首页或其他页面
+      // 如果不是ADMIN
+      ElMessage.error("权限不足");
+      return next(from.path !== '/manage' ? from.path : '/'); 
+    } catch (error: any) {
+      // 检查是否为401错误
+      if (error.response && error.response.status === 401) {
+        ElMessage.error('请登录');
+      } else {
+        ElMessage.error('获取用户角色失败');
+        console.error('获取用户角色失败:', error);
+      }
+      return next(from.path !== '/manage' ? from.path : '/');
     }
-  } catch (error) {
-    ElMessage.error('获取用户角色失败');
-    console.error('获取用户角色失败:', error);
-    next('/'); // 如果获取角色失败，重定向到首页
   }
 
-  next();
+  // 其他路径，直接通过
+  return next();
 });
 
 export default router

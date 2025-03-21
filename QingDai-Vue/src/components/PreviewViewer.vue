@@ -1,6 +1,8 @@
 <template>
-    <el-image-viewer :teleported="true" :url-list="urlList" :initial-index="initialIndex" :hide-on-click-modal="true"
+    <div class="showViewer">
+    <el-image-viewer  :url-list="urlList" :initial-index="initialIndex" :hide-on-click-modal="true"
         @close="handleClose" />
+    </div>
 </template>
 
 <script setup lang="ts">
@@ -85,6 +87,9 @@ const handleClose = () => {
 <style scoped>
 .no-scroll {
     overflow: hidden;
+}
+.showViewer {
+    z-index: 9999;
 }
 </style>
 
