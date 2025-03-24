@@ -5,9 +5,9 @@ spring:
     password: 123456
 
 qingdai:
-  url: E:/QingDaiPhotos/
-  fullSizeUrl: E:/QingDaiPhotos/Photos/FullSize/
-  thumbnail1000KUrl: E:/QingDaiPhotos/Photos/Thumbnail-1000K/
-  thumbnail100KUrl: E:/QingDaiPhotos/Photos/Thumbnail-100K/
-  thumbnailSizeUrl: E:/QingDaiPhotos/Photos/Thumbnail/
-  pendingUrl: E:/QingDaiPhotos/Photos/Pending/
+  url: D:/QingDai Photos/
+  fullSizeUrl: D:/Qing DaiPhotos/Photos/FullSize/
+  thumbnail1000KUrl: D:/QingDai Photos/Photos/Thumbnail-1000K/
+  thumbnail100KUrl: D:/QingDai Photos/Photos/Thumbnail-100K/
+  thumbnailSizeUrl: D:/QingDai Photos/Photos/Thumbnail/
+  pendingUrl: D:/QingDai Photos/Photos/Pending/
