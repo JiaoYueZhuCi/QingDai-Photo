@@ -4,6 +4,7 @@ import com.qingdai.dto.GroupPhotoDTO;
 import com.qingdai.entity.GroupPhoto;
 import com.qingdai.service.GroupPhotoService;
 import com.qingdai.service.PhotoService;
+import com.qingdai.utils.SnowflakeIdGenerator;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
@@ -30,8 +31,7 @@ import java.util.stream.Collectors;
 public class GroupPhotoController {
     @Autowired
     private GroupPhotoService groupPhotoService;
-
-
+    private final SnowflakeIdGenerator snowflakeIdGenerator = new SnowflakeIdGenerator(1, 1);
     @Operation(summary = "获取组图详情", description = "根据ID查询组图详细信息")
     @GetMapping("/getGroupPhoto/{id}")
     public ResponseEntity<GroupPhoto> getGroupPhotoById(@PathVariable Long id) {
@@ -82,6 +82,7 @@ public class GroupPhotoController {
                 log.warn("创建组图失败：照片列表不能为空");
                 return ResponseEntity.badRequest().body("照片列表不能为空");
             }
+            groupPhoto.setId(snowflakeIdGenerator.nextId());
 
             boolean saved = groupPhotoService.save(groupPhoto);
             if (!saved) {
@@ -99,7 +100,7 @@ public class GroupPhotoController {
         }
     }
 
-    @Operation(summary = "更新组图", description = "更新指定ID的组图信息")
+    @Operation(summary = "更新组图", description = "更新组图信息")
     @PutMapping("/updateGroupPhoto")
     public ResponseEntity<String> updateGroupPhoto(@RequestBody GroupPhoto groupPhoto) {
         try {

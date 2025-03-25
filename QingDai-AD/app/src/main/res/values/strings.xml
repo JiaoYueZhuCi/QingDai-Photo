@@ -1,10 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">青黛日出</string>
-    <string name="event_time_label">北京时间：</string>
-    <string name="data_source_label">数据来源：</string>
-    <string name="aerosol_label">气溶胶：</string>
-    <string name="quality_label">鲜艳度：</string>
+    <string name="app_name">青黛天气</string>
     <string name="loading">加载中...</string>
-    <string name="error_loading">加载数据失败，请重试</string>
-    <string name="refresh">刷新</string>
+    <string name="city_label">城市: %s</string>
+    <string name="time_label">北京时间: %s</string>
+    <string name="quality_label">鲜艳度: %s</string>
+    <string name="aod_label">气溶胶: %s</string>
+    <string name="network_error">网络请求失败，请检查网络连接</string>
 </resources> 

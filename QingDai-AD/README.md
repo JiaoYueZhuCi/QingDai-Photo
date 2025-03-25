@@ -1,39 +1,45 @@
-# 青黛日出 Android 应用
+# 青黛天气 Android 应用
 
-这是一个简单的Android应用，用于展示来自SunsetBot API的日出日落数据。
+这是一个Android应用，用于展示青黛天气数据，包括北京时间、鲜艳度和气溶胶信息。
 
 ## 功能
 
-- 显示日出/日落事件的时间
-- 显示数据来源信息
-- 显示气溶胶光学厚度(AOD)信息
-- 显示鲜艳度信息
-- 支持手动刷新数据
+- 从sunsetbot.top API获取天气数据
+- 展示城市信息
+- 展示北京时间信息
+- 展示鲜艳度数据
+- 展示气溶胶数据
+- 显示相关天气图像
 
 ## 技术栈
 
-- Java
-- Retrofit2 用于网络请求
-- OkHttp3 用于HTTP客户端
-- Gson 用于JSON解析
+- Android Java
+- Retrofit2用于网络请求
+- Glide用于图像加载
+- Material Design组件
 
-## 如何构建
+## 构建和运行
 
 1. 使用Android Studio打开项目
-2. 点击"Sync Project with Gradle Files"
-3. 点击"Run"按钮，选择设备或模拟器运行应用
+2. 构建项目：`Build > Make Project`
+3. 运行项目：`Run > Run 'app'`
+4. 在模拟器或实际设备上测试应用
 
-## 接口说明
+## 依赖项
 
-应用调用以下接口获取数据：
-```
-https://www.sunsetbot.top/?query_id=5754827&intend=select_city&query_city=天津市-天津&event_date=None&event=rise_1&times=None
-```
+- Android SDK 33
+- AndroidX库
+- Retrofit2和Gson转换器
+- Glide图像加载库
+- Jsoup HTML解析库
 
-## 截图
+## 项目结构
 
-应用展示了以下信息：
-- 北京时间：事件发生的时间
-- 数据来源：数据的来源信息
-- 气溶胶：大气中的气溶胶光学厚度值及评级
-- 鲜艳度：日出/日落景观的鲜艳程度评级 
+- `app/src/main/java/com/qingdai/photo/` - Java源代码
+  - `MainActivity.java` - 主界面活动
+  - `ApiService.java` - Retrofit API接口
+  - `WeatherData.java` - 数据模型
+- `app/src/main/res/` - 资源文件
+  - `layout/activity_main.xml` - 主界面布局
+  - `values/` - 字符串、颜色和样式
+- `app/` - Gradle构建配置 

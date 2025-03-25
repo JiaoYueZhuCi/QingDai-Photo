@@ -59,6 +59,10 @@ const router = createRouter({
             {
               path: '/manage/timelineList',
               component: () => import('@/views/manage/TimelineList.vue').catch(() => errorPage)
+            },
+            {
+              path: '/manage/groupPhotosList',
+              component: () => import('@/views/manage/GroupPhotosList.vue').catch(() => errorPage)
             }
           ]
         },

@@ -1,0 +1,19 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.qingdai.photo.app-mergeDebugResources-28:/values-port/values-port.xml",
+            "map": [
+                {
+                    "source": "C:\\Users\\LiuZiMing\\.gradle\\caches\\8.10\\transforms\\be2bc4eb9e6974177491e10d4461cf46\\transformed\\appcompat-1.6.1\\res\\values-port\\values-port.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "55",
+                        "endOffsets": "106"
+                    }
+                }
+            ]
+        }
+    ]
+}
