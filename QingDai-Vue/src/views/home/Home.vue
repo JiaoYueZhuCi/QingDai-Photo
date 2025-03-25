@@ -9,6 +9,7 @@
         <el-tab-pane label="组图" name="groupPhotos"></el-tab-pane>
         <el-tab-pane label="时间轴" name="timeline"></el-tab-pane>
         <el-tab-pane label="数据" name="data"></el-tab-pane>
+        <el-tab-pane label="霞" name="sunglow"></el-tab-pane>
     </el-tabs>
 
     <router-view v-slot="{ Component }">

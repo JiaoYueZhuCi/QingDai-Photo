@@ -14,7 +14,6 @@
             </el-table-column>
             <el-table-column prop="introduce" label="介绍">
                 <template #default="scope">
-
                     <span>{{ scope.row.introduce || '无介绍' }}</span>
                 </template>
             </el-table-column>
@@ -60,7 +59,13 @@
                 @current-change="handleCurrentChange" @size-change="handleSizeChange" />
         </div>
 
-        <PreviewViewer v-if="previewVisible" :photo-id="currentPreviewId" @close="previewVisible = false" />
+        <!-- 组图预览组件 -->
+        <group-photo-preview
+            v-if="selectedGroupId !== null"
+            :group-id="selectedGroupId || ''"
+            :initial-photo-id="selectedPhotoId || undefined"
+            @close="closeGroupPhotoPreview"
+        />
     </div>
 </template>
 
@@ -71,8 +76,8 @@ import { Plus } from '@element-plus/icons-vue'
 import { getAllGroupPhotos, updateGroupPhoto, deleteGroupPhoto } from '@/api/groupPhoto'
 import {  getThumbnail100KPhotos } from '@/api/photo'
 import type { GroupPhoto } from '@/types/groupPhoto'
-import PreviewViewer from '@/components/PreviewViewer.vue'
 import GroupPhotoUpdate from '@/views/manage/GroupPhotoUpdate.vue'
+import GroupPhotoPreview from '@/components/GroupPhotoPreview.vue'
 import JSZip from 'jszip'
 
 const groupPhotoUpdateRef = ref()
@@ -86,9 +91,9 @@ const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
 
-// 预览相关
-const previewVisible = ref(false)
-const currentPreviewId = ref('')
+// 组图预览相关
+const selectedGroupId = ref<string | null>(null)
+const selectedPhotoId = ref<string | null>(null)
 
 const showGroupPhotoAdd = () => {
     editMode.value = false
@@ -237,11 +242,16 @@ const handleDelete = async (row: any) => {
         }
     }
 }
-
 // 照片预览
 const openPreview = (id: string) => {
-    currentPreviewId.value = id
-    previewVisible.value = true
+    selectedGroupId.value = id
+    selectedPhotoId.value = null
+}
+
+// 关闭组图预览
+const closeGroupPhotoPreview = () => {
+    selectedGroupId.value = null
+    selectedPhotoId.value = null
 }
 
 // 管理照片
@@ -260,7 +270,6 @@ const handleManagePhotos = (row: any) => {
 
 <style scoped>
 .group-photos-list-container {
-    padding: 20px;
     background: #fff;
 }
 

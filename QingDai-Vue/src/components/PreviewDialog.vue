@@ -52,7 +52,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, defineProps, defineEmits } from 'vue'
 import { ElDialog, ElImage, ElDescriptions, ElDescriptionsItem, ElIcon, ElLoading, ElEmpty, ElTag } from 'element-plus'
-import { Picture as IconPicture, Loading } from '@element-plus/icons-vue'
 import type { WaterfallItem } from '@/types'
 import { getThumbnail1000KPhoto, getPhotoInfo } from '@/api/photo'
 

@@ -69,7 +69,9 @@
                         <el-tag v-if="index === form.cover" size="small" type="success">封面</el-tag>
                     </div>
                     <div class="photo-preview-actions">
-                        <el-button type="danger" size="small" icon="Delete" circle @click="removePhoto(index)"></el-button>
+                        <el-button type="danger" size="small" circle @click="removePhoto(index)">
+                            <el-icon><DeleteFilled /></el-icon>
+                        </el-button>
                     </div>
                 </div>
             </div>
@@ -86,6 +88,7 @@ import { addGroupPhoto, updateGroupPhoto } from '@/api/groupPhoto'
 import type { WaterfallItem } from '@/types'
 import type { GroupPhoto } from '@/types/groupPhoto'
 import JSZip from 'jszip'
+import { DeleteFilled } from '@element-plus/icons-vue'
 
 // 定义props和emit用于支持v-model
 const props = defineProps({

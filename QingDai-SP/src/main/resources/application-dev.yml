@@ -6,7 +6,7 @@ spring:
 
 qingdai:
   url: D:/QingDai Photos/
-  fullSizeUrl: D:/Qing DaiPhotos/Photos/FullSize/
+  fullSizeUrl: D:/QingDai Photos/Photos/FullSize/
   thumbnail1000KUrl: D:/QingDai Photos/Photos/Thumbnail-1000K/
   thumbnail100KUrl: D:/QingDai Photos/Photos/Thumbnail-100K/
   thumbnailSizeUrl: D:/QingDai Photos/Photos/Thumbnail/

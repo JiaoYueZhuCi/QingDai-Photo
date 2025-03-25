@@ -276,7 +276,7 @@ const openPreview = (url: string) => {
     right: 10px;
     top: 410px;
     opacity: v-bind(manageOpacity);
-    z-index: 2;
+    z-index: 9999;
     transition: opacity 0.8s ease;
 }
 

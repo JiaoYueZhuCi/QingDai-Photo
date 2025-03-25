@@ -40,6 +40,10 @@ const router = createRouter({
             {
               path: '/home/groupPhotos',
               component: () => import('@/views/home/GroupPhotos.vue').catch(() => errorPage)
+            },
+            {
+              path: '/home/sunglow',
+              component: () => import('@/views/home/SunglowTimeLine.vue').catch(() => errorPage)
             }
           ]
         },

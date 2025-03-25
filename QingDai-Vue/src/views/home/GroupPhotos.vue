@@ -215,22 +215,57 @@ const getThumbnailPhotos = async (start: number, end: number) => {
     if (newItems.length === 0) return;
 
     try {
+        // 获取需要请求的照片ID
+        const photoIds = newItems.map(item => item.id);
+        
+        // 创建ID到项目的映射，用于后续查找
+        const idToItemsMap = new Map<string, WaterfallItem[]>();
+        newItems.forEach((item: WaterfallItem) => {
+            if (!idToItemsMap.has(item.id)) {
+                idToItemsMap.set(item.id, []);
+            }
+            idToItemsMap.get(item.id)!.push(item);
+        });
+        
+        // 去重后的照片ID
+        const uniquePhotoIds = [...new Set(photoIds)];
+        
+        // 调用API获取缩略图，只传递唯一的ID
         const response = await getThumbnail100KPhotos(
-            newItems.map(item => item.id).join(',')
+            uniquePhotoIds.join(',')
         );
 
         const zip = await JSZip.loadAsync(response.data);
-
-        await Promise.all(newItems.map(async item => {
-            const file = zip.file(`${item.fileName}`);
-            if (file) {
-                const blob = await file.async('blob');
-                item.compressedSrc = URL.createObjectURL(blob);
-            } else {
-                item.compressedSrc = '';
-                console.error('ZIP包中未找到照片:', item.id);
+        
+        // 创建从照片ID到URL的映射
+        const photoIdToUrlMap = new Map();
+        
+        // 处理每个唯一的照片ID
+        for (const photoId of uniquePhotoIds) {
+            const items = idToItemsMap.get(photoId) || [];
+            if (items.length > 0) {
+                const fileName = items[0].fileName;
+                const file = zip.file(`${fileName}`);
+                
+                if (file) {
+                    const blob = await file.async('blob');
+                    const url = URL.createObjectURL(blob);
+                    // 存储ID到URL的映射
+                    photoIdToUrlMap.set(photoId, url);
+                    
+                    // 为所有使用该ID的项设置相同的URL
+                    items.forEach(item => {
+                        item.compressedSrc = url;
+                    });
+                } else {
+                    // 文件未找到的情况
+                    items.forEach(item => {
+                        item.compressedSrc = '';
+                    });
+                    console.error('ZIP包中未找到照片:', photoId);
+                }
             }
-        }));
+        }
     } catch (error) {
         console.error('批量获取压缩图失败:', error);
         newItems.forEach(item => item.compressedSrc = '');

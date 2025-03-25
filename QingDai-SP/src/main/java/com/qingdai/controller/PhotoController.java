@@ -726,4 +726,46 @@ public class PhotoController {
                     .body("更新过程中发生错误: " + e.getMessage());
         }
     }
+
+    @GetMapping("/getPhotosByIds")
+    @PreAuthorize("permitAll()")
+    @Operation(summary = "根据ID列表获取多个照片对象", description = "从数据库获取对应ID列表的多个照片信息")
+    public ResponseEntity<List<Photo>> getPhotosByIds(@RequestParam List<String> ids) {
+        try {
+            log.info("开始批量获取照片对象，ID列表: {}", ids);
+            
+            if (ids == null || ids.isEmpty()) {
+                log.warn("请求的ID列表为空");
+                return ResponseEntity.badRequest().body(Collections.emptyList());
+            }
+            
+            List<Long> photoIds = new ArrayList<>();
+            for (String id : ids) {
+                try {
+                    photoIds.add(Long.parseLong(id));
+                    log.debug("添加有效ID到查询列表: {}", id);
+                } catch (NumberFormatException e) {
+                    log.warn("无效的ID格式: {}", id);
+                }
+            }
+            
+            if (photoIds.isEmpty()) {
+                log.warn("没有有效的照片ID");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Collections.emptyList());
+            }
+            
+            List<Photo> photos = photoService.listByIds(photoIds);
+            
+            if (photos.isEmpty()) {
+                log.warn("未找到任何照片记录，ID列表: {}", ids);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Collections.emptyList());
+            }
+            
+            log.info("成功获取批量照片对象，共{}个照片", photos.size());
+            return ResponseEntity.ok(photos);
+        } catch (Exception e) {
+            log.error("批量获取照片对象时发生错误，ID列表: {}, 错误: {}", ids, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
 }
