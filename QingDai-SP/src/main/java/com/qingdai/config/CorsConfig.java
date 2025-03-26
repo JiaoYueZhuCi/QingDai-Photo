@@ -12,12 +12,14 @@ public class CorsConfig implements WebMvcConfigurer {
             .allowedOriginPatterns(
                 "http://localhost:80",
                 "http://127.0.0.1:80",
-                "http://localhost:[*]" // 按需添加其他端口
+                "http://localhost:[*]",
+                "http://hd6.com",
+                "https://hd6.com"
             )
             .allowedMethods("*")
             .allowCredentials(true)
             .allowedHeaders("*")
-            .exposedHeaders("Content-Type", "Content-Length", "Content-Disposition", "Vary")
+            .exposedHeaders("Content-Type", "Content-Length", "Content-Disposition", "Vary", "Authorization")
             .maxAge(3600);
     }
 }

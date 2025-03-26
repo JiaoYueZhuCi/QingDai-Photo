@@ -35,6 +35,7 @@ public class SecurityConfig {
                 // )
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
                 // 配置会话管理策略
+                .cors(cors -> {})
                 .sessionManagement(session -> {
                     // 设置会话创建策略为无状态，即不使用会话来管理用户状态
                     session.sessionCreationPolicy(SessionCreationPolicy.STATELESS);
