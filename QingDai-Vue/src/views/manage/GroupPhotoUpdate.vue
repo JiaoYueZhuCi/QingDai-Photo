@@ -276,7 +276,7 @@ const fetchPhotos = async () => {
 // 获取照片标签
 const getPhotoLabel = (photoId: string) => {
     const photo = photoCache.value.get(photoId);
-    return photo ? (photo.title || photo.fileName) : `照片${photoId}`;
+    return photo ? (photo.title || photo.fileName) : `加载中`;
 };
 
 // 获取照片缩略图

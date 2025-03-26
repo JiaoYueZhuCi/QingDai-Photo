@@ -175,4 +175,30 @@ public class GroupPhotoController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
+    @Operation(summary = "获取组图照片数量", description = "根据ID获取组图中照片的数量")
+    @GetMapping("/getPhotoCount/{id}")
+    public ResponseEntity<Integer> getPhotoCountById(@PathVariable Long id) {
+        try {
+            log.info("开始查询组图照片数量，ID: {}", id);
+            GroupPhoto groupPhoto = groupPhotoService.getById(id);
+
+            if (groupPhoto == null) {
+                log.warn("未找到ID为{}的组图", id);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
+
+            if (groupPhoto.getPhotos() == null || groupPhoto.getPhotos().isEmpty()) {
+                log.info("组图ID: {} 的照片列表为空", id);
+                return ResponseEntity.ok(0);
+            }
+
+            int count = groupPhoto.getPhotos().split(",").length;
+            log.info("成功获取组图ID: {} 的照片数量: {}", id, count);
+            return ResponseEntity.ok(count);
+        } catch (Exception e) {
+            log.error("获取组图照片数量时发生异常，ID: {}，错误: {}", id, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 }

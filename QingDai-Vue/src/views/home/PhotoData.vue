@@ -35,7 +35,7 @@
           </div>
         </div>
       </el-col>
-      <el-col :span="8">
+      <el-col :span="8" >
         <div class="statistic-card">
           <el-statistic :value="photoCount">
             <template #title>
@@ -109,6 +109,73 @@
       </el-col>
     </el-row>
 
+    <el-row :gutter="10" class="row2" style="margin-top: 10px;">
+      <el-col :span="6">
+        <div class="statistic-card">
+          <el-statistic :value="morningGlowCount">
+            <template #title>
+              <div style="display: inline-flex; align-items: center">
+                已记录朝霞次数
+                <el-tooltip effect="dark" content="朝霞照片的累计次数" placement="top">
+                  <el-icon style="margin-left: 4px" :size="12">
+                    <Warning />
+                  </el-icon>
+                </el-tooltip>
+              </div>
+            </template>
+          </el-statistic>
+        </div>
+      </el-col>
+      <el-col :span="6">
+        <div class="statistic-card">
+          <el-statistic :value="eveningGlowCount">
+            <template #title>
+              <div style="display: inline-flex; align-items: center">
+                已记录晚霞次数
+                <el-tooltip effect="dark" content="晚霞照片的累计次数" placement="top">
+                  <el-icon style="margin-left: 4px" :size="12">
+                    <Warning />
+                  </el-icon>
+                </el-tooltip>
+              </div>
+            </template>
+          </el-statistic>
+        </div>
+      </el-col>
+      <el-col :span="6">
+        <div class="statistic-card">
+          <el-statistic :value="sunriseCount">
+            <template #title>
+              <div style="display: inline-flex; align-items: center">
+                已记录日出次数
+                <el-tooltip effect="dark" content="日出照片的累计次数" placement="top">
+                  <el-icon style="margin-left: 4px" :size="12">
+                    <Warning />
+                  </el-icon>
+                </el-tooltip>
+              </div>
+            </template>
+          </el-statistic>
+        </div>
+      </el-col>
+      <el-col :span="6">
+        <div class="statistic-card">
+          <el-statistic :value="sunsetCount">
+            <template #title>
+              <div style="display: inline-flex; align-items: center">
+                已记录日落次数
+                <el-tooltip effect="dark" content="日落照片的累计次数" placement="top">
+                  <el-icon style="margin-left: 4px" :size="12">
+                    <Warning />
+                  </el-icon>
+                </el-tooltip>
+              </div>
+            </template>
+          </el-statistic>
+        </div>
+      </el-col>
+    </el-row>
+
   </div>
 </template>
 
@@ -128,7 +195,7 @@ import {
   getMonthlyPhotoCountChange,
   getYearlyPhotoCountChange
 } from '@/api/photo'
-
+import { getGroupPhotoCount } from '@/api/groupPhoto'
 const startPhotoCount = ref<number>(0);
 const photoCount = ref<number>(0);
 const startPhotoMonthlyChange = ref<number>(0);
@@ -137,6 +204,47 @@ const photoMonthlyChange = ref<number>(0);
 const photoYearlyChange = ref<number>(0);
 const photoAccumulateMonthlyChange = ref<number>(1);
 const photoAccumulateYearlyChange = ref<number>(1);
+
+const morningGlowCount = ref<number>(0);
+const eveningGlowCount = ref<number>(0);
+const sunriseCount = ref<number>(0);
+const sunsetCount = ref<number>(0);
+
+const fetchMorningGlowCount = async () => {
+  try {
+    const response = await getGroupPhotoCount('1');
+    morningGlowCount.value = Number(response);
+  } catch (error) {
+    console.error('获取朝霞次数失败:', error);
+  }
+};
+
+const fetchEveningGlowCount = async () => {
+  try {
+    const response = await getGroupPhotoCount('2');
+    eveningGlowCount.value = Number(response);
+  } catch (error) {
+    console.error('获取晚霞次数失败:', error);
+  }
+};
+
+const fetchSunriseCount = async () => {
+  try {
+    const response = await getGroupPhotoCount('3');
+    sunriseCount.value = Number(response);
+  } catch (error) {
+    console.error('获取日出次数失败:', error);
+  }
+};
+
+const fetchSunsetCount = async () => {
+  try {
+    const response = await getGroupPhotoCount('4');
+    sunsetCount.value = Number(response);
+  } catch (error) {
+    console.error('获取日落次数失败:', error);
+  }
+};
 
 const fetchStartPhotoCount = async () => {
   try {
@@ -185,6 +293,10 @@ onMounted(() => {
   fetchStartPhotoCount();
   fetchPhotoCount();
   fetchDeviceCounts();
+  fetchMorningGlowCount();
+  fetchEveningGlowCount();
+  fetchSunriseCount();
+  fetchSunsetCount();
 });
 
 
@@ -278,6 +390,9 @@ onMounted(() => {
   .phopoDataContainer {
     /* height: 200px; */
   }
+  .el-row {
+    margin-top: 10px !important
+  }
 }
 </style>
 
@@ -302,7 +417,5 @@ onMounted(() => {
 }
 
 /* 添加移动端响应式样式 */
-@media screen and (max-width: 768px) {
- 
-}
+@media screen and (max-width: 768px) {}
 </style>

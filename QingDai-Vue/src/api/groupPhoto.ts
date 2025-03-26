@@ -26,3 +26,7 @@ export const updateGroupPhoto = async (data: GroupPhoto) => {
 export const deleteGroupPhoto = async (id: string) => {
   return await request.delete(`${BASE_URL}/deleteGroupPhoto/${id}`);
 };
+
+export const getGroupPhotoCount = async (id: string) => {
+  return await request.get<number>(`${BASE_URL}/getPhotoCount/${id}`);
+};

@@ -1,6 +1,6 @@
 <template>
   <div class="map-group">
-    <el-affix :offset="affixOffset">
+      <el-affix :offset="10">
       <div class="card mapCard">
         <div ref="mapContainer" class="map-container"></div>
       </div>
