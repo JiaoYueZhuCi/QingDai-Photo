@@ -9,12 +9,15 @@
         <el-tab-pane label="组图" name="groupPhotos"></el-tab-pane>
         <el-tab-pane label="时间轴" name="timeline"></el-tab-pane>
         <el-tab-pane label="数据" name="data"></el-tab-pane>
-        <el-tab-pane label="霞" name="sunglow"></el-tab-pane>
+        <el-tab-pane label="朝霞" name="sunriseGlow"></el-tab-pane>
+        <el-tab-pane label="晚霞" name="sunsetGlow"></el-tab-pane>
+        <el-tab-pane label="日出" name="sunrise"></el-tab-pane>
+        <el-tab-pane label="日落" name="sunset"></el-tab-pane>
+
     </el-tabs>
 
     <router-view v-slot="{ Component }">
-        <component :is="Component" 
-            :photoType="photoType" />
+        <component :is="Component" :photoType="photoType" :meteorologyType="meteorologyType" />
     </router-view>
 
 </template>
@@ -38,7 +41,8 @@ watch(
     },
     { immediate: true }
 )
-
+const photoType = ref(0)
+const meteorologyType = ref('')
 // 处理标签切换
 const handleTabClick = (tab: TabsPaneContext) => {
     router.push(`/home/${tab.paneName}`)
@@ -47,19 +51,26 @@ const handleTabClick = (tab: TabsPaneContext) => {
     } else if (tab.paneName === 'photos') {
         photoType.value = 0
     }
-}
-
-// 照片类型：0-所有照片，1-星标照片
-const photoType = ref(0)
-
-// 初始化时根据当前标签页设置 photoType
-watch(activeTab, (newTab) => {
-    if (newTab === 'featured') {
-        photoType.value = 1
-    } else if (newTab === 'photos') {
-        photoType.value = 0
+    if (tab.paneName === 'sunriseGlow') {
+        meteorologyType.value = '1'
+    } else if (tab.paneName === 'sunsetGlow') {
+        meteorologyType.value = '2'
+    } else if (tab.paneName === 'sunrise') {
+        meteorologyType.value = '3'
+    } else if (tab.paneName === 'sunset') {
+        meteorologyType.value = '4'
     }
-}, { immediate: true })
+
+
+    // 初始化时根据当前标签页设置 photoType
+    watch(activeTab, (newTab) => {
+        if (newTab === 'featured') {
+            photoType.value = 1
+        } else if (newTab === 'photos') {
+            photoType.value = 0
+        }
+    }, { immediate: true })
+}
 </script>
 
 <style>
@@ -83,4 +94,4 @@ watch(activeTab, (newTab) => {
     border-right-color: white;
     color: var(--el-color-primary);
 } */
-</style> 
+</style>

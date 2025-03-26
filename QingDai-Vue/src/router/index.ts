@@ -42,8 +42,19 @@ const router = createRouter({
               component: () => import('@/views/home/GroupPhotos.vue').catch(() => errorPage)
             },
             {
-              path: '/home/sunglow',
-              component: () => import('@/views/home/SunglowTimeLine.vue').catch(() => errorPage)
+              path: '/home/sunriseGlow',
+              component: () => import('@/views/home/MeteorologyTimeLine.vue').catch(() => errorPage)
+            },
+            {
+              path: '/home/sunsetGlow',
+              component: () => import('@/views/home/MeteorologyTimeLine.vue').catch(() => errorPage)
+            },
+            {
+              path: '/home/sunrise',
+              component: () => import('@/views/home/MeteorologyTimeLine.vue').catch(() => errorPage)
+            },{
+              path: '/home/sunset',
+              component: () => import('@/views/home/MeteorologyTimeLine.vue').catch(() => errorPage)
             }
           ]
         },

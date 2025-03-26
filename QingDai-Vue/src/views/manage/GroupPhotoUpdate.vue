@@ -1,5 +1,5 @@
 <template>
-    <el-dialog v-model="dialogVisible" :title="editMode ? '编辑组图' : '创建组图'" top="5vh" width="85%"
+    <el-dialog v-model="dialogVisible" :title="editMode ? '编辑组图' : '创建组图'" top="5vh" width="87%"
         :before-close="handleClose">
         <el-form :model="form" :rules="rules" ref="formRef" label-width="120px">
             <el-form-item label="标题" prop="title">
@@ -72,68 +72,7 @@
     </el-dialog>
 </template>
 
-<style scoped>
-.ghost-item {
-    opacity: 0.5;
-    background: #f5f7fa;
-}
 
-.drag-handle {
-    cursor: move;
-    opacity: 0.6;
-    transition: opacity 0.3s;
-}
-
-.drag-handle:hover {
-    opacity: 1;
-}
-
-.photo-preview-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 12px;
-    padding: 10px 0;
-}
-
-.photo-preview-item {
-    position: relative;
-    transition: transform 0.3s;
-}
-
-.photo-preview-item:hover {
-    transform: translateY(-3px);
-}
-.ghost-item {
-    opacity: 0.5;
-    background: #f5f7fa;
-}
-
-.drag-handle {
-    cursor: move;
-    opacity: 0.6;
-    transition: opacity 0.3s;
-}
-
-.drag-handle:hover {
-    opacity: 1;
-}
-
-.photo-preview-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 12px;
-    padding: 10px 0;
-}
-
-.photo-preview-item {
-    position: relative;
-    transition: transform 0.3s;
-}
-
-.photo-preview-item:hover {
-    transform: translateY(-3px);
-}
-</style>
 
 <script setup lang="ts">
 import { ref, reactive, watch, defineProps, defineEmits, defineExpose } from 'vue'

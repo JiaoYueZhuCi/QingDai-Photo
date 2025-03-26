@@ -80,8 +80,17 @@
                                     v-if="!currentPhotoData.aperture && !currentPhotoData.shutter && !currentPhotoData.iso">未知</span>
                             </el-descriptions-item>
                             <el-descriptions-item label="级别">
-                                <el-tag :type="currentPhotoData.start === 1 ? 'success' : 'info'">
-                                    {{ currentPhotoData.start === 1 ? '精选' : '普通' }}
+                                <el-tag v-if="currentPhotoData.start === 1" :type="'warning'">
+                                   精选 
+                                </el-tag>
+                                <el-tag v-if="currentPhotoData.start === 0" :type="'success'">
+                                   普通 
+                                </el-tag>
+                                <el-tag v-if="currentPhotoData.start === -1" :type="'info'">
+                                   隐藏
+                                </el-tag>
+                                <el-tag v-if="currentPhotoData.start === 2" :type="'primary'">
+                                   气象
                                 </el-tag>
                             </el-descriptions-item>
                         </el-descriptions>
@@ -132,7 +141,7 @@ const activeTab = ref('group')
 // 组图数据
 const groupPhotoData = ref<GroupPhoto>({
     id: '',
-    photos: [],
+    photos: '',
     cover: 0,
     title: '',
     introduce: ''
@@ -176,7 +185,7 @@ const handleOpen = async () => {
         // 适配接口返回数据
         groupPhotoData.value = {
             id: groupData.id || '',
-            photos: [],
+            photos: '',
             cover: groupData.cover || 0,
             title: groupData.title || '',
             introduce: groupData.introduce || ''

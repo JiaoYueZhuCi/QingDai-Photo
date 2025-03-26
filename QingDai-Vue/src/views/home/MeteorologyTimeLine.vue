@@ -8,7 +8,7 @@
             <!-- 统计信息展示 -->
             <div class="stats-container">
                 <div class="photo-stats">
-                    现已记录朝晚霞：<span class="photo-count">{{ photos.length }}</span> 次
+                    现已记录{{ typeName }}：<span class="photo-count">{{ photos.length }}</span> 次
                 </div>
             </div>
 
@@ -38,18 +38,13 @@
         </div>
 
         <!-- 组图预览对话框 -->
-        <group-photo-preview
-            v-if="selectedGroupId !== null"
-            :group-id="selectedGroupId || '1'"
-            :initial-photo-id="selectedPhotoId || undefined"
-            :photos="sortedPhotos" 
-            @close="closeGroupPhotoPreview"
-        />
+        <group-photo-preview v-if="selectedPhotoId" :group-id="selectedGroupId"
+            :initial-photo-id="selectedPhotoId || undefined" :photos="sortedPhotos" @close="closeGroupPhotoPreview" />
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed ,watch} from 'vue'
 import { getGroupPhoto } from '@/api/groupPhoto'
 import { getThumbnail100KPhotos, getPhotosByIds } from '@/api/photo'
 import type { GroupPhoto } from '@/types'
@@ -62,20 +57,20 @@ const groupInfo = ref<GroupPhoto | null>(null)
 const photos = ref<WaterfallItem[]>([])
 
 // 预览相关状态
-const selectedGroupId = ref<string | null>(null)
+const props = defineProps<{
+    meteorologyType: string
+}>()
+const selectedGroupId = ref<string>(props.meteorologyType.toString())
 const selectedPhotoId = ref<string | undefined>(undefined)
 
 
 // 打开照片预览
 const handleImageClick = (photo: WaterfallItem) => {
     selectedPhotoId.value = photo.id
-    // 假设每张照片都属于同一个组图（ID为1）
-    selectedGroupId.value = '1'
 }
 
 // 关闭组图预览
 const closeGroupPhotoPreview = () => {
-    selectedGroupId.value = null
     selectedPhotoId.value = undefined
 }
 
@@ -90,6 +85,19 @@ const isAscending = ref(true) // 默认正序（时间从早到晚）
 const toggleSortOrder = () => {
     isAscending.value = !isAscending.value
 }
+
+// 气象类型名称
+const typeName = computed(() => {
+    const typeMap: Record<number, string> = {
+        1: '朝霞',
+        2: '晚霞',
+        3: '日出',
+        4: '日落'
+    }
+    // 将 props.meteorologyType 转换为 number 类型以匹配 typeMap 的索引类型
+    const meteorologyTypeNumber = parseInt(props.meteorologyType, 10);
+    return typeMap[meteorologyTypeNumber] || '气象异常'
+})
 
 // 排序后的照片列表
 const sortedPhotos = computed(() => {
@@ -133,7 +141,7 @@ const loadGroupPhotos = async () => {
         loading.value = true
 
         // 获取组图信息
-        const response = await getGroupPhoto('1') // 根据需求，这里固定获取id=1的组图
+        const response = await getGroupPhoto(selectedGroupId.value) // 
         groupInfo.value = response as unknown as GroupPhoto
         if (groupInfo.value && groupInfo.value.photos) {
             // 获取照片ID列表
@@ -190,6 +198,11 @@ const loadGroupPhotos = async () => {
         loading.value = false
     }
 }
+
+watch(() => props.meteorologyType, (newVal: string) => {
+    selectedGroupId.value = newVal.toString()
+    loadGroupPhotos()
+})
 
 onMounted(() => {
     loadGroupPhotos()
@@ -271,7 +284,7 @@ onUnmounted(() => {
 
 .timeline-item {
     position: relative;
-    width: 300px;
+    width: 240px;
     /* 固定宽度 */
     margin: 15px;
 }
@@ -282,7 +295,7 @@ onUnmounted(() => {
     height: 20px;
     background-color: #f9ca24;
     border-radius: 50%;
-    left: 55px;
+    left:25px;
     top: -10px;
     transform: translateX(-50%);
     z-index: 3;
@@ -320,14 +333,14 @@ onUnmounted(() => {
 .photo-container {
     width: 100%;
     overflow: hidden;
-    border-radius: 4px;
+    /* border-radius: 4px; */
     cursor: pointer;
     /* 添加鼠标指针样式，提示可点击 */
 }
 
 .photo-container img {
     width: 100%;
-    height: 270px;
+    height: 230px;
     object-fit: contain;
     transition: transform 0.5s ease;
     aspect-ratio: 4/3;

@@ -41,8 +41,19 @@
                         {{ previewData.iso || '未知' }}
                     </el-descriptions-item>
                     <el-descriptions-item label="级别">
-                        {{ previewData.start === 1 ? '精选' : previewData.start === 0 ? '普通' : '私密' }}
-                    </el-descriptions-item>
+                                <el-tag v-if="previewData.start === 1" :type="'warning'">
+                                   精选 
+                                </el-tag>
+                                <el-tag v-if="previewData.start === 0" :type="'success'">
+                                   普通 
+                                </el-tag>
+                                <el-tag v-if="previewData.start === -1" :type="'info'">
+                                   隐藏
+                                </el-tag>
+                                <el-tag v-if="previewData.start === 2" :type="'primary'">
+                                   气象
+                                </el-tag>
+                            </el-descriptions-item>
                 </el-descriptions>
             </div>
         </div>

@@ -7,6 +7,35 @@
                         @click="openPreview(scope.row.id)" />
                 </template>
             </el-table-column>
+
+            <el-table-column prop="start" label="精选标记" width="110">
+                <template #default="scope">
+                    <el-select v-model="scope.row.start" :disabled="!scope.row.isEditing" placeholder="选择状态"
+                        style="width: 80px">
+                        <el-option label="精选" :value="1">
+                            <el-tag :type="'warning'">
+                                精选
+                            </el-tag>
+                        </el-option>
+                        <el-option label="普通" :value="0">
+                            <el-tag :type="'success'">
+                                普通
+                            </el-tag>
+                        </el-option>
+                        <el-option label="私密" :value="-1">
+                            <el-tag :type="'info'">
+                                隐藏
+                            </el-tag>
+                        </el-option>
+                        <el-option label="气象" :value="2">
+                            <el-tag :type="'primary'">
+                                气象
+                            </el-tag>
+                        </el-option>
+                    </el-select>
+                </template>
+            </el-table-column>
+            
             <el-table-column prop="fileName" label="文件名" width="95">
                 <template #default="scope">
                     <!-- <el-input v-if="scope.row.isEditing" v-model="scope.row.fileName" /> -->
@@ -77,16 +106,7 @@
                 </template>
             </el-table-column>
 
-            <el-table-column prop="start" label="精选标记" width="110">
-                <template #default="scope">
-                    <el-select v-model="scope.row.start" :disabled="!scope.row.isEditing" placeholder="选择状态"
-                        style="width: 80px">
-                        <el-option label="精选" :value="1" />
-                        <el-option label="普通" :value="0" />
-                        <el-option label="私密" :value="-1" />
-                    </el-select>
-                </template>
-            </el-table-column>
+            
             <el-table-column label="操作" width="75" fixed>
                 <template #default="scope">
                     <div v-if="!scope.row.isEditing">
