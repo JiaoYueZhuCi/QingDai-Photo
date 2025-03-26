@@ -37,9 +37,14 @@
             </div>
         </div>
 
-        <!-- 照片预览对话框 -->
-        <PreviewDialog v-if="previewVisible" :photo-id="currentPreviewId" :initial-index="currentIndex"
-            @close="previewVisible = false" />
+        <!-- 组图预览对话框 -->
+        <group-photo-preview
+            v-if="selectedGroupId !== null"
+            :group-id="selectedGroupId || '1'"
+            :initial-photo-id="selectedPhotoId || undefined"
+            :photos="sortedPhotos" 
+            @close="closeGroupPhotoPreview"
+        />
     </div>
 </template>
 
@@ -50,22 +55,28 @@ import { getThumbnail100KPhotos, getPhotosByIds } from '@/api/photo'
 import type { GroupPhoto } from '@/types'
 import type { WaterfallItem } from '@/types'
 import JSZip from 'jszip'
-import PreviewDialog from '@/components/PreviewDialog.vue'
+import GroupPhotoPreview from '@/components/GroupPhotoPreview.vue'
 
 const loading = ref(true)
 const groupInfo = ref<GroupPhoto | null>(null)
 const photos = ref<WaterfallItem[]>([])
 
 // 预览相关状态
-const previewVisible = ref(false)
-const currentPreviewId = ref('')
-const currentIndex = ref(0);
+const selectedGroupId = ref<string | null>(null)
+const selectedPhotoId = ref<string | undefined>(undefined)
+
 
 // 打开照片预览
 const handleImageClick = (photo: WaterfallItem) => {
-    console.log(photo)
-    currentPreviewId.value = photo.id
-    previewVisible.value = true
+    selectedPhotoId.value = photo.id
+    // 假设每张照片都属于同一个组图（ID为1）
+    selectedGroupId.value = '1'
+}
+
+// 关闭组图预览
+const closeGroupPhotoPreview = () => {
+    selectedGroupId.value = null
+    selectedPhotoId.value = undefined
 }
 
 // 滚动透明度控制

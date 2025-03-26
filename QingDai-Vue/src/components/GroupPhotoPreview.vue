@@ -1,9 +1,6 @@
 <template>
-    <el-dialog v-model="visible" width="80%" top="5vh" align-center class="preview-dialog" 
-        :close-on-click-modal="true"
-        :before-close="handleClose"
-        @open="handleOpen"
-        @close="handleClose">
+    <el-dialog v-model="visible" width="80%" top="5vh" align-center class="preview-dialog" :close-on-click-modal="true"
+        :before-close="handleClose" @open="handleOpen" @close="handleClose">
         <div class="dialog-content">
             <!-- 左侧图片区域 -->
             <div class="image-container">
@@ -17,17 +14,18 @@
                         </div>
                     </template>
                 </el-image>
-                
+
                 <!-- 图片导航按钮 -->
                 <div class="navigation-buttons">
                     <el-button circle class="nav-button prev" @click="prevPhoto" :disabled="currentPhotoIndex <= 0">
                         <el-icon><arrow-left /></el-icon>
                     </el-button>
-                    <el-button circle class="nav-button next" @click="nextPhoto" :disabled="currentPhotoIndex >= photoIds.length - 1">
+                    <el-button circle class="nav-button next" @click="nextPhoto"
+                        :disabled="currentPhotoIndex >= photoIds.length - 1">
                         <el-icon><arrow-right /></el-icon>
                     </el-button>
                 </div>
-                
+
                 <!-- 图片计数 -->
                 <div class="photo-counter">
                     {{ currentPhotoIndex + 1 }} / {{ photoIds.length }}
@@ -39,7 +37,7 @@
                 <!-- 选项卡切换 -->
                 <el-tabs v-model="activeTab" class="info-tabs">
                     <el-tab-pane label="组图信息" name="group">
-                        <el-descriptions  :column="1" border class="metadata-descriptions">
+                        <el-descriptions :column="1" border class="metadata-descriptions">
                             <el-descriptions-item label="标题">
                                 {{ groupPhotoData.title || '无标题' }}
                             </el-descriptions-item>
@@ -52,7 +50,7 @@
                         </el-descriptions>
                     </el-tab-pane>
                     <el-tab-pane label="照片信息" name="photo">
-                        <el-descriptions  :column="1" border class="metadata-descriptions">
+                        <el-descriptions :column="1" border class="metadata-descriptions">
                             <el-descriptions-item label="标题">
                                 {{ currentPhotoData.title || '无标题' }}
                             </el-descriptions-item>
@@ -76,9 +74,10 @@
                             </el-descriptions-item>
                             <el-descriptions-item label="参数">
                                 <span v-if="currentPhotoData.aperture">光圈：{{ currentPhotoData.aperture }}</span>
-                                <span v-if="currentPhotoData.shutter">  快门：{{ currentPhotoData.shutter }}</span>
-                                <span v-if="currentPhotoData.iso">  ISO：{{ currentPhotoData.iso }}</span>
-                                <span v-if="!currentPhotoData.aperture && !currentPhotoData.shutter && !currentPhotoData.iso">未知</span>
+                                <span v-if="currentPhotoData.shutter"> 快门：{{ currentPhotoData.shutter }}</span>
+                                <span v-if="currentPhotoData.iso"> ISO：{{ currentPhotoData.iso }}</span>
+                                <span
+                                    v-if="!currentPhotoData.aperture && !currentPhotoData.shutter && !currentPhotoData.iso">未知</span>
                             </el-descriptions-item>
                             <el-descriptions-item label="级别">
                                 <el-tag :type="currentPhotoData.start === 1 ? 'success' : 'info'">
@@ -88,12 +87,12 @@
                         </el-descriptions>
                     </el-tab-pane>
                 </el-tabs>
-                
+
                 <!-- 缩略图浏览 -->
                 <div class="thumbnail-browser">
                     <h4>所有照片</h4>
                     <div class="thumbnail-list">
-                        <div v-for="(id, index) in photoIds" :key="id" 
+                        <div v-for="(id, index) in photoIds" :key="id"
                             :class="['thumbnail-item', { active: index === currentPhotoIndex }]"
                             @click="selectPhoto(index)">
                             <div class="thumbnail-index">{{ index + 1 }}</div>
@@ -102,11 +101,7 @@
                 </div>
             </div>
         </div>
-        <preview-viewer
-            v-if="showFullScreen"
-            :photo-id="fullScreenPhotoId"
-            @close="closeFullScreen"
-        />
+        <preview-viewer v-if="showFullScreen" :photo-id="fullScreenPhotoId" @close="closeFullScreen" />
     </el-dialog>
 </template>
 
@@ -123,6 +118,7 @@ import PreviewViewer from '@/components/PreviewViewer.vue'
 const props = defineProps<{
     groupId: string;
     initialPhotoId?: string;
+    photos?: WaterfallItem[];
 }>()
 
 const emit = defineEmits(['close'])
@@ -172,12 +168,11 @@ const handleOpen = async () => {
     try {
         // 获取组图数据
         const response = await getGroupPhoto(props.groupId)
-        
-        // 直接使用原始数据，可能API已经处理了响应
+
         const groupData = typeof response === 'object' && response !== null
             ? (response.data || response)  // 尝试访问data属性，如果没有则使用整个response
             : {};
-        
+
         // 适配接口返回数据
         groupPhotoData.value = {
             id: groupData.id || '',
@@ -186,23 +181,25 @@ const handleOpen = async () => {
             title: groupData.title || '',
             introduce: groupData.introduce || ''
         }
-        
+
         // 处理照片ID列表 - 直接处理字符串类型的photos
-        if (groupData.photos && typeof groupData.photos === 'string') {
+        if (props.photos) {
+            photoIds.value = props.photos.map((photo: WaterfallItem) => photo.id)
+        }else if (groupData.photos && typeof groupData.photos === 'string') {
             photoIds.value = groupData.photos.split(',').filter((id: string) => id.trim() !== '')
         } else if (groupData.photos && Array.isArray(groupData.photos)) {
             photoIds.value = groupData.photos.filter((id: string) => id && typeof id === 'string' && id.trim() !== '')
         } else {
             photoIds.value = []
         }
-        
+
         // 如果有指定初始照片，则设置为当前照片
         if (props.initialPhotoId && photoIds.value.includes(props.initialPhotoId)) {
             currentPhotoIndex.value = photoIds.value.indexOf(props.initialPhotoId)
         } else {
             currentPhotoIndex.value = 0
         }
-        
+
         // 加载当前照片
         if (photoIds.value.length > 0) {
             await loadCurrentPhoto()
@@ -219,37 +216,37 @@ const loadCurrentPhoto = async () => {
     if (photoIds.value.length === 0) {
         return;
     }
-    
+
     isLoading.value = true
     try {
         const currentId = photoIds.value[currentPhotoIndex.value]
-        
+
         // 释放之前的URL
         if (thumbnailUrl.value) {
             URL.revokeObjectURL(thumbnailUrl.value)
             thumbnailUrl.value = ''
         }
-        
+
         // 获取缩略图
         try {
             const thumbRes = await getThumbnail1000KPhoto(currentId)
-            
+
             if (thumbRes && thumbRes.data) {
                 thumbnailUrl.value = URL.createObjectURL(thumbRes.data)
             }
         } catch (err) {
             console.error('获取缩略图失败:', err);
         }
-        
+
         // 获取照片信息
         try {
             const response = await getPhotoInfo(currentId)
-            
+
             // 提取照片数据
             const photoData = typeof response === 'object' && response !== null
                 ? (response.data || response)
                 : {};
-            
+
             // 适配接口返回数据
             currentPhotoData.value = {
                 id: photoData.id || '',
@@ -267,7 +264,7 @@ const loadCurrentPhoto = async () => {
                 introduce: photoData.introduce || '',
                 start: photoData.start || 0
             }
-            
+
             // 自动切换到照片信息标签
             activeTab.value = 'photo'
         } catch (err) {
@@ -328,7 +325,7 @@ onMounted(() => {
     // 延迟设置visible为true，确保DOM完全挂载
     setTimeout(() => {
         visible.value = true;
-        
+
         // 延迟后立即调用打开处理函数，以防对话框未触发open事件
         setTimeout(() => {
             if (photoIds.value.length === 0) {
@@ -336,7 +333,7 @@ onMounted(() => {
             }
         }, 100);
     }, 0);
-    
+
     window.addEventListener('keydown', handleKeyDown);
 })
 
@@ -382,7 +379,7 @@ const closeFullScreen = () => {
 
 .image-container {
     position: relative;
-    flex: 1 ;
+    flex: 1;
     min-width: 0;
     background: #000;
     border-radius: 8px;
@@ -557,16 +554,16 @@ const closeFullScreen = () => {
         max-width: none;
         width: 100%;
     }
-    
+
     .navigation-buttons {
         padding: 0 10px;
     }
-    
+
     .nav-button {
         width: 36px;
         height: 36px;
     }
-    
+
     .thumbnail-list {
         max-height: 80px;
     }

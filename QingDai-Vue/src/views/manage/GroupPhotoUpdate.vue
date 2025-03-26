@@ -1,5 +1,6 @@
 <template>
-    <el-dialog v-model="dialogVisible" :title="editMode ? '编辑组图' : '创建组图'" top="5vh" width="85%" :before-close="handleClose">
+    <el-dialog v-model="dialogVisible" :title="editMode ? '编辑组图' : '创建组图'" top="5vh" width="85%"
+        :before-close="handleClose">
         <el-form :model="form" :rules="rules" ref="formRef" label-width="120px">
             <el-form-item label="标题" prop="title">
                 <el-input v-model="form.title" placeholder="请输入组图标题"></el-input>
@@ -8,40 +9,26 @@
                 <el-input v-model="form.introduce" type="textarea" :rows="3" placeholder="请输入组图介绍"></el-input>
             </el-form-item>
             <el-form-item label="选择照片" prop="photos">
-                <el-select
-                    v-model="form.photos"
-                    multiple
-                    filterable
-                    remote
-                    reserve-keyword
-                    placeholder="请选择照片"
-                    :remote-method="searchPhotos"
-                    :loading="loading"
-                    style="width: 100%"
-                >
-                    <el-option
-                        v-for="item in photoOptions"
-                        :key="item.id"
-                        :label="item.title || item.fileName"
-                        :value="item.id"
-                    >
+                <el-select v-model="form.photos" multiple filterable remote reserve-keyword placeholder="请选择照片"
+                    :remote-method="searchPhotos" :loading="loading" style="width: 100%">
+                    <el-option v-for="item in photoOptions" :key="item.id" :label="item.title || item.fileName"
+                        :value="item.id">
                         <div style="display: flex; align-items: center;">
-                            <el-image :src="item.thumbnailSrc" style="width: 50px; height: 50px; margin-right: 10px;" fit="cover" />
+                            <el-image :src="item.thumbnailSrc" style="width: 50px; height: 50px; margin-right: 10px;"
+                                fit="cover" />
                             <span>{{ item.title || item.fileName }}</span>
                         </div>
                     </el-option>
                 </el-select>
             </el-form-item>
             <el-form-item label="封面照片" prop="cover">
-                <el-select v-model="form.cover" placeholder="请选择封面照片" :disabled="!form.photos.length" style="width: 100%">
-                    <el-option
-                        v-for="(photoId, index) in form.photos"
-                        :key="photoId"
-                        :label="getPhotoLabel(photoId)"
-                        :value="index"
-                    >
+                <el-select v-model="form.cover" placeholder="请选择封面照片" :disabled="!form.photos.length"
+                    style="width: 100%">
+                    <el-option v-for="(photoId, index) in form.photos" :key="photoId" :label="getPhotoLabel(photoId)"
+                        :value="index">
                         <div style="display: flex; align-items: center;">
-                            <el-image :src="getPhotoThumbnail(photoId)" style="width: 50px; height: 50px; margin-right: 10px;" fit="cover" />
+                            <el-image :src="getPhotoThumbnail(photoId)"
+                                style="width: 50px; height: 50px; margin-right: 10px;" fit="cover" />
                             <span>{{ getPhotoLabel(photoId) }}</span>
                         </div>
                     </el-option>
@@ -57,27 +44,96 @@
         <!-- 预览区域 -->
         <div class="preview-container" v-if="form.photos.length > 0">
             <h3>已选照片预览</h3>
-            <div class="photo-preview-list">
-                <div 
-                    v-for="(photoId, index) in form.photos" 
-                    :key="photoId"
-                    :class="['photo-preview-item', { 'is-cover': index === form.cover }]"
-                >
-                    <el-image :src="getPhotoThumbnail(photoId)" fit="cover" />
-                    <div class="photo-preview-info">
-                        <span class="photo-preview-title">{{ getPhotoLabel(photoId) }}</span>
-                        <el-tag v-if="index === form.cover" size="small" type="success">封面</el-tag>
+            <draggable v-model="form.photos" item-key="id" class="photo-preview-list" animation="300"
+                ghost-class="ghost-item" handle=".drag-handle" @end="onDragEnd">
+                <template #item="{ element: photoId, index }">
+                    <div class="photo-preview-item">
+                        <el-image :src="getPhotoThumbnail(photoId)" fit="cover" />
+                        <div class="photo-preview-info">
+                            <span class="photo-preview-title">{{ getPhotoLabel(photoId) }}</span>
+                            <el-tag v-if="index === form.cover" size="small" type="success">封面</el-tag>
+                        </div>
+                        <div class="photo-preview-actions">
+                            <el-button type="danger" size="small" circle @click="removePhoto(index)">
+                                <el-icon>
+                                    <DeleteFilled />
+                                </el-icon>
+                            </el-button>
+                        </div>
+                        <div class="drag-handle">
+                            <el-icon>
+                                <Rank />
+                            </el-icon>
+                        </div>
                     </div>
-                    <div class="photo-preview-actions">
-                        <el-button type="danger" size="small" circle @click="removePhoto(index)">
-                            <el-icon><DeleteFilled /></el-icon>
-                        </el-button>
-                    </div>
-                </div>
-            </div>
+                </template>
+            </draggable>
         </div>
     </el-dialog>
 </template>
+
+<style scoped>
+.ghost-item {
+    opacity: 0.5;
+    background: #f5f7fa;
+}
+
+.drag-handle {
+    cursor: move;
+    opacity: 0.6;
+    transition: opacity 0.3s;
+}
+
+.drag-handle:hover {
+    opacity: 1;
+}
+
+.photo-preview-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 12px;
+    padding: 10px 0;
+}
+
+.photo-preview-item {
+    position: relative;
+    transition: transform 0.3s;
+}
+
+.photo-preview-item:hover {
+    transform: translateY(-3px);
+}
+.ghost-item {
+    opacity: 0.5;
+    background: #f5f7fa;
+}
+
+.drag-handle {
+    cursor: move;
+    opacity: 0.6;
+    transition: opacity 0.3s;
+}
+
+.drag-handle:hover {
+    opacity: 1;
+}
+
+.photo-preview-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 12px;
+    padding: 10px 0;
+}
+
+.photo-preview-item {
+    position: relative;
+    transition: transform 0.3s;
+}
+
+.photo-preview-item:hover {
+    transform: translateY(-3px);
+}
+</style>
 
 <script setup lang="ts">
 import { ref, reactive, watch, defineProps, defineEmits, defineExpose } from 'vue'
@@ -88,7 +144,8 @@ import { addGroupPhoto, updateGroupPhoto } from '@/api/groupPhoto'
 import type { WaterfallItem } from '@/types'
 import type { GroupPhoto } from '@/types/groupPhoto'
 import JSZip from 'jszip'
-import { DeleteFilled } from '@element-plus/icons-vue'
+import { DeleteFilled, Rank } from '@element-plus/icons-vue'
+import draggable from 'vuedraggable'
 
 // 定义props和emit用于支持v-model
 const props = defineProps({
@@ -111,6 +168,14 @@ const emit = defineEmits(['update:modelValue', 'group-photo-added', 'group-photo
 // 本地的对话框可见性控制
 const dialogVisible = ref(false);
 
+// 处理拖拽结束事件
+const onDragEnd = () => {
+    // 当拖拽导致封面索引变化时自动调整
+    if (form.cover >= form.photos.length) {
+        form.cover = form.photos.length - 1
+    }
+}
+
 // 同步内外部的状态
 watch(() => props.modelValue, (val) => {
     dialogVisible.value = val;
@@ -119,11 +184,11 @@ watch(() => props.modelValue, (val) => {
         form.id = props.editData.id || '';
         form.title = props.editData.title || '';
         form.introduce = props.editData.introduce || '';
-        form.photos = Array.isArray(props.editData.photos) 
-            ? [...props.editData.photos] 
+        form.photos = Array.isArray(props.editData.photos)
+            ? [...props.editData.photos]
             : (props.editData.photos || '').split(',').filter(id => id.trim() !== '');
         form.cover = props.editData.cover || 0;
-        
+
         // 保存原始数据用于重置
         originalData.value = {
             id: form.id,
@@ -179,7 +244,7 @@ const searchPhotos = async (query: string) => {
         await fetchPhotos();
         return;
     }
-    
+
     loading.value = true;
     try {
         const response = await getPhotosByPage({ page: 1, pageSize: 50 });
@@ -188,7 +253,7 @@ const searchPhotos = async (query: string) => {
                 return (item.title && item.title.toLowerCase().includes(query.toLowerCase())) ||
                     (item.fileName && item.fileName.toLowerCase().includes(query.toLowerCase()));
             });
-            
+
             // 获取所有照片的缩略图
             const photoIds = filteredRecords.map((item: WaterfallItem) => item.id);
             if (photoIds.length > 0) {
@@ -207,12 +272,12 @@ const searchPhotos = async (query: string) => {
                     }));
                 }
             }
-            
+
             photoOptions.value = filteredRecords.map((item: WaterfallItem) => ({
                 ...item,
                 thumbnailSrc: thumbnailUrlCache.value.get(item.id) || ''
             }));
-            
+
             // 更新缓存
             photoOptions.value.forEach(photo => {
                 photoCache.value.set(photo.id, photo);
@@ -250,12 +315,12 @@ const fetchPhotos = async () => {
                     }));
                 }
             }
-            
+
             photoOptions.value = response.records.map((item: WaterfallItem) => ({
                 ...item,
                 thumbnailSrc: thumbnailUrlCache.value.get(item.id) || ''
             }));
-            
+
             // 更新缓存
             photoOptions.value.forEach(photo => {
                 photoCache.value.set(photo.id, photo);
@@ -290,10 +355,10 @@ const removePhoto = (index: number) => {
         // 如果删除的照片在封面前面，需要调整封面索引
         form.cover--;
     }
-    
+
     // 删除照片
     form.photos.splice(index, 1);
-    
+
     // 如果没有照片了，封面索引设为0
     if (form.photos.length === 0) {
         form.cover = 0;
@@ -303,7 +368,7 @@ const removePhoto = (index: number) => {
 // 提交表单
 const submitForm = async () => {
     if (!formRef.value) return;
-    
+
     await formRef.value.validate(async (valid, fields) => {
         if (valid) {
             try {
@@ -326,7 +391,7 @@ const submitForm = async () => {
                     ElMessage.success('创建组图成功');
                     emit('group-photo-added');
                 }
-                
+
                 resetForm();
                 dialogVisible.value = false;
             } catch (error) {
@@ -351,7 +416,7 @@ const originalData = ref<{
 // 重置表单
 const resetForm = () => {
     if (!formRef.value) return;
-    
+
     if (props.editMode && originalData.value) {
         // 编辑模式下，恢复到原始数据
         form.id = originalData.value.id;
@@ -453,4 +518,4 @@ h3 {
 .photo-preview-item:hover .photo-preview-actions {
     display: block;
 }
-</style> 
+</style>
