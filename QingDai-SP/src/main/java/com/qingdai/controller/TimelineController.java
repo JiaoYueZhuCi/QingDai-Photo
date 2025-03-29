@@ -1,7 +1,7 @@
 package com.qingdai.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.qingdai.dto.TimelineDTO;
+import com.qingdai.entity.dto.TimelineDTO;
 import com.qingdai.entity.Timeline;
 import com.qingdai.service.TimelineService;
 import com.qingdai.utils.SnowflakeIdGenerator;

@@ -18,9 +18,9 @@ import java.time.LocalDateTime;
 @TableName("sys_role")
 @Schema(name = "Role实体")
 public class Role {
-    @TableId(value = "id", type = IdType.AUTO)
+    @TableId(value = "id")
     @Schema(description = "")
-    private Long id;
+    private String id;
     @TableField(value = "name")
     @Schema(description = "")
     private String name;

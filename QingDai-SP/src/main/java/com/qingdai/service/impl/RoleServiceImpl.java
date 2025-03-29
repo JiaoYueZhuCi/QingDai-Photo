@@ -33,9 +33,9 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
     private PermissionMapper permissionMapper; // 注入 permissionMapper
 
     @Override
-    public List<String> getPermissionsByRole(Long roleId) {
+    public List<String> getPermissionsByRole(String roleId) {
         // 获取角色对应的权限ID列表
-        List<Long> permissionIds = rolePermissionMapper.selectList(new LambdaQueryWrapper<RolePermission>()
+        List<String> permissionIds = rolePermissionMapper.selectList(new LambdaQueryWrapper<RolePermission>()
                         .eq(RolePermission::getRoleId, roleId))
                 .stream()
                 .map(RolePermission::getPermissionId)

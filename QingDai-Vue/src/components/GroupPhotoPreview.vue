@@ -39,10 +39,10 @@
                     <el-tab-pane label="组图信息" name="group">
                         <el-descriptions :column="1" border class="metadata-descriptions">
                             <el-descriptions-item label="标题">
-                                {{ groupPhotoData.title || '无标题' }}
+                                {{ groupPhotoData.groupPhoto.title || '无标题' }}
                             </el-descriptions-item>
                             <el-descriptions-item label="介绍">
-                                <div class="description-content">{{ groupPhotoData.introduce || '暂无介绍' }}</div>
+                                <div class="description-content">{{ groupPhotoData.groupPhoto.introduce || '暂无介绍' }}</div>
                             </el-descriptions-item>
                             <el-descriptions-item label="包含照片数">
                                 {{ photoIds.length }}
@@ -81,16 +81,16 @@
                             </el-descriptions-item>
                             <el-descriptions-item label="级别">
                                 <el-tag v-if="currentPhotoData.start === 1" :type="'warning'">
-                                   精选 
+                                    精选
                                 </el-tag>
                                 <el-tag v-if="currentPhotoData.start === 0" :type="'success'">
-                                   普通 
+                                    普通
                                 </el-tag>
                                 <el-tag v-if="currentPhotoData.start === -1" :type="'info'">
-                                   隐藏
+                                    隐藏
                                 </el-tag>
                                 <el-tag v-if="currentPhotoData.start === 2" :type="'primary'">
-                                   气象
+                                    气象
                                 </el-tag>
                             </el-descriptions-item>
                         </el-descriptions>
@@ -119,8 +119,8 @@ import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { ElDialog, ElImage, ElDescriptions, ElDescriptionsItem, ElButton, ElIcon, ElTabs, ElTabPane, ElTag } from 'element-plus'
 import { ArrowLeft, ArrowRight, PictureFilled } from '@element-plus/icons-vue'
 import type { WaterfallItem } from '@/types'
-import type { GroupPhoto } from '@/types/groupPhoto'
-import { getThumbnail1000KPhoto, getPhotoInfo, getFullSizePhoto } from '@/api/photo'
+import type { GroupPhotoDTO } from '@/types/groupPhoto'
+import { getThumbnail1000KPhoto, getPhotoInfo } from '@/api/photo'
 import { getGroupPhoto } from '@/api/groupPhoto'
 import PreviewViewer from '@/components/PreviewViewer.vue'
 
@@ -139,12 +139,15 @@ const isLoading = ref(false)
 const activeTab = ref('group')
 
 // 组图数据
-const groupPhotoData = ref<GroupPhoto>({
-    id: '',
-    photos: '',
-    cover: 0,
-    title: '',
-    introduce: ''
+const groupPhotoData = ref<GroupPhotoDTO>({
+    groupPhoto: {
+        id: '',
+        title: '',
+        introduce: '',
+        coverPhotoId: '',
+
+    },
+    photoIds: [],
 })
 
 // 当前照片和照片列表
@@ -177,31 +180,13 @@ const handleOpen = async () => {
     try {
         // 获取组图数据
         const response = await getGroupPhoto(props.groupId)
-
-        const groupData = typeof response === 'object' && response !== null
-            ? (response.data || response)  // 尝试访问data属性，如果没有则使用整个response
-            : {};
+        console.log("response",response)
 
         // 适配接口返回数据
-        groupPhotoData.value = {
-            id: groupData.id || '',
-            photos: '',
-            cover: groupData.cover || 0,
-            title: groupData.title || '',
-            introduce: groupData.introduce || ''
-        }
-
-        // 处理照片ID列表 - 直接处理字符串类型的photos
-        if (props.photos) {
-            photoIds.value = props.photos.map((photo: WaterfallItem) => photo.id)
-        }else if (groupData.photos && typeof groupData.photos === 'string') {
-            photoIds.value = groupData.photos.split(',').filter((id: string) => id.trim() !== '')
-        } else if (groupData.photos && Array.isArray(groupData.photos)) {
-            photoIds.value = groupData.photos.filter((id: string) => id && typeof id === 'string' && id.trim() !== '')
-        } else {
-            photoIds.value = []
-        }
-
+        groupPhotoData.value = response;
+        // 提取照片ID列表
+        photoIds.value = groupPhotoData.value.photoIds;
+        console.log("photoIds.value",photoIds.value)
         // 如果有指定初始照片，则设置为当前照片
         if (props.initialPhotoId && photoIds.value.includes(props.initialPhotoId)) {
             currentPhotoIndex.value = photoIds.value.indexOf(props.initialPhotoId)

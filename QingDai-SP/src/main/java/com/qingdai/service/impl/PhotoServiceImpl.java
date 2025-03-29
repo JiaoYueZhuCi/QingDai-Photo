@@ -150,7 +150,7 @@ public class PhotoServiceImpl extends ServiceImpl<PhotoMapper, Photo> implements
 
     // 根据照片ID获取文件名
     @Override
-    public String getFileNameById(Long photoId) {
+    public String getFileNameById(String photoId) {
         Photo photo = getById(photoId);
         if (photo == null) {
             return null;

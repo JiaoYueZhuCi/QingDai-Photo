@@ -16,7 +16,7 @@ public class Timeline {
     @TableId(value = "id", type = IdType.ASSIGN_ID)
     @Schema(description = "id")
     @JsonSerialize(using = ToStringSerializer.class)
-    private Long id;
+    private String id;
     @TableField(value = "time")
     @Schema(description = "时间")
     private String time;

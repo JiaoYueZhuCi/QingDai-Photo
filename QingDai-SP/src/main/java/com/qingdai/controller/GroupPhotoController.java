@@ -1,9 +1,10 @@
 package com.qingdai.controller;
 
-import com.qingdai.dto.GroupPhotoDTO;
+import com.qingdai.entity.dto.GroupPhotoDTO;
 import com.qingdai.entity.GroupPhoto;
+import com.qingdai.entity.GroupPhotoPhoto;
+import com.qingdai.service.GroupPhotoPhotoService;
 import com.qingdai.service.GroupPhotoService;
-import com.qingdai.service.PhotoService;
 import com.qingdai.utils.SnowflakeIdGenerator;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -14,7 +15,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
+
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * <p>
@@ -31,21 +33,25 @@ import java.util.stream.Collectors;
 public class GroupPhotoController {
     @Autowired
     private GroupPhotoService groupPhotoService;
+    @Autowired
+    private GroupPhotoPhotoService groupPhotoPhotoService;
+
     private final SnowflakeIdGenerator snowflakeIdGenerator = new SnowflakeIdGenerator(1, 1);
+
     @Operation(summary = "获取组图详情", description = "根据ID查询组图详细信息")
     @GetMapping("/getGroupPhoto/{id}")
-    public ResponseEntity<GroupPhoto> getGroupPhotoById(@PathVariable Long id) {
+    public ResponseEntity<GroupPhotoDTO> getGroupPhotoById(@PathVariable String id) {
         try {
             log.info("开始查询组图详情，ID: {}", id);
-            GroupPhoto groupPhoto = groupPhotoService.getById(id);
+            GroupPhotoDTO groupPhotoDTO = groupPhotoService.getGroupPhotoDTOById(id);
 
-            if (groupPhoto == null) {
+            if (groupPhotoDTO == null) {
                 log.warn("未找到ID为{}的组图", id);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
             }
 
             log.info("成功获取组图详情，ID: {}", id);
-            return ResponseEntity.ok(groupPhoto);
+            return ResponseEntity.ok(groupPhotoDTO);
         } catch (Exception e) {
             log.error("查询组图详情时发生异常，ID: {}，错误: {}", id, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -54,18 +60,18 @@ public class GroupPhotoController {
 
     @Operation(summary = "获取所有组图", description = "获取所有组图列表")
     @GetMapping("/getAllGroupPhotos")
-    public ResponseEntity<List<GroupPhoto>> getAllGroupPhotos() {
+    public ResponseEntity<List<GroupPhotoDTO>> getAllGroupPhotos() {
         try {
             log.info("开始查询所有组图");
-            List<GroupPhoto> groupPhotos = groupPhotoService.list();
+            List<GroupPhotoDTO> groupPhotoDTOs = groupPhotoService.getAllGroupPhotoDTOs();
 
-            if (groupPhotos == null || groupPhotos.isEmpty()) {
+            if (groupPhotoDTOs == null || groupPhotoDTOs.isEmpty()) {
                 log.warn("当前没有组图记录");
                 return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
             }
 
-            log.info("成功获取{}条组图记录", groupPhotos.size());
-            return ResponseEntity.ok(groupPhotos);
+            log.info("成功获取{}条组图记录", groupPhotoDTOs.size());
+            return ResponseEntity.ok(groupPhotoDTOs);
         } catch (Exception e) {
             log.error("获取组图列表时发生异常: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -74,25 +80,33 @@ public class GroupPhotoController {
 
     @Operation(summary = "创建组图", description = "创建新的组图记录")
     @PostMapping("/addGroupPhoto")
-    public ResponseEntity<String> createGroupPhoto(@RequestBody GroupPhoto groupPhoto) {
+    public ResponseEntity<String> createGroupPhoto(@RequestBody GroupPhotoDTO groupPhotoDTO) {
         try {
-            log.info("开始创建组图，请求参数: {}", groupPhoto);
+            log.info("开始创建组图，请求参数: {}", groupPhotoDTO);
 
-            if (groupPhoto.getPhotos() == null || groupPhoto.getPhotos().isEmpty()) {
-                log.warn("创建组图失败：照片列表不能为空");
-                return ResponseEntity.badRequest().body("照片列表不能为空");
+            if (groupPhotoDTO.photoIds == null || groupPhotoDTO.photoIds.isEmpty()) {
+                log.warn("创建组图失败：照片ID列表不能为空");
+                return ResponseEntity.badRequest().body("照片ID列表不能为空");
             }
-            groupPhoto.setId(snowflakeIdGenerator.nextId());
+            String groupPhotoId = snowflakeIdGenerator.nextId();
+            groupPhotoDTO.getGroupPhoto().setId(groupPhotoId);
 
-            boolean saved = groupPhotoService.save(groupPhoto);
+            boolean saved = groupPhotoService.save(groupPhotoDTO.getGroupPhoto());
             if (!saved) {
-                log.error("组图保存失败，ID: {}", groupPhoto.getId());
+                log.error("组图保存失败");
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .body("组图创建失败");
             }
-            log.info("成功创建组图，ID: {}", groupPhoto.getId());
+
+            // 添加照片关联
+            for (String photoId : groupPhotoDTO.getPhotoIds()) {
+                GroupPhotoPhoto groupPhotoPhoto = new GroupPhotoPhoto(groupPhotoId, photoId);
+                groupPhotoPhotoService.save(groupPhotoPhoto);
+            }
+
+            log.info("成功创建组图，ID: {}", groupPhotoId);
             return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(String.format("组图创建成功，ID: %s", groupPhoto.getId()));
+                    .body(String.format("组图创建成功，ID: %s", groupPhotoId));
         } catch (Exception e) {
             log.error("创建组图时发生异常: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -102,20 +116,28 @@ public class GroupPhotoController {
 
     @Operation(summary = "更新组图", description = "更新组图信息")
     @PutMapping("/updateGroupPhoto")
-    public ResponseEntity<String> updateGroupPhoto(@RequestBody GroupPhoto groupPhoto) {
+    public ResponseEntity<String> updateGroupPhoto(@RequestBody GroupPhotoDTO groupPhotoDTO) {
         try {
-            Long id = groupPhoto.getId();
+            GroupPhoto groupPhoto = groupPhotoDTO.getGroupPhoto();
+            String id = groupPhoto.getId();
             if (id == null) {
                 return ResponseEntity.badRequest().body("ID不能为空");
             }
             log.info("开始更新组图，ID: {}", id);
 
+            // 更新组图基本信息
             boolean updated = groupPhotoService.updateById(groupPhoto);
             if (!updated) {
                 log.warn("组图不存在，ID: {}", id);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body("未找到指定组图");
             }
+
+            // 处理照片关联
+            if (groupPhotoDTO.getPhotoIds() != null && !groupPhotoDTO.getPhotoIds().isEmpty()) {
+                groupPhotoPhotoService.updateGroupPhotoPhoto(groupPhotoDTO);
+            }
+
             log.info("成功更新组图，ID: {}", id);
             return ResponseEntity.ok("组图更新成功");
         } catch (Exception e) {
@@ -127,18 +149,25 @@ public class GroupPhotoController {
 
     @Operation(summary = "删除组图", description = "删除指定ID的组图记录")
     @DeleteMapping("/deleteGroupPhoto/{id}")
-    public ResponseEntity<String> deleteGroupPhoto(@PathVariable Long id) {
+    @Transactional
+    public ResponseEntity<String> deleteGroupPhoto(@PathVariable String id) {
         try {
-            log.info("开始删除组图，ID: {}", id);
+            log.info("开始删除组图及其关联照片，ID: {}", id);
 
-            if (groupPhotoService.getById(id) == null) {
+            GroupPhoto groupPhoto = groupPhotoService.getById(id);
+            if (groupPhoto == null) {
                 log.warn("尝试删除不存在的组图，ID: {}", id);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("组图不存在");
             }
 
+            // 先删除关联的GroupPhotoPhoto记录
+            log.info("开始删除组图ID: {} 的关联照片记录", id);
+            groupPhotoPhotoService.deleteByGroupPhotoId(id);
+
+            // 再删除组图记录
             boolean removed = groupPhotoService.removeById(id);
             if (removed) {
-                log.info("成功删除组图，ID: {}", id);
+                log.info("成功删除组图及其关联照片，ID: {}", id);
                 return ResponseEntity.noContent().build();
             } else {
                 log.error("删除组图失败，ID: {}", id);
@@ -152,33 +181,33 @@ public class GroupPhotoController {
         }
     }
 
-    @Operation(summary = "获取组图预览列表", description = "获取所有组图的预览信息（含封面图）")
-    @GetMapping("/previews")
-    public ResponseEntity<List<GroupPhotoDTO>> getAllGroupPhotoPreviews() {
-        try {
-            log.info("开始获取组图预览列表");
-            List<GroupPhoto> groupPhotos = groupPhotoService.list();
+    // @Operation(summary = "获取组图预览列表", description = "获取所有组图的预览信息（含封面图）")
+    // @GetMapping("/previews")
+    // public ResponseEntity<List<GroupPhotoDTO>> getAllGroupPhotoPreviews() {
+    //     try {
+    //         log.info("开始获取组图预览列表");
+    //         List<GroupPhoto> groupPhotos = groupPhotoService.list();
 
-            if (groupPhotos == null || groupPhotos.isEmpty()) {
-                log.warn("当前没有组图记录");
-                return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-            }
+    //         if (groupPhotos == null || groupPhotos.isEmpty()) {
+    //             log.warn("当前没有组图记录");
+    //             return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    //         }
 
-            List<GroupPhotoDTO> dtos = groupPhotos.stream()
-            .map(groupPhotoService::convertToDTO)
-            .collect(Collectors.toList());
+    //         List<GroupPhotoDTO> dtos = groupPhotos.stream()
+    //                 .map(groupPhotoService::convertToDTO)
+    //                 .collect(Collectors.toList());
 
-            log.info("成功获取{}条组图预览记录", dtos.size());
-            return ResponseEntity.ok(dtos);
-        } catch (Exception e) {
-            log.error("获取组图预览列表时发生异常: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
+    //         log.info("成功获取{}条组图预览记录", dtos.size());
+    //         return ResponseEntity.ok(dtos);
+    //     } catch (Exception e) {
+    //         log.error("获取组图预览列表时发生异常: {}", e.getMessage(), e);
+    //         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+    //     }
+    // }
 
     @Operation(summary = "获取组图照片数量", description = "根据ID获取组图中照片的数量")
     @GetMapping("/getPhotoCount/{id}")
-    public ResponseEntity<Integer> getPhotoCountById(@PathVariable Long id) {
+    public ResponseEntity<Integer> getPhotoCountById(@PathVariable String id) {
         try {
             log.info("开始查询组图照片数量，ID: {}", id);
             GroupPhoto groupPhoto = groupPhotoService.getById(id);
@@ -188,12 +217,7 @@ public class GroupPhotoController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
             }
 
-            if (groupPhoto.getPhotos() == null || groupPhoto.getPhotos().isEmpty()) {
-                log.info("组图ID: {} 的照片列表为空", id);
-                return ResponseEntity.ok(0);
-            }
-
-            int count = groupPhoto.getPhotos().split(",").length;
+            int count = groupPhotoPhotoService.countByGroupPhotoId(id);
             log.info("成功获取组图ID: {} 的照片数量: {}", id, count);
             return ResponseEntity.ok(count);
         } catch (Exception e) {

@@ -40,7 +40,7 @@ public class SnowflakeIdGenerator {
     /**
      * 生成下一个唯一ID（线程安全）
      */
-    public synchronized long nextId() {
+    public synchronized String nextId() {
         long currentTimestamp = getCurrentTimestamp();
 
         // 时钟回拨检查
@@ -62,10 +62,10 @@ public class SnowflakeIdGenerator {
         lastTimestamp = currentTimestamp;
 
         // 组合各部分生成最终ID
-        return ((currentTimestamp - START_TIMESTAMP) << TIMESTAMP_SHIFT)
+        return String.valueOf(((currentTimestamp - START_TIMESTAMP) << TIMESTAMP_SHIFT)
                 | (datacenterId << DATACENTER_SHIFT)
                 | (machineId << MACHINE_SHIFT)
-                | sequence;
+                | sequence);
     }
 
     /**

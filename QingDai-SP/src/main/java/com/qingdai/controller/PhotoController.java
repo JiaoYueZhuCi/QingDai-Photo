@@ -3,7 +3,7 @@ package com.qingdai.controller;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.qingdai.dto.PhotoStartStatusDTO;
+import com.qingdai.entity.dto.PhotoStartStatusDTO;
 import com.qingdai.entity.Photo;
 import com.qingdai.service.PhotoService;
 import com.qingdai.utils.FileUtils;
@@ -195,7 +195,7 @@ public class PhotoController {
     public ResponseEntity<Resource> getThumbnail100KPhotoById(@RequestParam String id) {
         try {
             log.info("获取100K压缩照片，ID: {}", id);
-            String fileName = photoService.getFileNameById(Long.valueOf(id));
+            String fileName = photoService.getFileNameById(id);
             if (fileName == null) {
                 log.warn("未找到ID为{}的照片记录", id);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
@@ -214,7 +214,7 @@ public class PhotoController {
     public ResponseEntity<Resource> getThumbnail1000KPhotoById(@RequestParam String id) {
         try {
             log.info("获取1000K压缩照片，ID: {}", id);
-            String fileName = photoService.getFileNameById(Long.valueOf(id));
+            String fileName = photoService.getFileNameById(id);
             if (fileName == null) {
                 log.warn("未找到ID为{}的照片记录", id);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
@@ -237,8 +237,7 @@ public class PhotoController {
 
             for (String id : ids) {
                 try {
-                    Long photoId = Long.parseLong(id);
-                    String fileName = photoService.getFileNameById(photoId);
+                    String fileName = photoService.getFileNameById(id);
                     if (fileName != null) {
                         File file = new File(thumbnail100KUrl, fileName);
                         if (file.exists()) {
@@ -274,7 +273,7 @@ public class PhotoController {
     public ResponseEntity<Resource> getFullSizePhotoById(@RequestParam String id) {
         try {
             log.info("获取原图照片，ID: {}", id);
-            String fileName = photoService.getFileNameById(Long.valueOf(id));
+            String fileName = photoService.getFileNameById(id);
             if (fileName == null) {
                 log.warn("未找到ID为{}的照片记录", id);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
@@ -733,12 +732,12 @@ public class PhotoController {
     public ResponseEntity<List<Photo>> getPhotosByIds(@RequestParam List<String> ids) {
         try {
             log.info("开始批量获取照片对象，ID列表: {}", ids);
-            
+
             if (ids == null || ids.isEmpty()) {
                 log.warn("请求的ID列表为空");
                 return ResponseEntity.badRequest().body(Collections.emptyList());
             }
-            
+
             List<Long> photoIds = new ArrayList<>();
             for (String id : ids) {
                 try {
@@ -748,19 +747,19 @@ public class PhotoController {
                     log.warn("无效的ID格式: {}", id);
                 }
             }
-            
+
             if (photoIds.isEmpty()) {
                 log.warn("没有有效的照片ID");
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Collections.emptyList());
             }
-            
+
             List<Photo> photos = photoService.listByIds(photoIds);
-            
+
             if (photos.isEmpty()) {
                 log.warn("未找到任何照片记录，ID列表: {}", ids);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Collections.emptyList());
             }
-            
+
             log.info("成功获取批量照片对象，共{}个照片", photos.size());
             return ResponseEntity.ok(photos);
         } catch (Exception e) {

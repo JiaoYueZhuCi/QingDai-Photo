@@ -44,9 +44,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
      * @param userId 用户ID
      * @return 角色名称列表
      */
-    public List<String> getRolesByUserId(Long userId) {
+    public List<String> getRolesByUserId(String userId) {
         // 查询用户角色关联表，获取该用户对应的所有角色ID
-        List<Long> roleIds = userRoleMapper.selectList(new LambdaQueryWrapper<UserRole>()
+        List<String> roleIds = userRoleMapper.selectList(new LambdaQueryWrapper<UserRole>()
                 .eq(UserRole::getUserId, userId)) // 筛选出指定用户ID的记录
                 .stream()
                 .map(UserRole::getRoleId) // 提取每条记录中的角色ID
@@ -60,9 +60,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     @Override
-    public List<String> getPermissionsByUserId(Long userId) {
+    public List<String> getPermissionsByUserId(String userId) {
         // 获取用户角色ID列表
-        List<Long> roleIds = userRoleMapper.selectList(new LambdaQueryWrapper<UserRole>()
+        List<String> roleIds = userRoleMapper.selectList(new LambdaQueryWrapper<UserRole>()
                 .eq(UserRole::getUserId, userId))
                 .stream()
                 .map(UserRole::getRoleId)

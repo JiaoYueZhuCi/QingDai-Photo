@@ -39,8 +39,8 @@ import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import type { WaterfallItem } from '@/types';
 import { ElImage, ElIcon, ElMessage, ElLoading, ElPopover, ElEmpty } from 'element-plus';
 import { Picture as IconPicture, FullScreen, Star, StarFilled } from '@element-plus/icons-vue'
-import { getVisiblePhotosByPage, getStartPhotosByPage, getThumbnail100KPhotos, updatePhotoStartStatus as updatePhotoStart  } from '@/api/photo';
-import { getAllGroupPhotoPreviews } from '@/api/groupPhoto';
+import { getVisiblePhotosByPage, getPhotosByIds, getThumbnail100KPhotos, updatePhotoStartStatus as updatePhotoStart  } from '@/api/photo';
+import { getAllGroupPhotos } from '@/api/groupPhoto';
 import { debounce } from 'lodash';
 import JSZip from 'jszip';
 import type { GroupPhotoDTO } from '@/types/groupPhoto';
@@ -102,31 +102,49 @@ const getPhotos = async () => {
     if (!hasMore.value) return;
 
     try {
-        // 使用类型断言
-        const response = await getAllGroupPhotoPreviews() as unknown as GroupPhotoDTO[];
+        const response = await getAllGroupPhotos();
+        // 获取所有封面图ID
+        const coverPhotoIds = response.map((item: GroupPhotoDTO) => item.groupPhoto.coverPhotoId).filter(Boolean);
 
-        // 预处理数据，确保所有字段类型匹配
-        const processedData = response.map((item: GroupPhotoDTO) => ({
-            id: item.photo.id,
-            fileName: item.photo.fileName,
-            author: item.photo.author || '未知作者',
-            width: item.photo.width || 0,
-            height: item.photo.height || 0,
-            aperture: item.photo.aperture || '',
-            iso: item.photo.iso || '',
-            shutter: item.photo.shutter || '',
-            camera: item.photo.camera || '',
-            lens: item.photo.lens || '',
-            time: item.photo.time || '',
-            title: item.groupPhoto.title || '',
-            introduce: item.groupPhoto.introduce || '',
-            start: item.photo.start || 0,
-            aspectRatio: item.photo.width / item.photo.height,
-            calcWidth: 0,
-            calcHeight: 0,
-            compressedSrc: '',
-            groupId: item.groupPhoto.id // 添加组图ID
-        }));
+        
+        // 批量获取封面图信息
+        let coverPhotos:WaterfallItem[] = [];
+        if (coverPhotoIds.length > 0) {
+            const coverResponse = await getPhotosByIds(coverPhotoIds);
+            coverPhotos = coverResponse;
+        }
+        
+        // 预处理数据
+        const processedData = response.map((item: GroupPhotoDTO) => {
+            const groupPhoto = item.groupPhoto;
+            const coverPhoto = coverPhotos.find(p => p.id === groupPhoto.coverPhotoId);
+            if (!coverPhoto) {
+                console.error('未找到封面图');
+                return null;
+            }
+            
+            return {
+                id: coverPhoto.id || '',
+                fileName: coverPhoto.fileName || '',
+                author: coverPhoto.author || '未知作者',
+                width: coverPhoto.width || 0,
+                height: coverPhoto.height || 0,
+                aperture: coverPhoto.aperture || '',
+                iso: coverPhoto.iso || '',
+                shutter: coverPhoto.shutter || '',
+                camera: coverPhoto.camera || '',
+                lens: coverPhoto.lens || '',
+                time: coverPhoto.time || '',
+                title: groupPhoto.title || '',
+                introduce: groupPhoto.introduce || '',
+                start: coverPhoto.start || 0,
+                aspectRatio: coverPhoto.width / coverPhoto.height ,
+                calcWidth: 0,
+                calcHeight: 0,
+                compressedSrc: coverPhoto.compressedSrc || '',
+                groupId: groupPhoto.id
+            };
+        });
 
         // 记录添加前的长度
         const previousLength = images.value.length;

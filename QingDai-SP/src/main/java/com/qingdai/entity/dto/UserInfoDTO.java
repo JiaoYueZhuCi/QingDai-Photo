@@ -1,4 +1,4 @@
-package com.qingdai.dto;
+package com.qingdai.entity.dto;
 
 import com.qingdai.entity.User;
 import lombok.Data;

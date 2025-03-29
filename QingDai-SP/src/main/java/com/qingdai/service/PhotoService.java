@@ -25,7 +25,7 @@ public interface PhotoService extends IService<Photo> {
     List<Photo> getPhotosByMultipartFiles(MultipartFile[] files);
     void thumbnailPhotosFromFolderToFolder(File srcDir, File thumbnailDir, int maxSizeKB, boolean overwrite);
     void thumbnailPhotoFromMultipartFileToFolder(MultipartFile photo, File pendingDir, File thumbnailDir, int maxSizeKB, boolean overwrite) throws IOException;
-    String getFileNameById(Long photoId);
+    String getFileNameById(String photoId);
     boolean multipartFileIsSupportedPhoto(MultipartFile file);
     boolean fileIsSupportedPhoto(File file);
     void deletePhotoFiles(String fullSizeUrl, String thumbnail100KUrl, String thumbnail1000KUrl, String fileName) throws IOException;

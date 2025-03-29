@@ -179,8 +179,8 @@ export const getYearlyPhotoCountChange = async (): Promise<number> => {
 };
 
 // 根据ID列表获取多个照片对象
-export const getPhotosByIds = async (ids: string): Promise<WaterfallItem[]> => {
+export const getPhotosByIds = async (ids: string[]): Promise<WaterfallItem[]> => {
   return await request.get(`${BASE_URL}/getPhotosByIds`, {
-    params: { ids }
+    params: { ids: ids.join(',') }
   });
-}; 
+};

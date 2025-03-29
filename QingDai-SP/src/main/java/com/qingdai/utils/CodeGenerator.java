@@ -17,7 +17,7 @@ public class CodeGenerator {
                 .globalConfig(builder -> {
                     builder.author("LiuZiMing")
                             .enableSwagger() // 启用Swagger3注解
-                            .outputDir("D:/Code/qingdai-photo/QingDai-SP/src/main/java");
+                            .outputDir("D:/Code/A/qingdai-photo/QingDai-SP/src/main/java");
                 })
                 .dataSourceConfig(builder -> builder.typeConvertHandler((globalConfig, typeRegistry, metaInfo) -> {
                     int typeCode = metaInfo.getJdbcType().TYPE_CODE;
@@ -31,7 +31,7 @@ public class CodeGenerator {
                                 "D:/Code/qingdai-photo/QingDai-SP/src/main/resources/mapper"))
                 )
                 .strategyConfig(builder -> {
-                    builder.addInclude("group_photo")
+                    builder.addInclude("group_photo-photo")
                             .entityBuilder()
                             .enableLombok()
 //                            .enableFileOverride()  //!!!

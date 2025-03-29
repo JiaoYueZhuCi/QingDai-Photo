@@ -1,26 +1,22 @@
 import request from './request';
-import type { GroupPhoto, GroupPhotoDTO } from '@/types/groupPhoto';
+import type { GroupPhotoDTO } from '@/types/groupPhoto';
 
 const BASE_URL = '/api/QingDai/groupPhoto';
 
-export const getAllGroupPhotos = async () => {
-  return await request.get<GroupPhoto[]>(`${BASE_URL}/getAllGroupPhotos`);
+export const getAllGroupPhotos = async (): Promise<any> => {
+  return await request.get<GroupPhotoDTO[]>(`${BASE_URL}/getAllGroupPhotos`);
 };
 
-export const getAllGroupPhotoPreviews = async () => {
-  return await request.get<GroupPhotoDTO[]>(`${BASE_URL}/previews`);
+export const getGroupPhoto = async (id: string): Promise<any> => {
+  return await request.get<GroupPhotoDTO>(`${BASE_URL}/getGroupPhoto/${id}`);
 }
 
-export const getGroupPhoto = async (id: string) => {
-  return await request.get(`${BASE_URL}/getGroupPhoto/${id}`);
-}
-
-export const addGroupPhoto = async (data: GroupPhoto) => {
-  return await request.post<GroupPhoto>(`${BASE_URL}/addGroupPhoto`, data);
+export const addGroupPhoto = async (data: GroupPhotoDTO) => {
+  return await request.post<GroupPhotoDTO>(`${BASE_URL}/addGroupPhoto`, data);
 };
 
-export const updateGroupPhoto = async (data: GroupPhoto) => {
-  return await request.put<GroupPhoto>(`${BASE_URL}/updateGroupPhoto`, data);
+export const updateGroupPhoto = async (data: GroupPhotoDTO) => {
+  return await request.put<GroupPhotoDTO>(`${BASE_URL}/updateGroupPhoto`, data);
 };
 
 export const deleteGroupPhoto = async (id: string) => {

@@ -1,8 +1,8 @@
 package com.qingdai.controller;
 
-import com.qingdai.dto.LoginRequest;
-import com.qingdai.dto.UserCreateDTO;
-import com.qingdai.dto.UserInfoDTO;
+import com.qingdai.entity.dto.LoginRequest;
+import com.qingdai.entity.dto.UserCreateDTO;
+import com.qingdai.entity.dto.UserInfoDTO;
 import com.qingdai.entity.User;
 import com.qingdai.service.UserService;
 import com.qingdai.utils.DateUtils;
@@ -188,7 +188,7 @@ public class UserController {
                 User user = userService.getByUsername(username);
 
                 if (user != null) {
-                    Long userId = user.getId();
+                    String userId = user.getId();
                     List<String> roles = userService.getRolesByUserId(userId);
                     List<String> permissions = userService.getPermissionsByUserId(userId);
 
@@ -228,7 +228,7 @@ public class UserController {
                 Jws<Claims> claims = jwtTokenUtil.parseToken(token);
                 String username = claims.getBody().getSubject();
                 User user = userService.getByUsername(username);
-                Long userId = user.getId();
+                String userId = user.getId();
                 List<String> roles = userService.getRolesByUserId(userId);
                 List<String> permissions = userService.getPermissionsByUserId(userId);
 

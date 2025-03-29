@@ -18,8 +18,8 @@ import java.io.Serializable;
 public class RolePermission {
     @TableField(value = "role_id")
     @Schema(description = "")
-    private Long roleId;
+    private String roleId;
     @TableField(value = "permission_id")
     @Schema(description = "")
-    private Long permissionId;
+    private String permissionId;
 }

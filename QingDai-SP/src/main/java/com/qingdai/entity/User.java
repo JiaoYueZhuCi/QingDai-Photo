@@ -20,9 +20,9 @@ import java.time.LocalDateTime;
 @TableName("sys_user")
 @Schema(name = "User实体")
 public class User {
-    @TableId(value = "id", type = IdType.AUTO)
+    @TableId(value = "id")
     @Schema(description = "")
-    private Long id;
+    private String id;
     @TableField(value = "username")
     @Schema(description = "")
     private String username;

@@ -16,7 +16,7 @@ public class Photo {
     @TableId(value = "id", type = IdType.ASSIGN_ID)
     @Schema(description = "id")
     @JsonSerialize(using = ToStringSerializer.class) // 确保序列化为字符串
-    private Long id;
+    private String id;
     @TableField(value = "title")
     @Schema(description = "标题")
     private String title;

@@ -1,8 +1,9 @@
 package com.qingdai.service;
 
-import com.qingdai.dto.GroupPhotoDTO;
+import com.qingdai.entity.dto.GroupPhotoDTO;
 import com.qingdai.entity.GroupPhoto;
 import com.baomidou.mybatisplus.extension.service.IService;
+import java.util.List;
 
 /**
  * <p>
@@ -13,5 +14,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
  * @since 2025-03-19
  */
 public interface GroupPhotoService extends IService<GroupPhoto> {
-    GroupPhotoDTO convertToDTO(GroupPhoto groupPhoto);
+    GroupPhotoDTO getGroupPhotoDTOById(String id);
+    
+    List<GroupPhotoDTO> getAllGroupPhotoDTOs();
 }

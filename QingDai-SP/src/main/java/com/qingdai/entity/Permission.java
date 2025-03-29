@@ -18,9 +18,9 @@ import java.time.LocalDateTime;
 @TableName("sys_permission")
 @Schema(name = "Permission实体")
 public class Permission {
-    @TableId(value = "id", type = IdType.AUTO)
+    @TableId(value = "id")
     @Schema(description = "")
-    private Long id;
+    private String id;
     @TableField(value = "code")
     @Schema(description = "")
     private String code;

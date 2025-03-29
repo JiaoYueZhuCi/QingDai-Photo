@@ -75,7 +75,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { getAllGroupPhotos, updateGroupPhoto, deleteGroupPhoto } from '@/api/groupPhoto'
 import {  getThumbnail100KPhotos } from '@/api/photo'
-import type { GroupPhoto } from '@/types/groupPhoto'
+import type { GroupPhoto,GroupPhotoDTO } from '@/types/groupPhoto'
 import GroupPhotoUpdate from '@/views/manage/GroupPhotoUpdate.vue'
 import GroupPhotoPreview from '@/components/GroupPhotoPreview.vue'
 import JSZip from 'jszip'
@@ -85,7 +85,7 @@ const groupPhotoDialogVisible = ref(false)
 const editMode = ref(false)
 const currentEditData = ref<GroupPhoto | null>(null)
 
-const tableData = ref<(GroupPhoto & { isEditing: boolean, coverImage: string, photosArray: string[] })[]>([])
+const tableData = ref<(GroupPhotoDTO & { isEditing: boolean, coverImage: string, photosArray: string[], groupId: string })[]>([])
 const editOriginData = ref<any>({})
 const currentPage = ref(1)
 const pageSize = ref(10)
@@ -107,13 +107,14 @@ const fetchData = async () => {
 
         // 处理响应数据
         if (response && Array.isArray(response)) {
-            tableData.value = response.map((item: GroupPhoto) => ({
-                ...item,
+            tableData.value = response.map((item: GroupPhotoDTO) => ({
+                ...item.groupPhoto,
                 isEditing: false,
                 coverImage: '',  // 初始化为空，后续通过getThumbnail100KPhotos获取
-                photosArray: typeof item.photos === 'string' 
-                    ? item.photos.split(',').filter(id => id.trim() !== '')
-                    : item.photos
+                photosArray: typeof item.groupPhoto.photos === 'string' 
+                    ? item.groupPhoto.photos.split(',').filter(id => id.trim() !== '')
+                    : item.groupPhoto.photos,
+                groupId: item.groupPhoto.id
             }));
 
             // 获取所有组图的封面照片ID

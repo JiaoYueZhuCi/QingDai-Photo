@@ -1,4 +1,4 @@
-package com.qingdai.dto;
+package com.qingdai.entity.dto;
 
 import lombok.Data;
 

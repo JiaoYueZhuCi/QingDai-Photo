@@ -1,14 +1,14 @@
 import type { WaterfallItem } from '@/types';
 
 export interface GroupPhoto {
-    id: string;
-    photos: string ;  
-    cover: number;
+    id: string; 
     title: string;
     introduce: string;
+    coverPhotoId: string;
+
 }
 
 export interface GroupPhotoDTO {
     groupPhoto: GroupPhoto;
-    photo: WaterfallItem;
+    photoIds: string[];
 }

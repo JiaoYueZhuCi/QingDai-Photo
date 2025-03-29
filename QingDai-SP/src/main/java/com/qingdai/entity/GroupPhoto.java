@@ -16,17 +16,15 @@ public class GroupPhoto {
     @TableId(value = "id", type = IdType.ASSIGN_ID)
     @Schema(description = "id")
     @JsonSerialize(using = ToStringSerializer.class) // 确保序列化为字符串
-    private Long id;
-    @TableField(value = "photos")
-    @Schema(description = "组图id集合")
-    private String photos;
-    @TableField(value = "cover")
-    @Schema(description = "封面照片所在集合的index")
-    private Integer cover;
+    private String id;
     @TableField(value = "title")
     @Schema(description = "标题")
     private String title;
     @TableField(value = "introduce")
     @Schema(description = "介绍")
     private String introduce;
+    @TableField(value = "coverPhotoId")
+    @Schema(description = "封面图照片id")
+    @JsonSerialize(using = ToStringSerializer.class)
+    private Long coverPhotoId;
 }
