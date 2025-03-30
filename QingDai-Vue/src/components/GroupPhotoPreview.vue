@@ -180,13 +180,11 @@ const handleOpen = async () => {
     try {
         // 获取组图数据
         const response = await getGroupPhoto(props.groupId)
-        console.log("response",response)
 
         // 适配接口返回数据
         groupPhotoData.value = response;
         // 提取照片ID列表
         photoIds.value = groupPhotoData.value.photoIds;
-        console.log("photoIds.value",photoIds.value)
         // 如果有指定初始照片，则设置为当前照片
         if (props.initialPhotoId && photoIds.value.includes(props.initialPhotoId)) {
             currentPhotoIndex.value = photoIds.value.indexOf(props.initialPhotoId)

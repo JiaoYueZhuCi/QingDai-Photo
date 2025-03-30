@@ -14,11 +14,9 @@
 
             <!-- 排序按钮 -->
             <div class="sort-controls">
-                <el-affix :offset="10">
                     <el-button class="sort-btn" @click="toggleSortOrder" :style="{ opacity: opacity }">
                         {{ isAscending ? '切换为最新优先' : '切换为最早优先' }}
                     </el-button>
-                </el-affix>
             </div>
             <div class="timeline-container">
                 <!-- 照片列表 -->
@@ -47,13 +45,13 @@
 import { ref, onMounted, onUnmounted, computed ,watch} from 'vue'
 import { getGroupPhoto } from '@/api/groupPhoto'
 import { getThumbnail100KPhotos, getPhotosByIds } from '@/api/photo'
-import type { GroupPhoto } from '@/types'
+import type { GroupPhoto,GroupPhotoDTO } from '@/types'
 import type { WaterfallItem } from '@/types'
 import JSZip from 'jszip'
 import GroupPhotoPreview from '@/components/GroupPhotoPreview.vue'
 
 const loading = ref(true)
-const groupInfo = ref<GroupPhoto | null>(null)
+const groupInfo = ref<GroupPhotoDTO | null>(null)
 const photos = ref<WaterfallItem[]>([])
 
 // 预览相关状态
@@ -142,13 +140,13 @@ const loadGroupPhotos = async () => {
 
         // 获取组图信息
         const response = await getGroupPhoto(selectedGroupId.value) // 
-        groupInfo.value = response as unknown as GroupPhoto
-        if (groupInfo.value && groupInfo.value.photos) {
+        groupInfo.value = response as unknown as GroupPhotoDTO
+        if (groupInfo.value && groupInfo.value.photoIds) {
             // 获取照片ID列表
-            const photoIds = groupInfo.value.photos.split(',').filter(id => id.trim().length > 0)
+            const photoIds = groupInfo.value.photoIds;
             if (photoIds.length > 0) {
                 // 获取照片信息
-                const photosData = await getPhotosByIds(photoIds.join(','))
+                const photosData = await getPhotosByIds(photoIds)
 
                 // 获取照片缩略图
                 const thumbnailResponse = await getThumbnail100KPhotos(photoIds.join(','))
@@ -393,7 +391,7 @@ onUnmounted(() => {
 /* 统计信息样式 */
 .stats-container {
     text-align: center;
-    padding: 10px 0;
+    padding: 10px 0 0 0;
     color: #f9ca24;
     font-size: 18px;
 }
@@ -405,10 +403,7 @@ onUnmounted(() => {
 }
 
 .sort-controls {
-    padding-top: 6px;
-    position: absolute;
-    top: 5px;
-    right: 150px;
+    text-align: center;
 }
 
 .sort-btn {

@@ -4,7 +4,7 @@
             <el-table-column label="封面图" width="220" fixed>
                 <template #default="scope">
                     <el-image :src="scope.row.coverImage" style="height: 150px" fit="contain"
-                        @click="openPreview(scope.row.id)" />
+                        @click="openPreview(scope.row)" />
                 </template>
             </el-table-column>
             <el-table-column prop="title" label="标题" width="180">
@@ -24,14 +24,11 @@
             </el-table-column>
             <el-table-column label="操作" width="180" fixed="right">
                 <template #default="scope">
-                    <div v-if="!scope.row.isEditing">
+                    <div>
                         <el-button size="small" type="primary" @click="handleManagePhotos(scope.row)">管理照片</el-button>
                         <el-button size="small" type="danger" @click="handleDelete(scope.row)">删除</el-button>
                     </div>
-                    <div v-else>
-                        <el-button size="small" type="success" @click="submitEdit(scope.row)">保存</el-button>
-                        <el-button size="small" @click="cancelEdit(scope.row)">取消</el-button>
-                    </div>
+                    
                 </template>
             </el-table-column>
         </el-table>
@@ -83,10 +80,9 @@ import JSZip from 'jszip'
 const groupPhotoUpdateRef = ref()
 const groupPhotoDialogVisible = ref(false)
 const editMode = ref(false)
-const currentEditData = ref<GroupPhoto | null>(null)
+const currentEditData = ref<GroupPhotoDTO | null>(null)
 
-const tableData = ref<(GroupPhotoDTO & { isEditing: boolean, coverImage: string, photosArray: string[], groupId: string })[]>([])
-const editOriginData = ref<any>({})
+const tableData = ref<(any)[]>([])
 const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
@@ -104,25 +100,18 @@ const showGroupPhotoAdd = () => {
 const fetchData = async () => {
     try {
         const response = await getAllGroupPhotos()
-
         // 处理响应数据
         if (response && Array.isArray(response)) {
             tableData.value = response.map((item: GroupPhotoDTO) => ({
-                ...item.groupPhoto,
+                ...item,
                 isEditing: false,
-                coverImage: '',  // 初始化为空，后续通过getThumbnail100KPhotos获取
-                photosArray: typeof item.groupPhoto.photos === 'string' 
-                    ? item.groupPhoto.photos.split(',').filter(id => id.trim() !== '')
-                    : item.groupPhoto.photos,
-                groupId: item.groupPhoto.id
             }));
 
             // 获取所有组图的封面照片ID
             const coverPhotoIds = tableData.value
-                .filter(item => item.photosArray.length > 0 && item.cover !== undefined)
-                .map(item => item.photosArray[item.cover])
+                .filter(item => item.groupPhoto.coverPhotoId)
+                .map(item => item.groupPhoto.coverPhotoId)
                 .filter(id => id);  // 过滤掉空值
-
             // 批量获取缩略图
             if (coverPhotoIds.length > 0) {
                 // 创建一个照片ID到索引位置的映射，用于后续恢复顺序
@@ -136,7 +125,6 @@ const fetchData = async () => {
 
                 // 去重后的照片ID数组
                 const uniqueCoverPhotoIds = [...new Set(coverPhotoIds)];
-                
                 const thumbnailResponse = await getThumbnail100KPhotos(uniqueCoverPhotoIds.join(','));
                 if (thumbnailResponse && thumbnailResponse.data) {
                     const zip = await JSZip.loadAsync(thumbnailResponse.data);
@@ -156,14 +144,12 @@ const fetchData = async () => {
                             photoIdToUrlMap.set(photoId, url);
                         }
                     }
-
                     // 更新表格数据中的缩略图
                     tableData.value = tableData.value.map((item) => {
-                        if (item.photosArray.length > 0 && item.cover !== undefined) {
-                            const coverPhotoId = item.photosArray[item.cover];
+                        if (item.groupPhoto.coverPhotoId) {
                             return {
                                 ...item,
-                                coverImage: photoIdToUrlMap.get(coverPhotoId) || ''
+                                coverImage: photoIdToUrlMap.get(item.groupPhoto.coverPhotoId) || ''
                             };
                         }
                         return item;
@@ -194,32 +180,6 @@ watchEffect(() => {
     fetchData()
 })
 
-const cancelEdit = (row: any) => {
-    Object.assign(row, editOriginData.value[row.id])
-    row.isEditing = false
-    delete editOriginData.value[row.id]
-}
-
-const submitEdit = async (row: any) => {
-    try {
-        await updateGroupPhoto({
-            id: row.id,
-            photos: row.photosArray.join(','),
-            cover: row.cover,
-            title: row.title,
-            introduce: row.introduce
-        })
-
-        ElMessage.success('更新成功')
-        row.isEditing = false
-        delete editOriginData.value[row.id]
-        await fetchData()
-    } catch (error) {
-        console.error('更新失败:', error)
-        ElMessage.error('更新失败')
-    }
-}
-
 // 删除功能
 const handleDelete = async (row: any) => {
     try {
@@ -244,9 +204,9 @@ const handleDelete = async (row: any) => {
     }
 }
 // 照片预览
-const openPreview = (id: string) => {
-    selectedGroupId.value = id
-    selectedPhotoId.value = null
+const openPreview = (item: GroupPhotoDTO) => {
+    selectedGroupId.value = item.groupPhoto.id;
+    selectedPhotoId.value = item.groupPhoto.coverPhotoId; 
 }
 
 // 关闭组图预览
@@ -258,13 +218,8 @@ const closeGroupPhotoPreview = () => {
 // 管理照片
 const handleManagePhotos = (row: any) => {
     editMode.value = true
-    currentEditData.value = { 
-        id: row.id,
-        title: row.title || '',
-        introduce: row.introduce || '',
-        photos: row.photosArray,
-        cover: row.cover || 0
-    }
+    currentEditData.value = row;
+    console.log('currentEditData', currentEditData.value)
     groupPhotoDialogVisible.value = true
 }
 </script>

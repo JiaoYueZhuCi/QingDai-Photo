@@ -31,15 +31,17 @@ import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Arrays;
-import java.util.List;
+import java.util.Date;
+import java.util.Date;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.nio.file.Files;
+import java.util.List;
 
 /**
  * <p>
- *  服务实现类
+ * 服务实现类
  * </p>
  *
  * @author LiuZiMing
@@ -258,14 +260,14 @@ public class PhotoServiceImpl extends ServiceImpl<PhotoMapper, Photo> implements
         File tempFile = null;
         try {
             String fileName = file.getOriginalFilename();
-            
+
             // 创建临时目录和文件
             File tempDir = new File(System.getProperty("java.io.tmpdir"));
             tempFile = new File(tempDir, fileName);
-            
+
             // 确保目录存在并保存文件
             Files.createDirectories(tempFile.getParentFile().toPath());
-            file.transferTo(tempFile);  // 添加文件传输操作
+            file.transferTo(tempFile); // 添加文件传输操作
 
             Photo photo = getPhotoObjectByFile(tempFile);
             return photo;
@@ -275,7 +277,7 @@ public class PhotoServiceImpl extends ServiceImpl<PhotoMapper, Photo> implements
         } finally {
             if (tempFile != null && tempFile.exists()) {
                 try {
-                    Files.delete(tempFile.toPath());  // 使用NIO方式删除更可靠
+                    Files.delete(tempFile.toPath()); // 使用NIO方式删除更可靠
                 } catch (IOException e) {
                     System.out.println("删除临时文件失败: " + tempFile.getAbsolutePath());
                 }
@@ -377,8 +379,15 @@ public class PhotoServiceImpl extends ServiceImpl<PhotoMapper, Photo> implements
 
     // 格式化拍摄时间
     private void processShootingTime(ExifSubIFDDirectory exif, Photo photo) {
-        Optional.ofNullable(exif.getDate(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL))
+        Date photoDate = exif.getDate(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL);
+        // 使 photoDate 向前八个小时 矫正时区错误
+        if (photoDate != null) {
+            photoDate = new Date(photoDate.getTime() - 8 * 60 * 60 * 1000);
+        }
+        Optional.ofNullable(photoDate)
                 .ifPresent(date -> photo.setTime(DateUtils.formatDateTime(date)));
+        System.out.println(photo.getTime());
+
     }
 
     // 存储相机拍摄参数

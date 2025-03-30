@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * <p>
@@ -40,6 +41,7 @@ public class GroupPhotoController {
 
     @Operation(summary = "获取组图详情", description = "根据ID查询组图详细信息")
     @GetMapping("/getGroupPhoto/{id}")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<GroupPhotoDTO> getGroupPhotoById(@PathVariable String id) {
         try {
             log.info("开始查询组图详情，ID: {}", id);
@@ -60,6 +62,7 @@ public class GroupPhotoController {
 
     @Operation(summary = "获取所有组图", description = "获取所有组图列表")
     @GetMapping("/getAllGroupPhotos")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<List<GroupPhotoDTO>> getAllGroupPhotos() {
         try {
             log.info("开始查询所有组图");
@@ -80,6 +83,7 @@ public class GroupPhotoController {
 
     @Operation(summary = "创建组图", description = "创建新的组图记录")
     @PostMapping("/addGroupPhoto")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> createGroupPhoto(@RequestBody GroupPhotoDTO groupPhotoDTO) {
         try {
             log.info("开始创建组图，请求参数: {}", groupPhotoDTO);
@@ -116,6 +120,7 @@ public class GroupPhotoController {
 
     @Operation(summary = "更新组图", description = "更新组图信息")
     @PutMapping("/updateGroupPhoto")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> updateGroupPhoto(@RequestBody GroupPhotoDTO groupPhotoDTO) {
         try {
             GroupPhoto groupPhoto = groupPhotoDTO.getGroupPhoto();
@@ -150,6 +155,7 @@ public class GroupPhotoController {
     @Operation(summary = "删除组图", description = "删除指定ID的组图记录")
     @DeleteMapping("/deleteGroupPhoto/{id}")
     @Transactional
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> deleteGroupPhoto(@PathVariable String id) {
         try {
             log.info("开始删除组图及其关联照片，ID: {}", id);
@@ -207,6 +213,7 @@ public class GroupPhotoController {
 
     @Operation(summary = "获取组图照片数量", description = "根据ID获取组图中照片的数量")
     @GetMapping("/getPhotoCount/{id}")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<Integer> getPhotoCountById(@PathVariable String id) {
         try {
             log.info("开始查询组图照片数量，ID: {}", id);

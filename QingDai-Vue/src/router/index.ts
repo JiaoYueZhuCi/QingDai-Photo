@@ -14,6 +14,10 @@ const router = createRouter({
           redirect: '/home'
         },
         {
+          path: '/login',
+          component: () => import('@/components/LoginDialog.vue').catch(() => errorPage),
+        },
+        {
           path: '/home',
           component: () => import('@/views/home/Home.vue').catch(() => errorPage),
           children: [
@@ -81,10 +85,6 @@ const router = createRouter({
             }
           ]
         },
-        // ,{
-        //   path: '/login',
-        //   component: () => import('@/components/login.vue').catch(() => errorPage)
-        // }
       ]
     },
     // {
@@ -114,8 +114,8 @@ router.beforeEach(async (to, from, next) => {
         return next(); // 如果是 ADMIN，继续处理路由
       }
       // 如果不是ADMIN
-      ElMessage.error("权限不足");
-      return next(from.path !== '/manage' ? from.path : '/'); 
+      ElMessage.error("非管理员登陆");
+      return next('/'); 
     } catch (error: any) {
       // 检查是否为401错误
       if (error.response && error.response.status === 401) {
@@ -124,7 +124,7 @@ router.beforeEach(async (to, from, next) => {
         ElMessage.error('获取用户角色失败');
         console.error('获取用户角色失败:', error);
       }
-      return next(from.path !== '/manage' ? from.path : '/');
+      return next('/login');
     }
   }
 

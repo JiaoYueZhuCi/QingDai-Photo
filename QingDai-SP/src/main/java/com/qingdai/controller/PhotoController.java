@@ -117,7 +117,8 @@ public class PhotoController {
 
     @GetMapping("/toMysql")
     @Operation(summary = "所有图片信息自动入数据库", description = "所有图片信息自动入数据库")
-    @PreAuthorize("hasRole('ADMIN')")
+    // @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<String> FullSizePhototoMysql() {
         log.info("开始执行图片信息入库操作，源目录: {}", fullSizeUrl);
         

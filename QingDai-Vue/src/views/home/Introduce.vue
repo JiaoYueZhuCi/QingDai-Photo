@@ -8,7 +8,7 @@
         <div class="avatar-section">
             <div>
                 <div class="avatar-container">
-                    <el-avatar :size="avatarSize" :src="avatarImageUrl" class="avatar-static" @click="openPreview(avatarImageUrl)">
+                    <el-avatar :size="avatarSize" :src="avatarImageUrl" class="avatar-static" @click="$router.push('/manage')">
                         <template #default>
                             <el-icon :size="50">
                                 <User />
@@ -16,15 +16,6 @@
                         </template>
                     </el-avatar>
                 </div>
-                <div class="manage">
-                    <el-affix :offset="10">
-                        <el-button type="primary" @click="loginDialogVisible = true"
-                            style="margin-left:12px">登录</el-button>
-                        <el-button type="success" style="margin-left:12px"
-                            @click="$router.push('/manage')">管理</el-button>
-                    </el-affix>
-                </div>
-                <LoginDialog v-model="loginDialogVisible" />
             </div>
 
             <!-- 用户信息保持原样 -->

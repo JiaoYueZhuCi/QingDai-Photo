@@ -1,46 +1,45 @@
 <template>
-  <el-dialog v-model="visible" title="登录" width="380px" align-center :before-close="handleClose">
-    <el-form ref="loginForm" :model="form" :rules="rules" label-width="0" class="login-form">
-      <el-form-item prop="username">
-        <el-input v-model="form.username" placeholder="用户名" prefix-icon="el-icon-user" />
-      </el-form-item>
-      <el-form-item prop="password">
-        <el-input v-model="form.password" type="password" placeholder="密码" prefix-icon="el-icon-lock"
-          show-password />
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" @click="submitForm" style="width: 100%">登录</el-button>
-      </el-form-item>
-    </el-form>
-  </el-dialog>
+  <div class="back">
+    <div class="loginBox" align-center>
+      <el-form ref="loginForm" :model="form" :rules="rules" label-width="0" class="login-form">
+        <el-form-item prop="username">
+          <el-input v-model="form.username" placeholder="用户名" prefix-icon="el-icon-user" />
+        </el-form-item>
+        <el-form-item prop="password">
+          <el-input v-model="form.password" type="password" placeholder="密码" prefix-icon="el-icon-lock" show-password />
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="submitForm" style="width: 100%">登录</el-button>
+        </el-form-item>
+      </el-form>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import type { FormInstance, FormRules } from 'element-plus'
+import type { FormInstance } from 'element-plus'
 import { login } from '@/api/user'
-import type { LoginResponse } from '@/api/user'
 
 const router = useRouter()
 
-const visible = ref(false)
 const loginForm = ref<FormInstance>()
 
 // 定义表单数据
 const form = reactive({
-    username: '',
-    password: ''
+  username: '',
+  password: ''
 })
 
 const rules = {
-    username: [
-        { required: true, message: '请输入用户名', trigger: 'blur' }
-    ],
-    password: [
-        { required: true, message: '请输入密码', trigger: 'blur' }
-    ]
+  username: [
+    { required: true, message: '请输入用户名', trigger: 'blur' }
+  ],
+  password: [
+    { required: true, message: '请输入密码', trigger: 'blur' }
+  ]
 }
 
 const submitForm = async () => {
@@ -72,8 +71,7 @@ const submitForm = async () => {
       }
       localStorage.setItem('token', token);
       ElMessage.success('登录成功');
-      visible.value = false;
-      router.push('/home')
+      router.push('/manage')
     } else {
       console.error('无效的响应数据:', response);
       ElMessage.error('登录失败：无效的响应数据');
@@ -84,17 +82,40 @@ const submitForm = async () => {
   }
 }
 
-const handleClose = (done: () => void) => {
-  done();
-};
 
-defineExpose({
-  visible
-})
 </script>
 
 <style scoped>
 .login-form {
-  padding: 0 20px;
+  width: 400px; 
+  margin: auto;
+  padding: 30px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.el-form-item {
+  margin-bottom: 22px;
+}
+
+.el-button {
+  margin-top: 10px;
+  transition: all 0.3s ease;
+}
+
+.el-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.loginBox {
+  opacity: 0.9; 
+  padding-top: 32vh; 
+}
+.back {
+  background: url('/public/img/introduce/background.jpg') no-repeat center center fixed;
+  background-size: cover;
+  height: 100vh;
 }
 </style>

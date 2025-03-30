@@ -2,14 +2,15 @@
     <el-dialog v-model="dialogVisible" :title="editMode ? '编辑组图' : '创建组图'" top="5vh" width="87%"
         :before-close="handleClose">
         <el-form :model="form" :rules="rules" ref="formRef" label-width="120px">
-            <el-form-item label="标题" prop="title">
-                <el-input v-model="form.title" placeholder="请输入组图标题"></el-input>
+            <el-form-item label="标题" prop="groupPhoto.title">
+                <el-input v-model="form.groupPhoto.title" placeholder="请输入组图标题"></el-input>
             </el-form-item>
             <el-form-item label="介绍" prop="introduce">
-                <el-input v-model="form.introduce" type="textarea" :rows="3" placeholder="请输入组图介绍"></el-input>
+                <el-input v-model="form.groupPhoto.introduce" type="textarea" :rows="3"
+                    placeholder="请输入组图介绍"></el-input>
             </el-form-item>
-            <el-form-item label="选择照片" prop="photos">
-                <el-select v-model="form.photos" multiple filterable remote reserve-keyword placeholder="请选择照片"
+            <el-form-item label="选择照片" prop="photoIds">
+                <el-select v-model="form.photoIds" multiple filterable remote reserve-keyword placeholder="请选择照片"
                     :remote-method="searchPhotos" :loading="loading" style="width: 100%">
                     <el-option v-for="item in photoOptions" :key="item.id" :label="item.title || item.fileName"
                         :value="item.id">
@@ -22,10 +23,10 @@
                 </el-select>
             </el-form-item>
             <el-form-item label="封面照片" prop="cover">
-                <el-select v-model="form.cover" placeholder="请选择封面照片" :disabled="!form.photos.length"
-                    style="width: 100%">
-                    <el-option v-for="(photoId, index) in form.photos" :key="photoId" :label="getPhotoLabel(photoId)"
-                        :value="index">
+                <el-select v-model="form.groupPhoto.coverPhotoId" placeholder="请选择封面照片"
+                    :disabled="!form.photoIds.length" style="width: 100%">
+                    <el-option v-for="(photoId, index) in form.photoIds" :key="photoId" :label="getPhotoLabel(photoId)"
+                        :value="photoId">
                         <div style="display: flex; align-items: center;">
                             <el-image :src="getPhotoThumbnail(photoId)"
                                 style="width: 50px; height: 50px; margin-right: 10px;" fit="cover" />
@@ -42,16 +43,17 @@
         </el-form>
 
         <!-- 预览区域 -->
-        <div class="preview-container" v-if="form.photos.length > 0">
+        <div class="preview-container" v-if="form.photoIds.length > 0">
             <h3>已选照片预览</h3>
-            <draggable v-model="form.photos" item-key="id" class="photo-preview-list" animation="300"
+            <draggable v-model="form.photoIds" item-key="id" class="photo-preview-list" animation="300"
                 ghost-class="ghost-item" handle=".drag-handle" @end="onDragEnd">
                 <template #item="{ element: photoId, index }">
                     <div class="photo-preview-item">
                         <el-image :src="getPhotoThumbnail(photoId)" fit="cover" />
                         <div class="photo-preview-info">
                             <span class="photo-preview-title">{{ getPhotoLabel(photoId) }}</span>
-                            <el-tag v-if="index === form.cover" size="small" type="success">封面</el-tag>
+                            <el-tag v-if="photoId === form.groupPhoto.coverPhotoId" size="small"
+                                type="success">封面</el-tag>
                         </div>
                         <div class="photo-preview-actions">
                             <el-button type="danger" size="small" circle @click="removePhoto(index)">
@@ -81,7 +83,7 @@ import { ElMessage } from 'element-plus'
 import { getPhotosByPage, getThumbnail100KPhotos } from '@/api/photo'
 import { addGroupPhoto, updateGroupPhoto } from '@/api/groupPhoto'
 import type { WaterfallItem } from '@/types'
-import type { GroupPhoto } from '@/types/groupPhoto'
+import type { GroupPhotoDTO, GroupPhoto } from '@/types/groupPhoto'
 import JSZip from 'jszip'
 import { DeleteFilled, Rank } from '@element-plus/icons-vue'
 import draggable from 'vuedraggable'
@@ -97,7 +99,7 @@ const props = defineProps({
         default: false
     },
     editData: {
-        type: Object as () => GroupPhoto | null,
+        type: Object as () => GroupPhotoDTO | null,
         default: null
     }
 });
@@ -109,9 +111,9 @@ const dialogVisible = ref(false);
 
 // 处理拖拽结束事件
 const onDragEnd = () => {
-    // 当拖拽导致封面索引变化时自动调整
-    if (form.cover >= form.photos.length) {
-        form.cover = form.photos.length - 1
+    // 当拖拽导致封面照片ID不在当前列表中时自动调整
+    if (!form.photoIds.includes(form.groupPhoto.coverPhotoId)) {
+        form.groupPhoto.coverPhotoId = form.photoIds[form.photoIds.length - 1] || ''
     }
 }
 
@@ -120,29 +122,24 @@ watch(() => props.modelValue, (val) => {
     dialogVisible.value = val;
     if (val && props.editMode && props.editData) {
         // 编辑模式下，填充表单数据
-        form.id = props.editData.id || '';
-        form.title = props.editData.title || '';
-        form.introduce = props.editData.introduce || '';
-        form.photos = Array.isArray(props.editData.photos)
-            ? [...props.editData.photos]
-            : (props.editData.photos || '').split(',').filter(id => id.trim() !== '');
-        form.cover = props.editData.cover || 0;
+        form.groupPhoto = props.editData.groupPhoto
+        form.photoIds = props.editData.photoIds;
 
         // 保存原始数据用于重置
         originalData.value = {
-            id: form.id,
-            title: form.title,
-            introduce: form.introduce,
-            photos: [...form.photos],
-            cover: form.cover
+            groupPhoto: { ...form.groupPhoto },
+            photoIds: [...form.photoIds]
         };
+
     } else if (val && !props.editMode) {
         // 新建模式下，清空表单
-        form.id = '';
-        form.title = '';
-        form.introduce = '';
-        form.photos = [];
-        form.cover = 0;
+        form.groupPhoto = {
+            id: '',
+            title: '',
+            introduce: '',
+            coverPhotoId: '',
+        };
+        form.photoIds = [];
         originalData.value = null;
     }
 });
@@ -155,19 +152,22 @@ const formRef = ref<FormInstance>();
 const loading = ref(false);
 
 const form = reactive({
-    id: '',
-    title: '',
-    introduce: '',
-    photos: [] as string[],
-    cover: 0
+    groupPhoto: {
+        id: '',
+        title: '',
+        introduce: '',
+        coverPhotoId: '',
+    },
+    photoIds: [] as string[],
+
 });
 
 const rules = reactive<FormRules>({
-    title: [
+    'groupPhoto.title': [
         { required: true, message: '请输入标题', trigger: 'blur' },
         { min: 1, max: 100, message: '长度在 1 到 100 个字符', trigger: 'blur' }
     ],
-    photos: [
+    photoIds: [
         { type: 'array', required: true, message: '请至少选择一张照片', trigger: 'change' }
     ]
 });
@@ -287,20 +287,18 @@ const getPhotoThumbnail = (photoId: string) => {
 // 移除照片
 const removePhoto = (index: number) => {
     // 如果删除的是封面照片
-    if (index === form.cover) {
+    const removedPhotoId = form.photoIds[index];
+    if (removedPhotoId === form.groupPhoto.coverPhotoId) {
         // 重置封面为第一张照片
-        form.cover = form.photos.length > 1 ? 0 : 0;
-    } else if (index < form.cover) {
-        // 如果删除的照片在封面前面，需要调整封面索引
-        form.cover--;
+        form.groupPhoto.coverPhotoId = form.photoIds.length > 1 ? form.photoIds[0] : '';
     }
 
     // 删除照片
-    form.photos.splice(index, 1);
+    form.photoIds.splice(index, 1);
 
-    // 如果没有照片了，封面索引设为0
-    if (form.photos.length === 0) {
-        form.cover = 0;
+    // 如果没有照片了，清空封面
+    if (form.photoIds.length === 0) {
+        form.groupPhoto.coverPhotoId = '';
     }
 };
 
@@ -311,13 +309,7 @@ const submitForm = async () => {
     await formRef.value.validate(async (valid, fields) => {
         if (valid) {
             try {
-                const formData = {
-                    id: form.id,
-                    title: form.title,
-                    introduce: form.introduce,
-                    photos: form.photos.join(','),  // 将数组转换为字符串
-                    cover: form.cover
-                };
+                const formData = form;
 
                 if (props.editMode) {
                     // 编辑模式
@@ -345,11 +337,8 @@ const submitForm = async () => {
 
 // 添加原始数据引用
 const originalData = ref<{
-    id: string;
-    title: string;
-    introduce: string;
-    photos: string[];
-    cover: number;
+    groupPhoto: GroupPhoto,
+    photoIds: string[],
 } | null>(null);
 
 // 重置表单
@@ -358,18 +347,19 @@ const resetForm = () => {
 
     if (props.editMode && originalData.value) {
         // 编辑模式下，恢复到原始数据
-        form.id = originalData.value.id;
-        form.title = originalData.value.title;
-        form.introduce = originalData.value.introduce;
-        form.photos = [...originalData.value.photos];
-        form.cover = originalData.value.cover;
+        form.groupPhoto = originalData.value.groupPhoto;
+        form.photoIds = originalData.value.photoIds;
         formRef.value.clearValidate();
     } else {
         // 新建模式下，清空表单
         formRef.value.resetFields();
-        form.id = '';
-        form.photos = [];
-        form.cover = 0;
+        form.groupPhoto = {
+            id: '',
+            title: '',
+            introduce: '', 
+            coverPhotoId: '',
+        }
+        form.photoIds = [];
     }
 };
 

@@ -201,6 +201,7 @@ const handleResize = () => {
         sideMargin.value = 8; // 更新 sideMargin 变量
         rowWidth.value = window.innerWidth - scrollbarWidth - 2 * sideMargin.value; // 恢复 rowWidth
     }
+    calculateLayout(); // 重新计算布局
 };
 
 // 在 onMounted 中添加滚动监听
