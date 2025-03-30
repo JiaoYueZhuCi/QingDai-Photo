@@ -1,46 +1,66 @@
-// 根据错误提示，需要使用仅类型导入来导入 DBSchema 和 IDBPDatabase
 import { openDB } from 'idb';
 import type { DBSchema, IDBPDatabase } from 'idb';
 
+// 正确定义数据结构
 interface PhotoDB extends DBSchema {
   photos: {
-    key: string;
-    value: string;
+    key: string;        // 主键类型
+    value: {            // 存储值类型
+      photoId: string;      // 对应 keyPath
+      blob: Blob;       // 实际存储的二进制数据
+    };
+    // indexes: { 
+    //   'by-key': string; // 索引
+    // };
   };
 }
 
 export const initDB = async (): Promise<IDBPDatabase<PhotoDB>> => {
   return await openDB<PhotoDB>('photo-cache', 1, {
     upgrade(db) {
-      if (!db.objectStoreNames.contains('photos')) {
-        db.createObjectStore('photos', { keyPath: 'key' });
-      }
+      // 创建对象存储库
+      const store = db.createObjectStore('photos', {
+        keyPath: 'photoId', // 指定主键为 photoId 字段
+      });
+      
+      // 创建索引（可选）
+    //   store.createIndex('by-key', 'key', { unique: true });
     },
   });
 };
 
-export const getPhotoFromDB = async (id: string): Promise<string | undefined> => {
-  const db = await initDB();
-  const tx = db.transaction('photos', 'readonly');
-  const store = tx.objectStore('photos');
-  const result = await store.get(id);
-  await tx.done;
-  return result?.value;
+// 获取照片
+export const getPhotoFromDB = async (photoId: string): Promise<Blob | undefined> => {
+  try {
+    const db = await initDB();
+    const record = await db.get('photos', photoId);
+    return record?.blob;
+  } catch (error) {
+    console.error('获取照片失败:', error);
+    return undefined;
+  }
 };
 
-export const savePhotoToDB = async (id: string, url: string): Promise<void> => {
-  const db = await initDB();
-  const tx = db.transaction('photos', 'readwrite');
-  const store = tx.objectStore('photos');
-  // Bug修复：原代码尝试将对象传递给需要字符串类型参数的方法，现修改为正确传递对象
-  await store.put({ key: id, value: url });
-  await tx.done;
+// 保存照片（支持批量）
+export const savePhotoToDB = async (photoId: string, blob: Blob): Promise<void> => {
+  try {
+    const db = await initDB();
+    await db.put('photos', {
+      photoId: photoId,  
+      blob: blob
+    });
+  } catch (error) {
+    console.error('保存照片失败:', {
+      error: error,
+      photoId: photoId,
+      blob: blob
+    });
+    throw new Error(`无法保存照片 ${photoId}`);
+  }
 };
 
+// 清理缓存
 export const clearPhotoDB = async (): Promise<void> => {
   const db = await initDB();
-  const tx = db.transaction('photos', 'readwrite');
-  const store = tx.objectStore('photos');
-  await store.clear();
-  await tx.done;
+  await db.clear('photos');
 };
