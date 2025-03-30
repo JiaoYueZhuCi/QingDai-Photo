@@ -17,6 +17,12 @@
       ],
       "@/types*": [
         "src/types/index.d.ts"
+      ],
+      "@/composables/*": [
+        "src/composables/*"
+      ],
+      "@/utils/*": [
+        "src/utils/*"
       ]
     }
   }

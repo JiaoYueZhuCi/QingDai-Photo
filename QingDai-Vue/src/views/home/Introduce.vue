@@ -15,6 +15,9 @@
                             </el-icon>
                         </template>
                     </el-avatar>
+                    <el-button class="logout" v-if="hasToken" type="danger" @click="handleLogout" style="margin-top: 10px;">
+                        注销
+                    </el-button>
                 </div>
             </div>
 
@@ -152,23 +155,19 @@ const columnCount = computed(() => {
     }
 })
 
-const scrollY = ref(0)
-
 const manageOpacity = computed(() => {
     return scrollY.value > 650 ? 0.6 : 1
 })
 
-const handleScroll = () => {
-    scrollY.value = window.scrollY
-}
+const hasToken = computed(() => {
+    return !!localStorage.getItem('token');
+});
 
-onMounted(() => {
-    window.addEventListener('scroll', handleScroll)
-})
+const handleLogout = () => {
+    localStorage.clear('token');
+    window.location.href = '/';
+};
 
-onBeforeUnmount(() => {
-    window.removeEventListener('scroll', handleScroll)
-})
 
 // 添加预览相关变量
 const previewVisible = ref(false)
@@ -275,5 +274,10 @@ const openPreview = (url: string) => {
     /* .el-tag{
         margin-bottom: 5px;
     } */
+}
+
+.logout{
+    position: absolute;
+    right: 10px;
 }
 </style>

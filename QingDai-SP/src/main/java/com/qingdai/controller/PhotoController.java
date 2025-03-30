@@ -154,7 +154,7 @@ public class PhotoController {
         }
     }
 
-    @Operation(summary = "批量图片压缩", description = "将原图目录中的图片压缩到缩略图目录", parameters = {
+    @Operation(summary = "批量图片压缩", description = "将pendingUrl目录中的图片压缩到缩略图目录", parameters = {
             @Parameter(name = "maxSizeKB", in = ParameterIn.QUERY, description = "最大文件大小(KB)", schema = @Schema(type = "integer", minimum = "10", maximum = "10240", example = "1024")),
             @Parameter(name = "overwrite", in = ParameterIn.QUERY, description = "覆盖已存在文件", schema = @Schema(type = "boolean"))
     })

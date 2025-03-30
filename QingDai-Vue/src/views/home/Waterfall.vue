@@ -70,7 +70,7 @@ import { debounce } from 'lodash';
 import JSZip from 'jszip';
 import PreviewDialog from "@/components/PreviewDialog.vue";
 import PreviewViewer from "@/components/PreviewViewer.vue";
-
+import getPhotoFromDB from "@/utils/indexedDB";
 // 添加 props 来接收父组件传递的值
 const props = defineProps({
     rowHeightMax: {
@@ -152,6 +152,9 @@ const getPhotos = async () => {
     }
 };
 
+
+
+
 // 新增滚动事件处理
 const handleScroll = debounce(() => {
     const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
@@ -222,18 +225,35 @@ const getThumbnailPhotos = async (start: number, end: number) => {
     const newItems = images.value.slice(start, end + 1).filter(item => !item.compressedSrc);
     if (newItems.length === 0) return;
 
+    // 尝试从IndexedDB获取已缓存的照片
+    await Promise.all(newItems.map(async item => {
+        const cachedUrl = await getPhotoFromDB(item.id);
+        if (cachedUrl) {
+            item.compressedSrc = cachedUrl;
+        }
+    }));
+
+    // 筛选出未缓存的照片
+    const uncachedItems = newItems.filter(item => !item.compressedSrc);
+    console.log('没有url的照片:', uncachedItems);
+
+    // 如果没有未缓存的照片，直接返回
+    if (uncachedItems.length === 0) return;
+
     try {
         const response = await getThumbnail100KPhotos(
-            newItems.map(item => item.id).join(',')
+            uncachedItems.map(item => item.id).join(',')
         );
 
         const zip = await JSZip.loadAsync(response.data);
 
-        await Promise.all(newItems.map(async item => {
+        await Promise.all(uncachedItems.map(async item => {
             const file = zip.file(`${item.fileName}`);
             if (file) {
                 const blob = await file.async('blob');
                 item.compressedSrc = URL.createObjectURL(blob);
+                // 更新IndexedDB中的照片缓存
+                await savePhotoToDB(item.id, item.compressedSrc);
             } else {
                 item.compressedSrc = '';
                 console.error('ZIP包中未找到照片:', item.id);
@@ -241,7 +261,7 @@ const getThumbnailPhotos = async (start: number, end: number) => {
         }));
     } catch (error) {
         console.error('批量获取压缩图失败:', error);
-        newItems.forEach(item => item.compressedSrc = '');
+        uncachedItems.forEach(item => item.compressedSrc = '');
     }
 };
 

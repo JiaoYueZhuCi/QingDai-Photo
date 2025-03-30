@@ -15,7 +15,9 @@
           <el-menu-item index="/manage/timelineList" style="width: 100px;">
             时间线管理
           </el-menu-item>
-
+          <el-menu-item style="width: 100px; color: #F56C6C;" @click="handleLogout">
+            注销
+          </el-menu-item>
         </el-menu>
       </el-header>
       <el-main>
@@ -30,4 +32,11 @@
   padding: 0;
   position: relative;
 }
-</style> 
+</style>
+
+<script setup>
+const handleLogout = () => {
+  localStorage.clear('token');
+  window.location.href = '/';
+};
+</script>

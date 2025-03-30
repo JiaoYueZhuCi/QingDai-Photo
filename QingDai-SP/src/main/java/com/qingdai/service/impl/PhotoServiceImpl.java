@@ -386,8 +386,6 @@ public class PhotoServiceImpl extends ServiceImpl<PhotoMapper, Photo> implements
         }
         Optional.ofNullable(photoDate)
                 .ifPresent(date -> photo.setTime(DateUtils.formatDateTime(date)));
-        System.out.println(photo.getTime());
-
     }
 
     // 存储相机拍摄参数
