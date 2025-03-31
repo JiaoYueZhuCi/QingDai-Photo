@@ -129,7 +129,7 @@
 
         <PhotoUpdate v-model="photoUploadVisible" ref="photoUpdateRef" @photo-uploaded="fetchData" />
 
-        <PreviewViewer v-if="previewVisible" :photo-id="currentPreviewId" @close="previewVisible = false" />
+        <PhotoViewer v-if="previewVisible" :photo-id="currentPreviewId" @close="previewVisible = false" />
 
         <div class="pagination-wrapper">
             <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize"
@@ -141,7 +141,7 @@
 
 <script setup lang="ts">
 import PhotoUpdate from '@/views/manage/PhotoUpdate.vue'
-import PreviewViewer from '@/components/PreviewViewer.vue'
+import PhotoViewer from '@/components/PhotoViewer.vue'
 import { ref, watchEffect } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Upload } from '@element-plus/icons-vue'

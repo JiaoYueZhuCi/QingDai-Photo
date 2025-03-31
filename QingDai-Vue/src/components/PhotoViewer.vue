@@ -35,6 +35,7 @@ const emit = defineEmits(['close'])
 const urlList = ref<string[]>([])
 const imageViewerRef = ref(null)
 
+
 // 组件挂载时的处理
 onMounted(async () => {
     // 处理滚动条和body样式
@@ -51,7 +52,9 @@ onMounted(async () => {
     });
 
     try {
-        if (props.photoId) {
+        if(props.urlList?.length){
+            urlList.value = props.urlList
+        }else if (props.photoId) {
             // 获取用户角色决定加载哪种质量的图片
             const userRoles = await getUserRoles()
             const hasViewPermission = await canViewFullSizePhoto()
@@ -61,20 +64,19 @@ onMounted(async () => {
             let imageResult
             if (hasViewPermission) {
                 imageResult = await getFullPhoto(props.photoId)
-           
+                console.log('获取全尺寸图片结果', imageResult)
             } else {
                 imageResult = await get1000KPhoto(props.photoId)
+                console.log('获取1000K图片结果', imageResult)
             }
             
-            if ( imageResult?.url) {
-                urlList.value = [imageResult.url]
+            if (imageResult?.url) {
+                    urlList.value = [imageResult.url]
             } else if(imageResult?.blob){
-            try {
-                    // 创建blob URL
-                    const blobUrl = URL.createObjectURL(imageResult.blob)
+                try {
+                const blobUrl = URL.createObjectURL(imageResult.blob)
                     urlList.value = [blobUrl]
                     console.log('创建的blob URL:', blobUrl)
-                    
                 } catch (error) {
                     console.error('创建图片URL失败:', error)
                     ElMessage.error('图片加载失败')
@@ -89,10 +91,7 @@ onMounted(async () => {
             console.log('获取全尺寸图片',props.photoId)
             console.log('imageResult',imageResult)
             console.log('urlList',urlList.value)
-        } else if (props.urlList?.length) {
-            // 如果直接提供了URL列表，直接使用
-            urlList.value = props.urlList
-        } else {
+        }  else {
             ElMessage.error('未提供照片信息')
             handleClose()
         }
@@ -145,4 +144,4 @@ body {
 .el-image-viewer__img {
     display: block !important;
 }
-</style>
+</style> 

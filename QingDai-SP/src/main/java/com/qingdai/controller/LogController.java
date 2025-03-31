@@ -35,7 +35,6 @@ public class LogController {
     public ResponseEntity<String> toggleSqlLog(
             @Parameter(description = "是否启用SQL日志") @RequestParam boolean enabled) {
         try {
-            log.info("开始切换SQL日志状态为: {}", enabled);
             DynamicLogConfig.setSqlLoggingEnabled(enabled);
             log.info("成功切换SQL日志状态为: {}", enabled);
             return ResponseEntity.ok(enabled ? "SQL日志已启用" : "SQL日志已禁用");

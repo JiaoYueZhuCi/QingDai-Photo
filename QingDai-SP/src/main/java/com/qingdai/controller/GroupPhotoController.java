@@ -44,7 +44,6 @@ public class GroupPhotoController {
     @PreAuthorize("permitAll()")
     public ResponseEntity<GroupPhotoDTO> getGroupPhotoById(@PathVariable String id) {
         try {
-            log.info("开始查询组图详情，ID: {}", id);
             GroupPhotoDTO groupPhotoDTO = groupPhotoService.getGroupPhotoDTOById(id);
 
             if (groupPhotoDTO == null) {
@@ -65,7 +64,6 @@ public class GroupPhotoController {
     @PreAuthorize("permitAll()")
     public ResponseEntity<List<GroupPhotoDTO>> getAllGroupPhotos() {
         try {
-            log.info("开始查询所有组图");
             List<GroupPhotoDTO> groupPhotoDTOs = groupPhotoService.getAllGroupPhotoDTOs();
 
             if (groupPhotoDTOs == null || groupPhotoDTOs.isEmpty()) {
@@ -86,8 +84,6 @@ public class GroupPhotoController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> createGroupPhoto(@RequestBody GroupPhotoDTO groupPhotoDTO) {
         try {
-            log.info("开始创建组图，请求参数: {}", groupPhotoDTO);
-
             if (groupPhotoDTO.photoIds == null || groupPhotoDTO.photoIds.isEmpty()) {
                 log.warn("创建组图失败：照片ID列表不能为空");
                 return ResponseEntity.badRequest().body("照片ID列表不能为空");
@@ -158,8 +154,6 @@ public class GroupPhotoController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> deleteGroupPhoto(@PathVariable String id) {
         try {
-            log.info("开始删除组图及其关联照片，ID: {}", id);
-
             GroupPhoto groupPhoto = groupPhotoService.getById(id);
             if (groupPhoto == null) {
                 log.warn("尝试删除不存在的组图，ID: {}", id);
@@ -216,7 +210,6 @@ public class GroupPhotoController {
     @PreAuthorize("permitAll()")
     public ResponseEntity<Integer> getPhotoCountById(@PathVariable String id) {
         try {
-            log.info("开始查询组图照片数量，ID: {}", id);
             GroupPhoto groupPhoto = groupPhotoService.getById(id);
 
             if (groupPhoto == null) {

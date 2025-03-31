@@ -110,7 +110,7 @@
                 </div>
             </div>
         </div>
-        <preview-viewer v-if="showFullScreen" :photo-id="fullScreenPhotoId" @close="closeFullScreen" />
+        <PhotoViewer v-if="showFullScreen" :photo-id="fullScreenPhotoId" @close="closeFullScreen" />
     </el-dialog>
 </template>
 
@@ -121,7 +121,7 @@ import { ArrowLeft, ArrowRight, PictureFilled } from '@element-plus/icons-vue'
 import type { WaterfallItem } from '@/types'
 import type { GroupPhotoDTO } from '@/types/groupPhoto'
 import { getGroupPhoto } from '@/api/groupPhoto'
-import PreviewViewer from '@/components/PreviewViewer.vue'
+import PhotoViewer from '@/components/PhotoViewer.vue'
 import { get1000KPhoto, getPhotoDetailInfo, type EnhancedWaterfallItem } from '@/utils/photo'
 
 const props = defineProps<{
@@ -419,8 +419,6 @@ const closeFullScreen = () => {
     overflow: hidden;
     display: flex;
 }
-
-
 
 .info-tabs :deep(.el-tabs__content) {
     overflow-y: auto;

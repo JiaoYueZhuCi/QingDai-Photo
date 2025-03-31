@@ -120,8 +120,6 @@ public class PhotoController {
     // @PreAuthorize("hasRole('ADMIN')")
     @PreAuthorize("permitAll()")
     public ResponseEntity<String> FullSizePhototoMysql() {
-        log.info("开始执行图片信息入库操作，源目录: {}", fullSizeUrl);
-        
         File folder = FileUtils.validateFolder(fullSizeUrl);
         if (folder == null) {
             log.error("照片文件夹路径无效: {}", fullSizeUrl);
@@ -165,7 +163,6 @@ public class PhotoController {
             @RequestParam(defaultValue = "false") boolean overwrite) {
 
         try {
-            log.info("开始执行图片压缩任务，最大大小: {}KB, 是否覆盖: {}", maxSizeKB, overwrite);
             ValidationUtils.validateMaxSize(maxSizeKB);
 
             File pendingDir = new File(pendingUrl);
@@ -195,7 +192,6 @@ public class PhotoController {
     @PreAuthorize("permitAll()")
     public ResponseEntity<Resource> getThumbnail100KPhotoById(@RequestParam String id) {
         try {
-            log.info("获取100K压缩照片，ID: {}", id);
             String fileName = photoService.getFileNameById(id);
             if (fileName == null) {
                 log.warn("未找到ID为{}的照片记录", id);
@@ -214,7 +210,6 @@ public class PhotoController {
     @PreAuthorize("permitAll()")
     public ResponseEntity<Resource> getThumbnail1000KPhotoById(@RequestParam String id) {
         try {
-            log.info("获取1000K压缩照片，ID: {}", id);
             String fileName = photoService.getFileNameById(id);
             if (fileName == null) {
                 log.warn("未找到ID为{}的照片记录", id);
@@ -233,7 +228,6 @@ public class PhotoController {
     @Operation(summary = "批量获取压缩照片文件", description = "根据ID列表获取多个压缩照片文件")
     public ResponseEntity<Resource> getThumbnail100KPhotosByIds(@RequestParam List<String> ids) {
         try {
-            log.info("开始批量获取100K压缩照片，ID列表: {}", ids);
             List<File> validFiles = new ArrayList<>();
 
             for (String id : ids) {
@@ -273,7 +267,6 @@ public class PhotoController {
     @Operation(summary = "获取指定原图照片文件", description = "根据接收到的照片ID获取原图照片文件并返回")
     public ResponseEntity<Resource> getFullSizePhotoById(@RequestParam String id) {
         try {
-            log.info("获取原图照片，ID: {}", id);
             String fileName = photoService.getFileNameById(id);
             if (fileName == null) {
                 log.warn("未找到ID为{}的照片记录", id);
@@ -292,7 +285,6 @@ public class PhotoController {
     @Operation(summary = "获取照片元数据", description = "根据ID获取照片的完整元数据信息")
     public ResponseEntity<Photo> getPhotoById(@RequestParam String id) {
         try {
-            log.info("开始获取照片元数据，ID: {}", id);
             Photo photo = photoService.getById(Long.valueOf(id));
             if (photo == null) {
                 log.warn("未找到ID为{}的照片记录", id);
@@ -339,7 +331,6 @@ public class PhotoController {
     @Operation(summary = "获取本月照片数量相比上个月照片数量的变化", description = "根据time字段计算本月照片数量相比上个月照片数量的变化")
     public ResponseEntity<Long> getMonthlyPhotoCountChange() {
         try {
-            log.info("开始计算月度照片数量变化");
             long currentMonthCount = photoService.countByMonth(YearMonth.now());
             long previousMonthCount = photoService.countByMonth(YearMonth.now().minusMonths(1));
             long change = currentMonthCount - previousMonthCount;
@@ -356,7 +347,6 @@ public class PhotoController {
     @Operation(summary = "获取今年照片数量相比去年照片数量的变化", description = "根据time字段计算今年照片数量相比去年照片数量的变化")
     public ResponseEntity<Long> getYearlyPhotoCountChange() {
         try {
-            log.info("开始计算年度照片数量变化");
             long currentYearCount = photoService.countByYear(Year.now());
             long previousYearCount = photoService.countByYear(Year.now().minusYears(1));
             long change = currentYearCount - previousYearCount;
@@ -373,7 +363,6 @@ public class PhotoController {
     @PreAuthorize("permitAll()")
     public ResponseEntity<Long> getMonthlyStartPhotoCountChange() {
         try {
-            log.info("开始计算月度精选照片数量变化");
             long currentMonthCount = photoService.countByMonthAndStart(YearMonth.now(), 1);
             long previousMonthCount = photoService.countByMonthAndStart(YearMonth.now().minusMonths(1), 1);
             long change = currentMonthCount - previousMonthCount;
@@ -389,7 +378,6 @@ public class PhotoController {
     @Operation(summary = "获取今年精选照片数量相比去年照片数量的变化", description = "根据time字段计算今年代表作照片数量相比去年照片数量的变化")
     public ResponseEntity<Long> getYearlyStartPhotoCountChange() {
         try {
-            log.info("开始计算年度精选照片数量变化");
             long currentYearCount = photoService.countByYearAndStart(Year.now(), 1);
             long previousYearCount = photoService.countByYearAndStart(Year.now().minusYears(1), 1);
             long change = currentYearCount - previousYearCount;
@@ -408,7 +396,6 @@ public class PhotoController {
             @RequestParam int page,
             @RequestParam int pageSize) {
         try {
-            log.info("开始获取可见照片分页信息，页码: {}, 每页大小: {}", page, pageSize);
             if (page < 1) {
                 page = 1;
                 log.warn("页码小于1，已自动调整为1");
@@ -432,7 +419,6 @@ public class PhotoController {
             @RequestParam int page,
             @RequestParam int pageSize) {
         try {
-            log.info("开始获取照片分页信息，页码: {}, 每页大小: {}", page, pageSize);
             if (page < 1) {
                 page = 1;
                 log.warn("页码小于1，已自动调整为1");
@@ -455,7 +441,6 @@ public class PhotoController {
             @RequestParam int page,
             @RequestParam int pageSize) {
         try {
-            log.info("开始获取代表作照片分页信息，页码: {}, 每页大小: {}", page, pageSize);
             Page<Photo> photoPage = new Page<>(page, pageSize);
             photoService.page(photoPage, new LambdaQueryWrapper<Photo>()
                     .orderByDesc(Photo::getTime)
@@ -475,8 +460,6 @@ public class PhotoController {
     public ResponseEntity<String> processPendingPhotos(
             @RequestParam(defaultValue = "false") boolean overwrite) {
         try {
-            log.info("开始处理待处理图片，是否覆盖: {}", overwrite);
-            
             File pendingDir = FileUtils.validateFolder(pendingUrl);
             File fullSizeDir = FileUtils.validateFolder(fullSizeUrl);
             File thumbnail100KDir = FileUtils.validateFolder(thumbnail100KUrl);
@@ -488,7 +471,6 @@ public class PhotoController {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("目录验证失败");
             }
 
-            log.info("开始获取待处理图片列表");
             List<Photo> photos = photoService.getPhotosByFolder(pendingDir);
 
             if (photos.isEmpty()) {
@@ -498,17 +480,14 @@ public class PhotoController {
             log.info("找到{}张待处理照片", photos.size());
 
             // 压缩图片到100K目录
-            log.info("开始压缩图片到100K目录");
             photoService.thumbnailPhotosFromFolderToFolder(pendingDir, thumbnail100KDir, 100, overwrite);
             log.info("完成100K压缩");
 
             // 压缩图片到1000K目录
-            log.info("开始压缩图片到1000K目录");
             photoService.thumbnailPhotosFromFolderToFolder(pendingDir, thumbnail1000KDir, 1000, overwrite);
             log.info("完成1000K压缩");
 
             // 复制原图到fullSizeDir
-            log.info("开始复制原图到目标目录");
             File[] imageFiles = FileUtils.getImageFiles(pendingDir);
             log.info("待复制的原图文件数量: {}", imageFiles.length);
             
@@ -525,12 +504,10 @@ public class PhotoController {
             log.info("完成原图复制");
 
             // 存入数据库
-            log.info("开始保存照片信息到数据库");
             boolean result = photoService.saveBatch(photos);
 
             if (result) {
                 // 清理pending目录
-                log.info("开始清理临时目录");
                 FileUtils.clearFolder(pendingDir, true);
                 log.info("成功处理所有照片，共处理{}张", photos.size());
                 return ResponseEntity.ok("处理成功，已处理 " + photos.size() + " 张照片");
@@ -555,8 +532,6 @@ public class PhotoController {
                     array = @ArraySchema(arraySchema = @Schema(type = "array", implementation = File.class),
                             schema = @Schema(type = "string", format = "binary")))) @RequestParam("files") MultipartFile[] files) {
         try {
-            log.info("开始处理前端上传的图片文件，是否覆盖: {}", overwrite);
-            
             if (files == null || files.length == 0) {
                 log.warn("没有收到文件");
                 return ResponseEntity.badRequest().body("没有收到文件");
@@ -583,8 +558,6 @@ public class PhotoController {
                 return ResponseEntity.badRequest().body("没有有效的图片文件");
             }
 
-            log.info("开始处理{}个有效图片文件", validFiles.size());
-
             // 保存到临时目录
             for (MultipartFile file : validFiles) {
                 FileUtils.saveFile(file, pendingDir);
@@ -597,7 +570,6 @@ public class PhotoController {
             // 单个文件处理遍历
             for (MultipartFile file : validFiles) {
                 try {
-                    log.debug("开始处理文件: {}", file.getOriginalFilename());
                     // 压缩到100K目录
                     photoService.thumbnailPhotoFromMultipartFileToFolder(file, pendingDir, thumbnail100KDir, 100, overwrite);
                     // 压缩到1000K目录
@@ -641,7 +613,6 @@ public class PhotoController {
     @Operation(summary = "更新照片信息", description = "根据ID更新照片元数据信息")
     public ResponseEntity<String> updatePhotoInfo(@RequestBody Photo photo) {
         try {
-            log.info("开始更新照片信息，ID: {}", photo.getId());
             if (photo.getId() == null) {
                 log.error("更新照片信息失败：ID为空");
                 return ResponseEntity.badRequest().body("ID不能为空");
@@ -666,7 +637,6 @@ public class PhotoController {
     @Operation(summary = "根据ID删除照片", description = "根据ID删除数据库记录及对应的原图和压缩图文件")
     public ResponseEntity<String> deletePhotoById(@RequestParam String id) {
         try {
-            log.info("开始删除照片，ID: {}", id);
             Long photoId = Long.valueOf(id);
             Photo photo = photoService.getById(photoId);
             if (photo == null) {
@@ -696,7 +666,6 @@ public class PhotoController {
     public ResponseEntity<String> updatePhotoStartStatus(
             @RequestBody PhotoStartStatusDTO photoStartStatusDTO) {
         try {
-            log.info("开始更新照片星标状态，ID: {}, 状态: {}", photoStartStatusDTO.getId(), photoStartStatusDTO.getStart());
             String id = photoStartStatusDTO.getId();
             Integer start = photoStartStatusDTO.getStart();
 
@@ -732,8 +701,6 @@ public class PhotoController {
     @Operation(summary = "根据ID列表获取多个照片对象", description = "从数据库获取对应ID列表的多个照片信息")
     public ResponseEntity<List<Photo>> getPhotosByIds(@RequestParam List<String> ids) {
         try {
-            log.info("开始批量获取照片对象，ID列表: {}", ids);
-
             if (ids == null || ids.isEmpty()) {
                 log.warn("请求的ID列表为空");
                 return ResponseEntity.badRequest().body(Collections.emptyList());

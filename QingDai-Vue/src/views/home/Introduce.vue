@@ -110,7 +110,7 @@
             </el-descriptions-item>
         </el-descriptions>
 
-        <PreviewViewer v-if="previewVisible" :urlList="[previewImageUrl]" @close="previewVisible = false" />
+        <PhotoViewer v-if="previewVisible" :urlList="[previewImageUrl]" @close="previewVisible = false" />
     </div>
 </template>
 
@@ -125,7 +125,7 @@ import {
     User,
 } from '@element-plus/icons-vue'
 import LoginDialog from '@/components/LoginDialog.vue'
-import PreviewViewer from '@/components/PreviewViewer.vue' // 引入预览组件
+import PhotoViewer from '@/components/PhotoViewer.vue' // 引入预览组件
 
 const backgroundImageUrl = '/img/introduce/background.jpg'
 const avatarImageUrl = '/img/introduce/avatar.jpg'

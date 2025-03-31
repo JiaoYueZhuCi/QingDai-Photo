@@ -67,7 +67,6 @@ public class TimelineController {
     @Operation(summary = "添加时间线信息", description = "向数据库中添加一条时间线信息")
     public ResponseEntity<Timeline> addTimeline(@RequestBody TimelineDTO timelineDTO) {
         try {
-            log.info("开始添加时间线信息: {}", timelineDTO);
             Timeline timeline = new Timeline();
             timeline.setId(snowflakeIdGenerator.nextId());
             timeline.setTitle(timelineDTO.getTitle());
@@ -93,7 +92,6 @@ public class TimelineController {
     @Operation(summary = "删除时间线信息", description = "根据ID从数据库中删除一条时间线信息")
     public ResponseEntity<Void> deleteTimeline(@PathVariable String id) {
         try {
-            log.info("开始删除时间线信息，ID: {}", id);
             Timeline timeline = timelineService.getById(Long.parseLong(id));
             if (timeline == null) {
                 log.warn("未找到ID为{}的时间线记录", id);
@@ -119,7 +117,6 @@ public class TimelineController {
     @Operation(summary = "更新时间线信息", description = "根据传入的时间线信息更新数据库中的记录")
     public ResponseEntity<Timeline> updateTimeline(@RequestBody Timeline timeline) {
         try {
-            log.info("开始更新时间线信息，ID: {}", timeline.getId());
             boolean success = timelineService.updateById(timeline);
             if (success) {
                 log.info("成功更新时间线信息，ID: {}", timeline.getId());

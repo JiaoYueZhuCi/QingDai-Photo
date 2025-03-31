@@ -88,7 +88,6 @@ const handleOpen = async () => {
     isLoading.value = true
     
     try {
-        // 使用工具函数获取1000K图片
         const imageResult = await get1000KPhoto(props.photoId, (loading) => isLoading.value = loading)
         if (imageResult) {
             thumbnailUrl.value = imageResult.url
@@ -209,4 +208,4 @@ onUnmounted(() => {
         width: 100%;
     }
 }
-</style>
+</style> 

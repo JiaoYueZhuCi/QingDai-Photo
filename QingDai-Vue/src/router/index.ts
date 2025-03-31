@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import errorPage from '@/components/ErrorPage.vue' // 新增错误页面组件
-import { getRolesPermissions } from '@/api/user.ts'; // 引入获取用户角色的方法
+import errorPage from '@/components/Error.vue' 
+import { getRolesPermissions } from '@/api/user.ts'; 
 import { ElMessage } from 'element-plus';
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -15,7 +15,7 @@ const router = createRouter({
         },
         {
           path: '/login',
-          component: () => import('@/components/LoginDialog.vue').catch(() => errorPage),
+          component: () => import('@/components/Login.vue').catch(() => errorPage),
         },
         {
           path: '/home',

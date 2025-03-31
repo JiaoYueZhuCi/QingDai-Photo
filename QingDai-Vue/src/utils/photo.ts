@@ -28,12 +28,12 @@ export const get100KPhotos = async (
   // 复制一份数据，避免修改原始数据
   const processedItems = [...items];
   
-  // 筛选出未加载缩略图的项
-  const newItems = processedItems.filter(item => !item[srcKey]);
-  if (newItems.length === 0) return processedItems;
+  // 筛选出未缓存的照片
+  const uncachedItems = processedItems.filter(item => !item[srcKey]);
+  if (uncachedItems.length === 0) return processedItems;
 
   // 尝试从IndexedDB获取已缓存的Blob
-  await Promise.all(newItems.map(async item => {
+  await Promise.all(uncachedItems.map(async item => {
     try {
       const cachedBlob = await get100KPhotoFromDB(item[idKey]);
       if (cachedBlob) {
@@ -43,9 +43,6 @@ export const get100KPhotos = async (
       console.error('从缓存加载失败:', error);
     }
   }));
-
-  // 筛选出未缓存的照片
-  const uncachedItems = newItems.filter(item => !item[srcKey]);
   if (uncachedItems.length === 0) return processedItems;
 
   try {
@@ -114,7 +111,7 @@ export const get100KPhotos = async (
   } catch (error) {
     console.error('批量获取压缩图失败:', error);
     ElMessage.warning('部分缩略图加载失败');
-    newItems.forEach(item => {
+    uncachedItems.forEach(item => {
       item[srcKey] = '';
     });
   }

@@ -74,7 +74,6 @@ public class UserController {
     public ResponseEntity<User> getUserById(
             @Parameter(name = "id", description = "用户ID", example = "1001", in = ParameterIn.PATH, required = true) @PathVariable String id) {
         try {
-            log.info("开始查询用户信息，ID: {}", id);
             User user = userService.getById(id);
             if (user != null) {
                 log.info("成功获取用户信息，ID: {}", id);
@@ -96,7 +95,6 @@ public class UserController {
     public ResponseEntity<User> register(
             @Parameter(description = "用户注册信息", required = true) @RequestBody UserCreateDTO userDTO) {
         try {
-            log.info("开始注册新用户，用户名: {}", userDTO.getUsername());
             String encode = passwordEncoder.encode(userDTO.getPassword());
             userDTO.setPassword(encode);
 
@@ -123,7 +121,6 @@ public class UserController {
     public ResponseEntity<Void> deleteUser(
             @Parameter(name = "id", description = "用户ID", in = ParameterIn.PATH) @PathVariable Long id) {
         try {
-            log.info("开始删除用户，ID: {}", id);
             if (userService.getById(id) == null) {
                 log.warn("未找到ID为{}的用户", id);
                 return ResponseEntity.notFound().build();
@@ -175,7 +172,6 @@ public class UserController {
     public ResponseEntity<UserInfoDTO> getUserInfo(
             @RequestHeader(value = "Authorization", required = false) String authorization) {
         try {
-            log.info("开始获取用户信息，Authorization: {}", authorization);
             if (authorization == null || !authorization.startsWith("Bearer ")) {
                 log.warn("无效的Authorization头");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
@@ -217,7 +213,6 @@ public class UserController {
     public ResponseEntity<Map<String, Object>> getRolesAndPermissions(
             @RequestHeader(value = "Authorization", required = false) String authorization) {
         try {
-            log.info("开始获取用户角色及权限信息，Authorization: {}", authorization);
             if (authorization == null || !authorization.startsWith("Bearer ")) {
                 log.warn("无效的Authorization头");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();

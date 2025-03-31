@@ -1,10 +1,10 @@
 <template>
     <div class="container" ref="containerRef">
-        <PreviewDialog v-model="previewVisible" :photo-id="currentPreviewId" @close="previewVisible = false"
+        <PhotoPreview v-model="previewVisible" :photo-id="currentPreviewId" @close="previewVisible = false"
             @image-click="openFullImg" />
 
-        <PreviewViewer v-if="fullImgShow" :photo-id="currentPreviewId" :initial-index="currentIndex"
-             @close="fullImgShow = false" />
+        <PhotoViewer v-if="fullImgShow" :photo-id="currentPreviewId" :initial-index="currentIndex"
+            :use-direct-render="true" @close="fullImgShow = false" />
 
         <el-empty v-if="images.length === 0" description="暂无照片数据"></el-empty>
 
@@ -66,8 +66,8 @@ import { ElImage, ElIcon, ElMessage, ElPopover, ElEmpty } from 'element-plus';
 import { Picture as IconPicture, FullScreen, Star, StarFilled } from '@element-plus/icons-vue';
 import { getVisiblePhotosByPage, getStartPhotosByPage, updatePhotoStartStatus as updatePhotoStart } from '@/api/photo';
 import { debounce } from 'lodash';
-import PreviewDialog from "@/components/PreviewDialog.vue";
-import PreviewViewer from "@/components/PreviewViewer.vue";
+import PhotoPreview from "@/components/PhotoPreview.vue";
+import PhotoViewer from "@/components/PhotoViewer.vue";
 import { get100KPhotos, processPhotoData, type EnhancedWaterfallItem } from '@/utils/photo';
 
 // 添加 props 来接收父组件传递的值
