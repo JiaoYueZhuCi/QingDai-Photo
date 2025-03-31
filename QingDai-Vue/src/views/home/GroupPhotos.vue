@@ -39,12 +39,13 @@ import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import type { WaterfallItem } from '@/types';
 import { ElImage, ElIcon, ElMessage, ElLoading, ElPopover, ElEmpty } from 'element-plus';
 import { Picture as IconPicture, FullScreen, Star, StarFilled } from '@element-plus/icons-vue'
-import { getVisiblePhotosByPage, getPhotosByIds, getThumbnail100KPhotos, updatePhotoStartStatus as updatePhotoStart  } from '@/api/photo';
+import { getVisiblePhotosByPage, getPhotosByIds } from '@/api/photo';
 import { getAllGroupPhotos } from '@/api/groupPhoto';
 import { debounce } from 'lodash';
 import JSZip from 'jszip';
 import type { GroupPhotoDTO } from '@/types/groupPhoto';
 import GroupPhotoPreview from '@/components/GroupPhotoPreview.vue';
+import { get100KPhotos as getThumbnail, processPhotoData } from '@/utils/photo';
 
 // 添加新的状态保存选中的组图和照片
 const selectedGroupId = ref<string | null>(null);
@@ -123,28 +124,13 @@ const getPhotos = async () => {
                 return null;
             }
             
-            return {
-                id: coverPhoto.id || '',
-                fileName: coverPhoto.fileName || '',
-                author: coverPhoto.author || '未知作者',
-                width: coverPhoto.width || 0,
-                height: coverPhoto.height || 0,
-                aperture: coverPhoto.aperture || '',
-                iso: coverPhoto.iso || '',
-                shutter: coverPhoto.shutter || '',
-                camera: coverPhoto.camera || '',
-                lens: coverPhoto.lens || '',
-                time: coverPhoto.time || '',
+            return processPhotoData({
+                ...coverPhoto,
                 title: groupPhoto.title || '',
                 introduce: groupPhoto.introduce || '',
-                start: coverPhoto.start || 0,
-                aspectRatio: coverPhoto.width / coverPhoto.height ,
-                calcWidth: 0,
-                calcHeight: 0,
-                compressedSrc: coverPhoto.compressedSrc || '',
                 groupId: groupPhoto.id
-            };
-        });
+            });
+        }).filter(Boolean);
 
         // 记录添加前的长度
         const previousLength = images.value.length;
@@ -153,8 +139,8 @@ const getPhotos = async () => {
         // 计算布局
         calculateLayout();
 
-        // 仅处理新增的数据项
-        await getThumbnailPhotos(previousLength, images.value.length - 1);
+        // 加载缩略图
+        await getThumbnail(images.value.slice(previousLength));
 
         // 由于API一次性返回所有数据，设置hasMore为false
         hasMore.value = false;
@@ -227,70 +213,6 @@ watch(() => props.photoType, (newVal, oldVal) => {
         getPhotos();
     }
 });
-
-// 缩略图获取方法
-const getThumbnailPhotos = async (start: number, end: number) => {
-    const newItems = images.value.slice(start, end + 1).filter(item => !item.compressedSrc);
-    if (newItems.length === 0) return;
-
-    try {
-        // 获取需要请求的照片ID
-        const photoIds = newItems.map(item => item.id);
-        
-        // 创建ID到项目的映射，用于后续查找
-        const idToItemsMap = new Map<string, WaterfallItem[]>();
-        newItems.forEach((item: WaterfallItem) => {
-            if (!idToItemsMap.has(item.id)) {
-                idToItemsMap.set(item.id, []);
-            }
-            idToItemsMap.get(item.id)!.push(item);
-        });
-        
-        // 去重后的照片ID
-        const uniquePhotoIds = [...new Set(photoIds)];
-        
-        // 调用API获取缩略图，只传递唯一的ID
-        const response = await getThumbnail100KPhotos(
-            uniquePhotoIds.join(',')
-        );
-
-        const zip = await JSZip.loadAsync(response.data);
-        
-        // 创建从照片ID到URL的映射
-        const photoIdToUrlMap = new Map();
-        
-        // 处理每个唯一的照片ID
-        for (const photoId of uniquePhotoIds) {
-            const items = idToItemsMap.get(photoId) || [];
-            if (items.length > 0) {
-                const fileName = items[0].fileName;
-                const file = zip.file(`${fileName}`);
-                
-                if (file) {
-                    const blob = await file.async('blob');
-                    const url = URL.createObjectURL(blob);
-                    // 存储ID到URL的映射
-                    photoIdToUrlMap.set(photoId, url);
-                    
-                    // 为所有使用该ID的项设置相同的URL
-                    items.forEach(item => {
-                        item.compressedSrc = url;
-                    });
-                } else {
-                    // 文件未找到的情况
-                    items.forEach(item => {
-                        item.compressedSrc = '';
-                    });
-                    console.error('ZIP包中未找到照片:', photoId);
-                }
-            }
-        }
-    } catch (error) {
-        console.error('批量获取压缩图失败:', error);
-        newItems.forEach(item => item.compressedSrc = '');
-    }
-};
-
 
 ////计算图片宽度
 interface RowData {

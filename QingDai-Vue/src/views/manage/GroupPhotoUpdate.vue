@@ -80,13 +80,13 @@
 import { ref, reactive, watch, defineProps, defineEmits, defineExpose } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
-import { getPhotosByPage, getThumbnail100KPhotos } from '@/api/photo'
+import { getPhotosByPage } from '@/api/photo'
 import { addGroupPhoto, updateGroupPhoto } from '@/api/groupPhoto'
 import type { WaterfallItem } from '@/types'
 import type { GroupPhotoDTO, GroupPhoto } from '@/types/groupPhoto'
-import JSZip from 'jszip'
 import { DeleteFilled, Rank } from '@element-plus/icons-vue'
 import draggable from 'vuedraggable'
+import { get100KPhotos, processPhotoData } from '@/utils/photo'
 
 // 定义props和emit用于支持v-model
 const props = defineProps({
@@ -173,9 +173,44 @@ const rules = reactive<FormRules>({
 });
 
 // 照片选择相关
-const photoOptions = ref<(WaterfallItem & { thumbnailSrc: string })[]>([]);
-const photoCache = ref<Map<string, WaterfallItem & { thumbnailSrc: string }>>(new Map());
+interface PhotoOptionItem extends WaterfallItem {
+    thumbnailSrc: string;
+}
+
+const photoOptions = ref<PhotoOptionItem[]>([]);
+const photoCache = ref<Map<string, PhotoOptionItem>>(new Map());
 const thumbnailUrlCache = ref<Map<string, string>>(new Map());
+
+// 获取基础照片数据
+const fetchPhotos = async () => {
+    loading.value = true;
+    try {
+        const response = await getPhotosByPage({ page: 1, pageSize: 50 });
+        if (response?.records) {
+            // 处理照片数据
+            photoOptions.value = response.records.map((item: any) => ({
+                ...processPhotoData(item),
+                thumbnailSrc: ''
+            }));
+            
+            // 获取缩略图
+            const updatedOptions = await get100KPhotos(photoOptions.value as any, 'thumbnailSrc');
+            
+            // 更新缓存
+            updatedOptions.forEach(photo => {
+                photoCache.value.set(photo.id, photo as PhotoOptionItem);
+                if (photo.thumbnailSrc) {
+                    thumbnailUrlCache.value.set(photo.id, photo.thumbnailSrc);
+                }
+            });
+        }
+    } catch (error) {
+        console.error('获取照片列表失败:', error);
+        ElMessage.error('获取照片列表失败');
+    } finally {
+        loading.value = false;
+    }
+};
 
 // 搜索照片
 const searchPhotos = async (query: string) => {
@@ -193,81 +228,28 @@ const searchPhotos = async (query: string) => {
                     (item.fileName && item.fileName.toLowerCase().includes(query.toLowerCase()));
             });
 
-            // 获取所有照片的缩略图
-            const photoIds = filteredRecords.map((item: WaterfallItem) => item.id);
-            if (photoIds.length > 0) {
-                const thumbnailResponse = await getThumbnail100KPhotos(photoIds.join(','));
-                if (thumbnailResponse && thumbnailResponse.data) {
-                    const zip = await JSZip.loadAsync(thumbnailResponse.data);
-                    await Promise.all(photoIds.map(async (id: string) => {
-                        const photo = filteredRecords.find((p: WaterfallItem) => p.id === id);
-                        if (photo && photo.fileName) {
-                            const file = zip.file(photo.fileName);
-                            if (file) {
-                                const blob = await file.async('blob');
-                                thumbnailUrlCache.value.set(id, URL.createObjectURL(blob));
-                            }
-                        }
-                    }));
-                }
-            }
-
-            photoOptions.value = filteredRecords.map((item: WaterfallItem) => ({
-                ...item,
+            // 处理照片数据
+            photoOptions.value = filteredRecords.map((item: any) => ({
+                ...processPhotoData(item),
                 thumbnailSrc: thumbnailUrlCache.value.get(item.id) || ''
             }));
-
-            // 更新缓存
-            photoOptions.value.forEach(photo => {
-                photoCache.value.set(photo.id, photo);
-            });
+            
+            // 获取缩略图
+            if (filteredRecords.length > 0) {
+                const updatedOptions = await get100KPhotos(photoOptions.value as any, 'thumbnailSrc');
+                
+                // 更新缓存
+                updatedOptions.forEach(photo => {
+                    photoCache.value.set(photo.id, photo as PhotoOptionItem);
+                    if (photo.thumbnailSrc) {
+                        thumbnailUrlCache.value.set(photo.id, photo.thumbnailSrc);
+                    }
+                });
+            }
         }
     } catch (error) {
         console.error('搜索照片失败:', error);
         ElMessage.error('搜索照片失败');
-    } finally {
-        loading.value = false;
-    }
-};
-
-// 获取照片列表
-const fetchPhotos = async () => {
-    loading.value = true;
-    try {
-        const response = await getPhotosByPage({ page: 1, pageSize: 50 });
-        if (response && response.records) {
-            // 获取所有照片的缩略图
-            const photoIds = response.records.map((item: WaterfallItem) => item.id);
-            if (photoIds.length > 0) {
-                const thumbnailResponse = await getThumbnail100KPhotos(photoIds.join(','));
-                if (thumbnailResponse && thumbnailResponse.data) {
-                    const zip = await JSZip.loadAsync(thumbnailResponse.data);
-                    await Promise.all(photoIds.map(async (id: string) => {
-                        const photo = response.records.find((p: WaterfallItem) => p.id === id);
-                        if (photo && photo.fileName) {
-                            const file = zip.file(photo.fileName);
-                            if (file) {
-                                const blob = await file.async('blob');
-                                thumbnailUrlCache.value.set(id, URL.createObjectURL(blob));
-                            }
-                        }
-                    }));
-                }
-            }
-
-            photoOptions.value = response.records.map((item: WaterfallItem) => ({
-                ...item,
-                thumbnailSrc: thumbnailUrlCache.value.get(item.id) || ''
-            }));
-
-            // 更新缓存
-            photoOptions.value.forEach(photo => {
-                photoCache.value.set(photo.id, photo);
-            });
-        }
-    } catch (error) {
-        console.error('获取照片列表失败:', error);
-        ElMessage.error('获取照片列表失败');
     } finally {
         loading.value = false;
     }

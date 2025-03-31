@@ -7,7 +7,9 @@ interface PhotoDB extends DBSchema {
     key: string;        // 主键类型
     value: {            // 存储值类型
       photoId: string;      // 对应 keyPath
-      blob: Blob;       // 实际存储的二进制数据
+      fullBlob: Blob;      // 原始尺寸照片数据
+      blob100K: Blob;      // 100K尺寸照片数据
+      blob1000K: Blob;     // 1000K尺寸照片数据
     };
     // indexes: { 
     //   'by-key': string; // 索引
@@ -29,33 +31,103 @@ export const initDB = async (): Promise<IDBPDatabase<PhotoDB>> => {
   });
 };
 
-// 获取照片
-export const getPhotoFromDB = async (photoId: string): Promise<Blob | undefined> => {
+// 获取原始尺寸照片
+export const getFullPhotoFromDB = async (photoId: string): Promise<Blob | undefined> => {
   try {
     const db = await initDB();
     const record = await db.get('photos', photoId);
-    return record?.blob;
+    return record?.fullBlob;
   } catch (error) {
-    console.error('获取照片失败:', error);
+    console.error('获取原始尺寸照片失败:', error);
     return undefined;
   }
 };
 
-// 保存照片（支持批量）
-export const savePhotoToDB = async (photoId: string, blob: Blob): Promise<void> => {
+// 获取100K尺寸照片
+export const get100KPhotoFromDB = async (photoId: string): Promise<Blob | undefined> => {
   try {
     const db = await initDB();
+    const record = await db.get('photos', photoId);
+    return record?.blob100K;
+  } catch (error) {
+    console.error('获取100K尺寸照片失败:', error);
+    return undefined;
+  }
+};
+
+// 获取1000K尺寸照片
+export const get1000KPhotoFromDB = async (photoId: string): Promise<Blob | undefined> => {
+  try {
+    const db = await initDB();
+    const record = await db.get('photos', photoId);
+    return record?.blob1000K;
+  } catch (error) {
+    console.error('获取1000K尺寸照片失败:', error);
+    return undefined;
+  }
+};
+
+// 保存原始尺寸照片
+export const saveFullPhotoToDB = async (photoId: string, fullBlob: Blob): Promise<void> => {
+  try {
+    const db = await initDB();
+    const existing = await db.get('photos', photoId);
     await db.put('photos', {
-      photoId: photoId,  
-      blob: blob
+      photoId: photoId,
+      fullBlob: fullBlob,
+      blob100K: existing?.blob100K || new Blob(), // 确保 blob100K 不为 undefined
+      blob1000K: existing?.blob1000K || new Blob() // 确保 blob1000K 不为 undefined
     });
   } catch (error) {
-    console.error('保存照片失败:', {
+    console.error('保存原始尺寸照片失败:', {
       error: error,
       photoId: photoId,
-      blob: blob
+      fullBlob: fullBlob
     });
-    throw new Error(`无法保存照片 ${photoId}`);
+    throw new Error(`无法保存原始尺寸照片 ${photoId}`);
+  }
+};
+
+// 保存100K尺寸照片
+export const save100KPhotoToDB = async (photoId: string, blob100K: Blob): Promise<void> => {
+  try {
+    const db = await initDB();
+    const existing = await db.get('photos', photoId);
+    await db.put('photos', {
+      photoId: photoId,
+      blob100K: blob100K,
+      fullBlob: existing?.fullBlob || new Blob(), 
+      blob1000K: existing?.blob1000K || new Blob()
+    });
+  } catch (error) {
+    console.error('保存100K尺寸照片失败:', {
+      error: error,
+      photoId: photoId,
+      blob100K: blob100K
+    });
+    throw new Error(`无法保存100K尺寸照片 ${photoId}`);
+  }
+};
+
+// 保存1000K尺寸照片
+export const save1000KPhotoToDB = async (photoId: string, blob1000K: Blob): Promise<void> => {
+  try {
+    const db = await initDB();
+    const existing = await db.get('photos', photoId);
+    await db.put('photos', {
+      ...existing,
+      photoId: photoId,
+      blob1000K: blob1000K,
+      fullBlob: existing?.fullBlob || new Blob(),
+      blob100K: existing?.blob100K || new Blob() 
+    });
+  } catch (error) {
+    console.error('保存1000K尺寸照片失败:', {
+      error: error,
+      photoId: photoId,
+      blob1000K: blob1000K
+    });
+    throw new Error(`无法保存1000K尺寸照片 ${photoId}`);
   }
 };
 

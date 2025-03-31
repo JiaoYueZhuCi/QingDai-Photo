@@ -67,22 +67,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watchEffect, reactive } from 'vue'
+import { ref, watchEffect } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
-import { getAllGroupPhotos, updateGroupPhoto, deleteGroupPhoto } from '@/api/groupPhoto'
-import {  getThumbnail100KPhotos } from '@/api/photo'
-import type { GroupPhoto,GroupPhotoDTO } from '@/types/groupPhoto'
+import { getAllGroupPhotos, deleteGroupPhoto } from '@/api/groupPhoto'
+import type { GroupPhotoDTO } from '@/types/groupPhoto'
 import GroupPhotoUpdate from '@/views/manage/GroupPhotoUpdate.vue'
 import GroupPhotoPreview from '@/components/GroupPhotoPreview.vue'
-import JSZip from 'jszip'
+import { get100KPhotos, type EnhancedWaterfallItem } from '@/utils/photo'
 
 const groupPhotoUpdateRef = ref()
 const groupPhotoDialogVisible = ref(false)
 const editMode = ref(false)
 const currentEditData = ref<GroupPhotoDTO | null>(null)
 
-const tableData = ref<(any)[]>([])
+const tableData = ref<any[]>([])
 const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
@@ -98,74 +97,57 @@ const showGroupPhotoAdd = () => {
 }
 
 const fetchData = async () => {
-    try {
-        const response = await getAllGroupPhotos()
-        // 处理响应数据
-        if (response && Array.isArray(response)) {
-            tableData.value = response.map((item: GroupPhotoDTO) => ({
-                ...item,
-                isEditing: false,
-            }));
+  try {
+    const response = await getAllGroupPhotos();
+    
+    if (response && Array.isArray(response)) {
+      tableData.value = response.map((item: GroupPhotoDTO) => ({
+        ...item,
+        isEditing: false,
+        coverImage: ''
+      }));
 
-            // 获取所有组图的封面照片ID
-            const coverPhotoIds = tableData.value
-                .filter(item => item.groupPhoto.coverPhotoId)
-                .map(item => item.groupPhoto.coverPhotoId)
-                .filter(id => id);  // 过滤掉空值
-            // 批量获取缩略图
-            if (coverPhotoIds.length > 0) {
-                // 创建一个照片ID到索引位置的映射，用于后续恢复顺序
-                const idPositionMap = new Map();
-                coverPhotoIds.forEach((id, index) => {
-                    if (!idPositionMap.has(id)) {
-                        idPositionMap.set(id, []);
-                    }
-                    idPositionMap.get(id).push(index);
-                });
+      // 获取所有封面图ID对应的项
+      const coverItems: EnhancedWaterfallItem[] = tableData.value
+        .filter(item => item.groupPhoto.coverPhotoId)
+        .map(item => ({
+          id: item.groupPhoto.coverPhotoId,
+          fileName: '',
+          author: '',
+          width: 0,
+          height: 0,
+          aperture: '',
+          iso: '',
+          shutter: '',
+          camera: '',
+          lens: '',
+          time: '',
+          title: '',
+          introduce: '',
+          start: 0,
+          compressedSrc: ''
+        }));
 
-                // 去重后的照片ID数组
-                const uniqueCoverPhotoIds = [...new Set(coverPhotoIds)];
-                const thumbnailResponse = await getThumbnail100KPhotos(uniqueCoverPhotoIds.join(','));
-                if (thumbnailResponse && thumbnailResponse.data) {
-                    const zip = await JSZip.loadAsync(thumbnailResponse.data);
-                    
-                    // 创建从照片ID到URL的映射
-                    const photoIdToUrlMap = new Map();
-                    
-                    // 为每个唯一的照片ID创建URL
-                    let i = 0;
-                    for (const [filename, file] of Object.entries(zip.files)) {
-                        if (file.dir) continue;
-                        
-                        const photoId = uniqueCoverPhotoIds[i++];
-                        if (photoId) {
-                            const blob = await file.async('blob');
-                            const url = URL.createObjectURL(blob);
-                            photoIdToUrlMap.set(photoId, url);
-                        }
-                    }
-                    // 更新表格数据中的缩略图
-                    tableData.value = tableData.value.map((item) => {
-                        if (item.groupPhoto.coverPhotoId) {
-                            return {
-                                ...item,
-                                coverImage: photoIdToUrlMap.get(item.groupPhoto.coverPhotoId) || ''
-                            };
-                        }
-                        return item;
-                    });
-                }
-            }
+      if (coverItems.length > 0) {
+        // 使用工具函数获取缩略图
+        const processedItems = await get100KPhotos(coverItems);
+        
+        // 更新表格数据中的封面图URL
+        tableData.value = tableData.value.map(item => {
+          const coverItem = processedItems.find(cover => cover.id === item.groupPhoto.coverPhotoId);
+          return {
+            ...item,
+            coverImage: coverItem?.compressedSrc || ''
+          };
+        });
+      }
 
-            total.value = response.length;
-        } else {
-            tableData.value = [];
-            total.value = 0;
-        }
-    } catch (error) {
-        console.error('获取组图数据失败:', error);
-        ElMessage.error('组图数据加载失败');
+      total.value = response.length;
     }
+  } catch (error) {
+    console.error('获取组图数据失败:', error);
+    ElMessage.error('组图数据加载失败');
+  }
 };
 
 const handleCurrentChange = (val: number) => {
@@ -203,6 +185,7 @@ const handleDelete = async (row: any) => {
         }
     }
 }
+
 // 照片预览
 const openPreview = (item: GroupPhotoDTO) => {
     selectedGroupId.value = item.groupPhoto.id;
@@ -219,7 +202,6 @@ const closeGroupPhotoPreview = () => {
 const handleManagePhotos = (row: any) => {
     editMode.value = true
     currentEditData.value = row;
-    console.log('currentEditData', currentEditData.value)
     groupPhotoDialogVisible.value = true
 }
 </script>

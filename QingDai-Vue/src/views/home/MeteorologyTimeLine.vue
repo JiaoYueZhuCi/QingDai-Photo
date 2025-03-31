@@ -42,17 +42,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed ,watch} from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch} from 'vue'
 import { getGroupPhoto } from '@/api/groupPhoto'
-import { getThumbnail100KPhotos, getPhotosByIds } from '@/api/photo'
-import type { GroupPhoto,GroupPhotoDTO } from '@/types'
-import type { WaterfallItem } from '@/types'
-import JSZip from 'jszip'
+import { getPhotosByIds } from '@/api/photo'
+import type { GroupPhotoDTO } from '@/types/groupPhoto'
+import { ElMessage } from 'element-plus'
 import GroupPhotoPreview from '@/components/GroupPhotoPreview.vue'
+import { get100KPhotos, processPhotoData, type EnhancedWaterfallItem } from '@/utils/photo'
 
 const loading = ref(true)
-const groupInfo = ref<GroupPhotoDTO | null>(null)
-const photos = ref<WaterfallItem[]>([])
+const groupPhoto = ref<GroupPhotoDTO | null>(null)
+const photos = ref<EnhancedWaterfallItem[]>([])
 
 // 预览相关状态
 const props = defineProps<{
@@ -63,7 +63,7 @@ const selectedPhotoId = ref<string | undefined>(undefined)
 
 
 // 打开照片预览
-const handleImageClick = (photo: WaterfallItem) => {
+const handleImageClick = (photo: EnhancedWaterfallItem) => {
     selectedPhotoId.value = photo.id
 }
 
@@ -136,82 +136,54 @@ const handleResize = () => {
 // 加载组图信息和照片
 const loadGroupPhotos = async () => {
     try {
-        loading.value = true
+        loading.value = true;
 
-        // 获取组图信息
-        const response = await getGroupPhoto(selectedGroupId.value) // 
-        groupInfo.value = response as unknown as GroupPhotoDTO
-        if (groupInfo.value && groupInfo.value.photoIds) {
+        // 获取特定气象类型组图信息
+        const response = await getGroupPhoto(selectedGroupId.value);
+        groupPhoto.value = response;
+
+        if (groupPhoto.value?.photoIds?.length) {
             // 获取照片ID列表
-            const photoIds = groupInfo.value.photoIds;
-            if (photoIds.length > 0) {
-                // 获取照片信息
-                const photosData = await getPhotosByIds(photoIds)
+            const photoIds = groupPhoto.value.photoIds;
+            
+            // 批量获取照片基础信息
+            const photoDataResponse = await getPhotosByIds(photoIds);
 
-                // 获取照片缩略图
-                const thumbnailResponse = await getThumbnail100KPhotos(photoIds.join(','))
-
-                // 处理照片数据 - 解压缩ZIP文件
-                const zip = await JSZip.loadAsync(thumbnailResponse.data)
-
-                // 获取所有图片文件
-                const files = Object.values(zip.files).filter(file => !file.dir)
-
-                // 确保已经获取到照片信息和缩略图
-                if (photosData && photosData.length > 0 && files.length > 0) {
-                    // 创建照片数组
-                    const photoList: WaterfallItem[] = []
-
-                    // 处理每张照片
-                    for (const photo of photosData) {
-                        // 根据文件名查找对应的缩略图文件
-                        const file = files.find(f => f.name.includes(photo.fileName) || f.name.includes(photo.id))
-
-                        if (file) {
-                            // 获取图片blob并创建URL
-                            const blob = await file.async('blob')
-                            const url = URL.createObjectURL(blob)
-
-                            // 创建照片对象并添加缩略图URL
-                            photoList.push({
-                                ...photo,
-                                compressedSrc: url
-                            })
-                        } else {
-                            // 如果没有找到对应的缩略图，仍然添加照片信息
-                            photoList.push(photo)
-                        }
-                    }
-
-                    // 确保照片顺序与photoIds一致
-                    photos.value = photoIds.map(id =>
-                        photoList.find(photo => photo.id === id)
-                    ).filter(photo => photo !== undefined) as WaterfallItem[]
-                }
-            }
+            // 处理照片数据
+            const processedPhotos = photoDataResponse.map(processPhotoData);
+            photos.value = processedPhotos;
+            
+            // 批量获取缩略图
+            await get100KPhotos(photos.value);
+        } else {
+            photos.value = [];
         }
     } catch (error) {
-        console.error('加载照片失败:', error)
+        console.error('加载照片失败:', error);
+        ElMessage.error('照片加载失败，请稍后重试');
     } finally {
-        loading.value = false
+        loading.value = false;
     }
-}
+};
 
+// 监听气象类型变化，重新加载数据
 watch(() => props.meteorologyType, (newVal: string) => {
-    selectedGroupId.value = newVal.toString()
-    loadGroupPhotos()
-})
+    selectedGroupId.value = newVal.toString();
+    loadGroupPhotos();
+});
 
+// 组件挂载时加载数据
 onMounted(() => {
-    loadGroupPhotos()
-    window.addEventListener('resize', handleResize)
-    window.addEventListener('scroll', handleScroll)
-})
+    loadGroupPhotos();
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('scroll', handleScroll);
+});
 
+// 组件卸载时清理事件监听
 onUnmounted(() => {
-    window.removeEventListener('resize', handleResize)
-    window.removeEventListener('scroll', handleScroll)
-})
+    window.removeEventListener('resize', handleResize);
+    window.removeEventListener('scroll', handleScroll);
+});
 </script>
 
 <style scoped>

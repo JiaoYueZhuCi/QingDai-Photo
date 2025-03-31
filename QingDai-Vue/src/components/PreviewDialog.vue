@@ -17,7 +17,7 @@
                         {{ previewData.title || '无标题' }}
                     </el-descriptions-item>
                     <el-descriptions-item label="介绍">
-                        {{ previewData.introduce || '暂无介绍' }}
+                        <div class="description-content">{{ previewData.introduce || '暂无介绍' }}</div>
                     </el-descriptions-item>
                     <el-descriptions-item label="文件">
                         {{ previewData.fileName || '未知' }}
@@ -31,29 +31,19 @@
                     <el-descriptions-item label="拍摄时间">
                         {{ previewData.time || '未知' }}
                     </el-descriptions-item>
-                    <el-descriptions-item label="光圈">
-                        {{ previewData.aperture || '未知' }}
-                    </el-descriptions-item>
-                    <el-descriptions-item label="快门">
-                        {{ previewData.shutter || '未知' }}
-                    </el-descriptions-item>
-                    <el-descriptions-item label="ISO">
-                        {{ previewData.iso || '未知' }}
+                    <el-descriptions-item label="参数">
+                        <span v-if="previewData.aperture">光圈：{{ previewData.aperture }}</span>
+                        <span v-if="previewData.shutter"> 快门：{{ previewData.shutter }}</span>
+                        <span v-if="previewData.iso"> ISO：{{ previewData.iso }}</span>
+                        <span
+                            v-if="!previewData.aperture && !previewData.shutter && !previewData.iso">未知</span>
                     </el-descriptions-item>
                     <el-descriptions-item label="级别">
-                                <el-tag v-if="previewData.start === 1" :type="'warning'">
-                                   精选 
-                                </el-tag>
-                                <el-tag v-if="previewData.start === 0" :type="'success'">
-                                   普通 
-                                </el-tag>
-                                <el-tag v-if="previewData.start === -1" :type="'info'">
-                                   隐藏
-                                </el-tag>
-                                <el-tag v-if="previewData.start === 2" :type="'primary'">
-                                   气象
-                                </el-tag>
-                            </el-descriptions-item>
+                        <el-tag v-if="previewData.start === 1" :type="'warning'">精选</el-tag>
+                        <el-tag v-if="previewData.start === 0" :type="'success'">普通</el-tag>
+                        <el-tag v-if="previewData.start === -1" :type="'info'">隐藏</el-tag>
+                        <el-tag v-if="previewData.start === 2" :type="'primary'">气象</el-tag>
+                    </el-descriptions-item>
                 </el-descriptions>
             </div>
         </div>
@@ -61,10 +51,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, defineProps, defineEmits } from 'vue'
-import { ElDialog, ElImage, ElDescriptions, ElDescriptionsItem, ElIcon, ElLoading, ElEmpty, ElTag } from 'element-plus'
-import type { WaterfallItem } from '@/types'
-import { getThumbnail1000KPhoto, getPhotoInfo } from '@/api/photo'
+import { ref, watch, onUnmounted } from 'vue'
+import { ElDialog, ElImage, ElDescriptions, ElDescriptionsItem, ElTag } from 'element-plus'
+import { get1000KPhotos, getPhotoDetailInfo, type EnhancedWaterfallItem } from '@/utils/photo'
 
 const props = defineProps<{
     photoId: string
@@ -74,37 +63,42 @@ const emit = defineEmits(['close', 'image-click'])
 
 const visible = ref(false)
 const thumbnailUrl = ref('')
-const emptyData = ref<WaterfallItem>({
-    id: "",          // 照片id 
-    fileName: "",     // 照片名称
-    author: "",    // 作者信息
-    width: 0,   // 原始宽度（像素）
-    height: 0,  // 原始高度（像素）
-    aperture: "", // 光圈
-    iso: "", // 感光度
-    shutter: "",  // 快门
-    camera: "",  // 相机
-    lens: "",  // 镜头
-    time: "",  // 拍摄时间
-    title: "",  // 标题
-    introduce: "",  // 介绍
-    start: 0, //代表作
+const previewData = ref<EnhancedWaterfallItem>({
+    id: "",
+    fileName: "",
+    author: "",
+    width: 0,
+    height: 0,
+    aperture: "",
+    iso: "",
+    shutter: "",
+    camera: "",
+    lens: "",
+    time: "",
+    title: "",
+    introduce: "",
+    start: 0,
 })
-const previewData = emptyData
 
 const isLoading = ref(false)
 
 // 打开对话框时获取数据
 const handleOpen = async () => {
+    visible.value = true
     isLoading.value = true
+    
     try {
-        // 获取缩略图
-        const thumbRes = await getThumbnail1000KPhoto(props.photoId)
-        thumbnailUrl.value = URL.createObjectURL(thumbRes.data)
+        // 使用工具函数获取1000K图片
+        const imageResult = await get1000KPhotos(props.photoId, (loading) => isLoading.value = loading)
+        if (imageResult) {
+            thumbnailUrl.value = imageResult.url
+        }
 
-        // 获取元数据
-        const infoRes = await getPhotoInfo(props.photoId)
-        previewData.value = { ...previewData.value, ...infoRes }
+        // 获取照片详细信息
+        const photoInfo = await getPhotoDetailInfo(props.photoId)
+        if (photoInfo) {
+            previewData.value = photoInfo
+        }
     } catch (error) {
         console.error('数据加载失败:', error)
     } finally {
@@ -112,12 +106,45 @@ const handleOpen = async () => {
     }
 }
 
+// 监听visible变化，确保关闭对话框时清理资源
+watch(visible, (newVal) => {
+    if (!newVal) {
+        handleClose()
+    }
+})
+
 const handleClose = () => {
-    thumbnailUrl.value = ''
-    previewData.value = emptyData.value
+    if (thumbnailUrl.value) {
+        URL.revokeObjectURL(thumbnailUrl.value)
+        thumbnailUrl.value = ''
+    }
+    
+    visible.value = false
+    previewData.value = {
+        id: "",
+        fileName: "",
+        author: "",
+        width: 0,
+        height: 0,
+        aperture: "",
+        iso: "",
+        shutter: "",
+        camera: "",
+        lens: "",
+        time: "",
+        title: "",
+        introduce: "",
+        start: 0,
+    }
     emit('close')
-    URL.revokeObjectURL(thumbnailUrl.value)
 }
+
+// 组件卸载时确保清理资源
+onUnmounted(() => {
+    if (thumbnailUrl.value) {
+        URL.revokeObjectURL(thumbnailUrl.value)
+    }
+})
 </script>
 
 <style scoped>
@@ -135,7 +162,6 @@ const handleClose = () => {
 .image-container {
     flex: 1;
     min-width: 0;
-
     background: black;
     border-radius: 8px;
     padding: 8px;
@@ -166,30 +192,10 @@ const handleClose = () => {
     --el-descriptions-item-bordered-label-background: #f8f9fa;
 }
 
-.image-loading,
-.image-error {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    color: var(--el-color-info);
-    height: 300px;
-}
-
-.image-loading .el-icon {
-    margin-bottom: 8px;
-    font-size: 32px;
-    animation: rotating 2s linear infinite;
-}
-
-@keyframes rotating {
-    from {
-        transform: rotate(0deg);
-    }
-
-    to {
-        transform: rotate(360deg);
-    }
+.description-content {
+    max-height: 120px;
+    overflow-y: auto;
+    white-space: pre-wrap;
 }
 
 @media (max-width: 768px) {

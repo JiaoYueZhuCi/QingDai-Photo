@@ -62,15 +62,13 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
-import type { WaterfallItem } from '@/types';
-import { ElImage, ElIcon, ElMessage, ElLoading, ElPopover } from 'element-plus';
-import { Picture as IconPicture, FullScreen, Star, StarFilled } from '@element-plus/icons-vue'
-import { getVisiblePhotosByPage, getStartPhotosByPage, getThumbnail100KPhotos, updatePhotoStartStatus as updatePhotoStart } from '@/api/photo';
+import { ElImage, ElIcon, ElMessage, ElPopover, ElEmpty } from 'element-plus';
+import { Picture as IconPicture, FullScreen, Star, StarFilled } from '@element-plus/icons-vue';
+import { getVisiblePhotosByPage, getStartPhotosByPage, updatePhotoStartStatus as updatePhotoStart } from '@/api/photo';
 import { debounce } from 'lodash';
-import JSZip from 'jszip';
 import PreviewDialog from "@/components/PreviewDialog.vue";
 import PreviewViewer from "@/components/PreviewViewer.vue";
-import { getPhotoFromDB,savePhotoToDB } from "@/utils/indexedDB";
+import { get100KPhotos, processPhotoData, type EnhancedWaterfallItem } from '@/utils/photo';
 
 // 添加 props 来接收父组件传递的值
 const props = defineProps({
@@ -93,7 +91,7 @@ const props = defineProps({
 });
 
 //// 照片流数据
-const images = ref<WaterfallItem[]>([]);
+const images = ref<EnhancedWaterfallItem[]>([]);
 const currentPage = ref(1);
 const pageSize = ref(50);
 const hasMore = ref(true);
@@ -113,48 +111,31 @@ const getPhotos = async () => {
             pageSize: pageSize.value
         });
 
-        // 预处理数据，确保所有字段类型匹配
-        const processedData = response.records.map((item: any) => ({
-            id: item.id,
-            fileName: item.fileName,
-            author: item.author || '未知作者', // 设置默认值
-            width: item.width || 0,
-            height: item.height || 0,
-            aperture: item.aperture || '',
-            iso: item.iso || '',
-            shutter: item.shutter || '',
-            camera: item.camera || '', // 设置默认值
-            lens: item.lens || '', // 设置默认值
-            time: item.time || '',
-            title: item.title || '', // 设置默认值
-            introduce: item.introduce || '', // 设置默认值
-            start: item.start || 0,
-            aspectRatio: item.width / item.height, // 计算宽高比
-            calcWidth: 0, // 初始化
-            calcHeight: 0, // 初始化
-            compressedSrc: '' // 初始化
-        }));
-
         // 记录添加前的长度
         const previousLength = images.value.length;
+        
+        // 预处理数据，使用工具函数
+        const processedData = response.records.map(processPhotoData);
+        
         // 更新数据时保留原有数据
         images.value = [...images.value, ...processedData];
+        
         // 计算布局
         calculateLayout();
 
-        // 仅处理新增的数据项
-        await getThumbnailPhotos(previousLength, images.value.length - 1);
+        // 使用统一工具函数加载缩略图
+        await get100KPhotos(images.value.slice(previousLength));
 
-        // 检查是否还有更多数据
-        hasMore.value = response.current < response.pages;
-        currentPage.value = response.current;
+        // 更新分页信息
+        hasMore.value = response.records.length >= pageSize.value;
+        if (hasMore.value) {
+            currentPage.value++;
+        }
     } catch (error) {
         console.error('获取照片数据失败:', error);
+        ElMessage.error('照片加载失败');
     }
 };
-
-
-
 
 // 新增滚动事件处理
 const handleScroll = debounce(() => {
@@ -163,7 +144,6 @@ const handleScroll = debounce(() => {
 
     // 当距离底部小于 50px
     if (scrollBottom < 50 && hasMore.value) {
-        currentPage.value++;
         getPhotos();
     }
 }, 200);
@@ -177,7 +157,6 @@ const sideMargin = ref(8); // 边距
 const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
 const gap = ref(props.gap); // 因为每行设置了justify-content: space-between;  所以gap实际为最小间隙（当照片+间隙刚好填满一行时）
 const rowWidth = ref(window.innerWidth - scrollbarWidth - 2 * sideMargin.value);
-
 
 // // 监听窗口大小变化
 const handleResize = () => {
@@ -221,67 +200,17 @@ watch(() => props.photoType, (newVal, oldVal) => {
     }
 });
 
-// 缩略图获取方法
-// 修改后的getThumbnailPhotos方法
-const getThumbnailPhotos = async (start: number, end: number) => {
-  const newItems = images.value.slice(start, end + 1).filter(item => !item.compressedSrc);
-  if (newItems.length === 0) return;
-
-  // 尝试从IndexedDB获取已缓存的Blob
-  await Promise.all(newItems.map(async item => {
-    try {
-      const cachedBlob = await getPhotoFromDB(item.id);
-      if (cachedBlob) {
-        // 生成新的ObjectURL
-        item.compressedSrc = URL.createObjectURL(cachedBlob);
-      }
-    } catch (error) {
-      console.error('从缓存加载失败:', error);
-    }
-  }));
-
-  // 筛选出未缓存的照片
-  const uncachedItems = newItems.filter(item => !item.compressedSrc);
-  if (uncachedItems.length === 0) return;
-
-  try {
-    const response = await getThumbnail100KPhotos(
-      uncachedItems.map(item => item.id).join(',')
-    );
-
-    const zip = await JSZip.loadAsync(response.data);
-
-    await Promise.all(uncachedItems.map(async item => {
-      const file = zip.file(`${item.fileName}`);
-      if (file) {
-        const blob = await file.async('blob');
-        // 生成临时URL
-        item.compressedSrc = URL.createObjectURL(blob);
-        // 将Blob保存到IndexedDB
-        await savePhotoToDB(item.id, blob);
-      } else {
-        item.compressedSrc = '';
-        console.error('ZIP包中未找到照片:', item.id);
-      }
-    }));
-  } catch (error) {
-    console.error('批量获取压缩图失败:', error);
-    uncachedItems.forEach(item => item.compressedSrc = '');
-  }
-};
-
 //// 预览相关状态
 const previewVisible = ref(false);
 const currentPreviewId = ref('');
-const handleImageClick = (item: WaterfallItem) => {
+const handleImageClick = (item: EnhancedWaterfallItem) => {
     currentPreviewId.value = item.id;
     previewVisible.value = true;
 };
 
-
 ////计算图片宽度
 interface RowData {
-    items: WaterfallItem[];
+    items: EnhancedWaterfallItem[];
     height: number;
 }
 const rows = ref<RowData[]>([]);
@@ -289,7 +218,7 @@ const rows = ref<RowData[]>([]);
 const sideMarginStyle = computed(() => `${sideMargin.value}px`);
 const calculateLayout = () => {
     const rowsData: RowData[] = [];       // 存储所有行数据
-    let currentRow: WaterfallItem[] = []; // 当前行的图片集合
+    let currentRow: EnhancedWaterfallItem[] = []; // 当前行的图片集合
     let currentAspectRatioSum = 0;        // 当前行所有图片宽高比之和
 
     images.value.forEach((item) => {
@@ -341,39 +270,40 @@ const calculateLayout = () => {
     rows.value = rowsData;
 };
 
-
 const fullImgShow = ref(false);
 const currentIndex = ref(0);
 
 const openFullImg = (id: string) => {
-    fullImgShow.value = true;
-    currentIndex.value = 0;
     currentPreviewId.value = id;
-};
-
-// 获取星星颜色
-const getStarColor = (startValue: number) => {
-    if (startValue === 1) return '#e6a23c'; // 橙色
-    if (startValue === 0) return '#ffffff'; // 白色
-    return '#c0c4cc'; // 淡灰色
-};
-
-// 更新星标状态
-const updateStarStatus = async (item: WaterfallItem, newValue: number) => {
-    try {
-        await updatePhotoStartStatus(item.id, newValue);
-        ElMessage.success('更新照片状态成功');
-        // 更新本地数据
-        item.start = newValue;
-    } catch (error) {
-        console.error('更新照片状态失败:', error);
-        ElMessage.error('更新照片状态失败');
+    fullImgShow.value = true;
+    // 查找当前索引
+    const index = images.value.findIndex(img => img.id === id);
+    if (index !== -1) {
+        currentIndex.value = index;
     }
 };
 
-// 更新照片星标状态的API请求
-const updatePhotoStartStatus = async (id: string, start: number) => {
-    return updatePhotoStart({ id, start });
+// 获取星星颜色
+const getStarColor = (startVal: number) => {
+    if (startVal === 1) return '#e6a23c'; // 星标
+    if (startVal === -1) return '#c0c4cc'; // 隐藏
+    if (startVal === 2) return '#409eff'; // 气象
+    return '#ffffff'; // 普通
+};
+
+// 更新星标状态
+const updateStarStatus = async (item: EnhancedWaterfallItem, startVal: number) => {
+    try {
+        await updatePhotoStart({
+            id: item.id,
+            start: startVal
+        });
+        item.start = startVal;
+        ElMessage.success('更新状态成功');
+    } catch (error) {
+        console.error('更新状态失败:', error);
+        ElMessage.error('更新状态失败');
+    }
 };
 
 </script>
@@ -396,7 +326,6 @@ const updatePhotoStartStatus = async (id: string, start: number) => {
     background-color: black;
 }
 
-
 .image-item {
     position: relative;
     overflow: hidden;
@@ -410,7 +339,6 @@ const updatePhotoStartStatus = async (id: string, start: number) => {
     transform: translateY(-5px);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
 }
-
 
 .fullscreen-icon {
     position: absolute;
@@ -483,7 +411,6 @@ const updatePhotoStartStatus = async (id: string, start: number) => {
     .container-in {
         padding: 4px 0;
     }
-
 }
 
 .star-icon {

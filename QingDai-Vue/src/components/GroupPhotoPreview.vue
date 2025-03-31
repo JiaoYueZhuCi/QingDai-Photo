@@ -120,9 +120,9 @@ import { ElDialog, ElImage, ElDescriptions, ElDescriptionsItem, ElButton, ElIcon
 import { ArrowLeft, ArrowRight, PictureFilled } from '@element-plus/icons-vue'
 import type { WaterfallItem } from '@/types'
 import type { GroupPhotoDTO } from '@/types/groupPhoto'
-import { getThumbnail1000KPhoto, getPhotoInfo } from '@/api/photo'
 import { getGroupPhoto } from '@/api/groupPhoto'
 import PreviewViewer from '@/components/PreviewViewer.vue'
+import { get1000KPhotos, getPhotoDetailInfo, type EnhancedWaterfallItem } from '@/utils/photo'
 
 const props = defineProps<{
     groupId: string;
@@ -145,7 +145,6 @@ const groupPhotoData = ref<GroupPhotoDTO>({
         title: '',
         introduce: '',
         coverPhotoId: '',
-
     },
     photoIds: [],
 })
@@ -153,7 +152,7 @@ const groupPhotoData = ref<GroupPhotoDTO>({
 // 当前照片和照片列表
 const photoIds = ref<string[]>([])
 const currentPhotoIndex = ref(0)
-const currentPhotoData = ref<WaterfallItem>({
+const currentPhotoData = ref<EnhancedWaterfallItem>({
     id: '',
     fileName: '',
     author: '',
@@ -219,48 +218,18 @@ const loadCurrentPhoto = async () => {
             thumbnailUrl.value = ''
         }
 
-        // 获取缩略图
-        try {
-            const thumbRes = await getThumbnail1000KPhoto(currentId)
-
-            if (thumbRes && thumbRes.data) {
-                thumbnailUrl.value = URL.createObjectURL(thumbRes.data)
-            }
-        } catch (err) {
-            console.error('获取缩略图失败:', err);
+        // 加载照片
+        const imageResult = await get1000KPhotos(currentId)
+        if (imageResult) {
+            thumbnailUrl.value = imageResult.url
         }
 
         // 获取照片信息
-        try {
-            const response = await getPhotoInfo(currentId)
-
-            // 提取照片数据
-            const photoData = typeof response === 'object' && response !== null
-                ? (response.data || response)
-                : {};
-
-            // 适配接口返回数据
-            currentPhotoData.value = {
-                id: photoData.id || '',
-                fileName: photoData.fileName || '',
-                author: photoData.author || '',
-                width: photoData.width || 0,
-                height: photoData.height || 0,
-                aperture: photoData.aperture || '',
-                iso: photoData.iso || '',
-                shutter: photoData.shutter || '',
-                camera: photoData.camera || '',
-                lens: photoData.lens || '',
-                time: photoData.time || '',
-                title: photoData.title || '',
-                introduce: photoData.introduce || '',
-                start: photoData.start || 0
-            }
-
+        const photoInfo = await getPhotoDetailInfo(currentId)
+        if (photoInfo) {
+            currentPhotoData.value = photoInfo
             // 自动切换到照片信息标签
             activeTab.value = 'photo'
-        } catch (err) {
-            console.error('获取照片信息失败:', err);
         }
     } catch (error) {
         console.error('照片加载失败:', error)
@@ -292,6 +261,7 @@ const selectPhoto = (index: number) => {
 const handleClose = () => {
     if (thumbnailUrl.value) {
         URL.revokeObjectURL(thumbnailUrl.value)
+        thumbnailUrl.value = ''
     }
     emit('close')
 }

@@ -38,7 +38,6 @@
             
             <el-table-column prop="fileName" label="文件名" width="95">
                 <template #default="scope">
-                    <!-- <el-input v-if="scope.row.isEditing" v-model="scope.row.fileName" /> -->
                     <span>{{ scope.row.fileName }}</span>
                 </template>
             </el-table-column>
@@ -105,9 +104,8 @@
                     {{ scope.row.width }}×{{ scope.row.height }}
                 </template>
             </el-table-column>
-
             
-            <el-table-column label="操作" width="75" fixed>
+            <el-table-column label="操作" width="120" fixed="right">
                 <template #default="scope">
                     <div v-if="!scope.row.isEditing">
                         <el-button size="small" @click="startEdit(scope.row)">编辑</el-button>
@@ -129,7 +127,7 @@
             </el-button>
         </div>
 
-        <PhotoUpdate v-model="photoUploadVisible" ref="photoUpdateRef" />
+        <PhotoUpdate v-model="photoUploadVisible" ref="photoUpdateRef" @photo-uploaded="fetchData" />
 
         <PreviewViewer v-if="previewVisible" :photo-id="currentPreviewId" @close="previewVisible = false" />
 
@@ -145,122 +143,98 @@
 import PhotoUpdate from '@/views/manage/PhotoUpdate.vue'
 import PreviewViewer from '@/components/PreviewViewer.vue'
 import { ref, watchEffect } from 'vue'
-import JSZip from 'jszip'
-import type { WaterfallItem } from '@/types'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Upload } from '@element-plus/icons-vue'
-import { getPhotosByPage, updatePhotoInfo, deletePhotoById, updatePhotoStartStatus, getThumbnail100KPhotos } from '@/api/photo'
+import { getPhotosByPage, updatePhotoInfo, deletePhotoById, updatePhotoStartStatus } from '@/api/photo'
 import type { PhotoResponse } from '@/api/photo'
+import { get100KPhotos, processPhotoData, type EnhancedWaterfallItem } from '@/utils/photo'
 
 const photoUpdateRef = ref()
 const photoUploadVisible = ref(false)
 
-const tableData = ref<WaterfallItem[]>([])
-const editOriginData = ref<any>({})
+// 表格数据
+const tableData = ref<EnhancedWaterfallItem[]>([])
+const editOriginData = ref<Record<string, EnhancedWaterfallItem>>({})
 const currentPage = ref(1)
 const pageSize = ref(50)
 const total = ref(0)
 
+// 预览相关
+const previewVisible = ref(false)
+const currentPreviewId = ref('')
+
+// 打开照片上传对话框
 const showPhotoUpload = () => {
     photoUploadVisible.value = true
 }
 
+// 获取照片列表数据
 const fetchData = async () => {
     try {
         const response: PhotoResponse = await getPhotosByPage({
             page: currentPage.value,
             pageSize: pageSize.value
-        })
+        });
 
-        tableData.value = response.records.map((item: any) => ({
-            isEditing: false,
-            id: item.id,
-            fileName: item.fileName,
-            author: item.author || '未知作者',
-            camera: item.camera || '',
-            lens: item.lens || '',
-            iso: item.iso || '',
-            shutter: item.shutter || '',
-            aperture: item.aperture || '',
-            time: item.time || '',
-            start: item.start || 0,
-            title: item.title || '',
-            introduce: item.introduce || '',
-            width: item.width || 0,
-            height: item.height || 0,
-            compressedSrc: ''
-        }))
-
-        total.value = response.total
-        await getThumbnailPhotos()
+        // 使用工具函数处理数据
+        const processedData = response.records.map(item => 
+            processPhotoData({
+                ...item,
+                isEditing: false,
+            })
+        );
+        
+        tableData.value = processedData;
+        total.value = response.total;
+        
+        // 批量获取缩略图
+        await get100KPhotos(tableData.value);
     } catch (error) {
-        console.error('获取数据失败:', error)
-        ElMessage.error('数据加载失败')
+        console.error('获取照片数据失败:', error);
+        ElMessage.error('照片数据加载失败');
     }
-}
+};
 
-const getThumbnailPhotos = async () => {
-    try {
-        const response = await getThumbnail100KPhotos(
-            tableData.value.map(item => item.id).join(',')
-        )
-
-        const zip = await JSZip.loadAsync(response.data)
-
-        await Promise.all(tableData.value.map(async item => {
-            const file = zip.file(`${item.fileName}`)
-            if (file) {
-                const blob = await file.async('blob')
-                item.compressedSrc = URL.createObjectURL(blob)
-            } else {
-                console.warn('ZIP包中未找到照片:', item.fileName)
-            }
-        }))
-    } catch (error) {
-        console.error('批量获取缩略图失败:', error)
-        ElMessage.error('缩略图加载失败')
-    }
-}
-
+// 分页相关方法
 const handleCurrentChange = (val: number) => {
-    currentPage.value = val
+    currentPage.value = val;
+    fetchData();
 }
 
 const handleSizeChange = (val: number) => {
-    pageSize.value = val
+    pageSize.value = val;
+    fetchData();
 }
 
-watchEffect(() => {
-    fetchData()
-})
-
-// 编辑功能逻辑
-const startEdit = (row: any) => {
-    row.isEditing = true
-    editOriginData.value[row.id] = { ...row }
+// 开始编辑照片
+const startEdit = (row: EnhancedWaterfallItem) => {
+    row.isEditing = true;
+    editOriginData.value[row.id] = { ...row };
 }
 
-const cancelEdit = (row: any) => {
-    Object.assign(row, editOriginData.value[row.id])
-    row.isEditing = false
-    delete editOriginData.value[row.id]
+// 取消编辑
+const cancelEdit = (row: EnhancedWaterfallItem) => {
+    Object.assign(row, editOriginData.value[row.id]);
+    row.isEditing = false;
+    delete editOriginData.value[row.id];
 }
 
-const submitEdit = async (row: any) => {
+// 提交编辑
+const submitEdit = async (row: EnhancedWaterfallItem) => {
     try {
-        await updatePhotoInfo(row)
-        ElMessage.success('更新成功')
-        row.isEditing = false
-        delete editOriginData.value[row.id]
-        fetchData()
+        await updatePhotoInfo(row);
+        ElMessage.success('更新成功');
+        row.isEditing = false;
+        delete editOriginData.value[row.id];
+        await fetchData();
     } catch (error) {
-        console.error('更新失败:', error)
-        ElMessage.error('更新失败')
+        console.error('更新失败:', error);
+        ElMessage.error('更新失败');
     }
 }
 
-// 删除功能
-const handleDelete = async (row: any) => {
+// 删除照片
+const handleDelete = async (row: EnhancedWaterfallItem) => {
     try {
         await ElMessageBox.confirm(
             '确定要删除这张照片吗？',
@@ -270,30 +244,32 @@ const handleDelete = async (row: any) => {
                 cancelButtonText: '取消',
                 type: 'warning',
             }
-        )
-        await deletePhotoById(row.id)
-        ElMessage.success('删除成功')
-        fetchData()
+        );
+        await deletePhotoById(row.id);
+        ElMessage.success('删除成功');
+        await fetchData();
     } catch (error) {
-        console.error('删除失败:', error)
-        ElMessage.error('取消删除')
+        if (error !== 'cancel') {
+            console.error('删除失败:', error);
+            ElMessage.error('删除失败');
+        }
     }
 }
 
-
-// 添加预览相关变量
-const previewVisible = ref(false)
-const currentPreviewId = ref('')
-// 添加打开预览的方法
-const openPreview = (id: string) => {
-    previewVisible.value = true
-    currentPreviewId.value = id
+// 打开预览
+const openPreview = (photoId: string) => {
+    currentPreviewId.value = photoId;
+    previewVisible.value = true;
 }
+
+// 初始加载
+watchEffect(() => {
+    fetchData();
+});
 </script>
 
 <style scoped>
 .photo-list-container {
-    padding: 0px;
     background: #fff;
 }
 
@@ -314,11 +290,7 @@ const openPreview = (id: string) => {
     padding: 5px;
 }
 
-:global(.el-image-viewer__wrapper) {
-    z-index: 2000 !important;
-}
-
 .el-button {
-    margin: 0;
+    margin: 0 2px;
 }
 </style>

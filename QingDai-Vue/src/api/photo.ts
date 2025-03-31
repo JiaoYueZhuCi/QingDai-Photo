@@ -25,11 +25,11 @@ export interface PhotoStatusUpdateParams {
   start: number;
 }
 
-export interface PhotoInfoUpdateParams extends WaterfallItem {}
+export interface PhotoInfoUpdateParams extends WaterfallItem { }
 //---------------------------------------文件操作 本机--------------------------------------------------------------
 
 // 获取100K压缩照片(批量)
-export const getThumbnail100KPhotos = async (ids: string) => {
+export const getThumbnail100KPhotos = async (ids: string): Promise<any> => {
   return await request.get(`${BASE_URL}/getThumbnail100KPhotos`, {
     params: { ids },
     responseType: 'arraybuffer'
@@ -38,7 +38,7 @@ export const getThumbnail100KPhotos = async (ids: string) => {
 };
 
 // 获取100K压缩照片(单张)
-export const getThumbnail100KPhoto = async (id: string) => {
+export const getThumbnail100KPhoto = async (id: string): Promise<any> => {
   return await request.get(`${BASE_URL}/getThumbnail100KPhoto`, {
     params: { id },
     responseType: 'blob'
