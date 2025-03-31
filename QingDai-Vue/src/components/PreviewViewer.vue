@@ -1,15 +1,15 @@
 <template>
     <div class="showViewer">
-        <el-image-viewer :url-list="urlList" :initial-index="initialIndex" :hide-on-click-modal="true"
-            @close="handleClose" />
+        <el-image-viewer v-if="urlList.length > 0" :url-list="urlList" :initial-index="initialIndex" :hide-on-click-modal="true"
+            @close="handleClose" ref="imageViewerRef" />
     </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref, nextTick } from 'vue'
 import { ElImageViewer, ElLoading, ElMessage } from 'element-plus'
-import { getRolesPermissions } from '@/api/user'
-import { get1000KPhotos, getFullPhotos } from '@/utils/photo'
+import { get1000KPhoto, getFullPhoto } from '@/utils/photo'
+import { getUserRoles, canViewFullSizePhoto } from '@/utils/auth'
 
 // 保存原始body样式以便恢复
 let originalBodyPadding = ''
@@ -33,6 +33,7 @@ const props = defineProps<{
 
 const emit = defineEmits(['close'])
 const urlList = ref<string[]>([])
+const imageViewerRef = ref(null)
 
 // 组件挂载时的处理
 onMounted(async () => {
@@ -53,22 +54,41 @@ onMounted(async () => {
         if (props.photoId) {
             // 获取用户角色决定加载哪种质量的图片
             const userRoles = await getUserRoles()
-            const canViewFullSize = userRoles.includes('VIEWER')
+            const hasViewPermission = await canViewFullSizePhoto()
+            console.log('用户角色:', userRoles, '是否可查看全尺寸:', hasViewPermission)
             
             // 根据权限获取不同质量的图片
             let imageResult
-            if (canViewFullSize) {
-                imageResult = await getFullPhotos(props.photoId)
+            if (hasViewPermission) {
+                imageResult = await getFullPhoto(props.photoId)
+           
             } else {
-                imageResult = await get1000KPhotos(props.photoId)
+                imageResult = await get1000KPhoto(props.photoId)
             }
             
-            if (imageResult?.url) {
+            if ( imageResult?.url) {
                 urlList.value = [imageResult.url]
-            } else {
+            } else if(imageResult?.blob){
+            try {
+                    // 创建blob URL
+                    const blobUrl = URL.createObjectURL(imageResult.blob)
+                    urlList.value = [blobUrl]
+                    console.log('创建的blob URL:', blobUrl)
+                    
+                } catch (error) {
+                    console.error('创建图片URL失败:', error)
+                    ElMessage.error('图片加载失败')
+                    handleClose()
+                }
+            }else {
+                console.error('获取照片失败, 返回数据:', imageResult)
                 ElMessage.error('获取照片失败')
                 handleClose()
             }
+
+            console.log('获取全尺寸图片',props.photoId)
+            console.log('imageResult',imageResult)
+            console.log('urlList',urlList.value)
         } else if (props.urlList?.length) {
             // 如果直接提供了URL列表，直接使用
             urlList.value = props.urlList
@@ -78,26 +98,15 @@ onMounted(async () => {
         }
     } catch (error) {
         console.error('获取照片失败:', error)
-        ElMessage.error('获取照片失败')
+        if (error instanceof Error) {
+            console.error('错误详情:', error.message, error.stack)
+        }
+        ElMessage.error(`获取照片失败: ${error instanceof Error ? error.message : '未知错误'}`)
         handleClose()
     } finally {
         loading.close()
     }
 })
-
-// 获取用户角色权限
-const getUserRoles = async (): Promise<string[]> => {
-    const token = localStorage.getItem('token')
-    if (!token) return []
-    
-    try {
-        const userRoleResponse = await getRolesPermissions()
-        return userRoleResponse?.roles || []
-    } catch (error) {
-        console.error('获取用户角色失败:', error)
-        return []
-    }
-}
 
 // 关闭预览
 const handleClose = () => {
@@ -130,5 +139,10 @@ onUnmounted(() => {
 <style>
 body {
     transition: padding-right 0.3s ease;
+}
+
+/* 修复Element Plus图片查看器的显示问题 */
+.el-image-viewer__img {
+    display: block !important;
 }
 </style>

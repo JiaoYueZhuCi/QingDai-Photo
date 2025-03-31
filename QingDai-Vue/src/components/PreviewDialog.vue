@@ -53,7 +53,7 @@
 <script setup lang="ts">
 import { ref, watch, onUnmounted } from 'vue'
 import { ElDialog, ElImage, ElDescriptions, ElDescriptionsItem, ElTag } from 'element-plus'
-import { get1000KPhotos, getPhotoDetailInfo, type EnhancedWaterfallItem } from '@/utils/photo'
+import { get1000KPhoto, getPhotoDetailInfo, type EnhancedWaterfallItem } from '@/utils/photo'
 
 const props = defineProps<{
     photoId: string
@@ -89,7 +89,7 @@ const handleOpen = async () => {
     
     try {
         // 使用工具函数获取1000K图片
-        const imageResult = await get1000KPhotos(props.photoId, (loading) => isLoading.value = loading)
+        const imageResult = await get1000KPhoto(props.photoId, (loading) => isLoading.value = loading)
         if (imageResult) {
             thumbnailUrl.value = imageResult.url
         }

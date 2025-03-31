@@ -4,7 +4,7 @@
             @image-click="openFullImg" />
 
         <PreviewViewer v-if="fullImgShow" :photo-id="currentPreviewId" :initial-index="currentIndex"
-            @close="fullImgShow = false" />
+             @close="fullImgShow = false" />
 
         <el-empty v-if="images.length === 0" description="暂无照片数据"></el-empty>
 

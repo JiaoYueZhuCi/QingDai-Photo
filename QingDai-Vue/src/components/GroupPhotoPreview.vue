@@ -122,7 +122,7 @@ import type { WaterfallItem } from '@/types'
 import type { GroupPhotoDTO } from '@/types/groupPhoto'
 import { getGroupPhoto } from '@/api/groupPhoto'
 import PreviewViewer from '@/components/PreviewViewer.vue'
-import { get1000KPhotos, getPhotoDetailInfo, type EnhancedWaterfallItem } from '@/utils/photo'
+import { get1000KPhoto, getPhotoDetailInfo, type EnhancedWaterfallItem } from '@/utils/photo'
 
 const props = defineProps<{
     groupId: string;
@@ -219,7 +219,7 @@ const loadCurrentPhoto = async () => {
         }
 
         // 加载照片
-        const imageResult = await get1000KPhotos(currentId)
+        const imageResult = await get1000KPhoto(currentId)
         if (imageResult) {
             thumbnailUrl.value = imageResult.url
         }

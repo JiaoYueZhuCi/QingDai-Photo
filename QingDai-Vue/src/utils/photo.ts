@@ -7,7 +7,6 @@ import { get100KPhotoFromDB, save100KPhotoToDB, get1000KPhotoFromDB, save1000KPh
 // 增强的瀑布流项类型，支持动态属性
 export interface EnhancedWaterfallItem extends WaterfallItem {
   [key: string]: any;
-  compressedSrc?: string;  // 100K缩略图URL
 }
 
 /**
@@ -185,7 +184,7 @@ export const processPhotoData = (item: any): EnhancedWaterfallItem => {
  * @param setLoading 设置加载状态的函数，可选
  * @returns Blob对象和URL
  */
-export const get1000KPhotos = async (
+export const get1000KPhoto = async (
   photoId: string,
   setLoading?: (loading: boolean) => void
 ): Promise<{ blob: Blob, url: string } | null> => {
@@ -226,7 +225,7 @@ export const get1000KPhotos = async (
  * @param setLoading 设置加载状态的函数，可选
  * @returns Blob对象和URL
  */
-export const getFullPhotos = async (
+export const getFullPhoto = async (
   photoId: string,
   setLoading?: (loading: boolean) => void
 ): Promise<{ blob: Blob, url: string } | null> => {
