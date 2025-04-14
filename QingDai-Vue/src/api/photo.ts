@@ -3,8 +3,6 @@ import type { WaterfallItem } from '@/types';
 
 // 基础路径
 const BASE_URL = '/api/QingDai/photo';
-const BASE_FILE_URL = '/api2/QingDai/photo';
-
 // 类型定义
 export interface PhotoQueryParams {
   page?: number;
@@ -25,10 +23,7 @@ export interface PhotoStatusUpdateParams {
   start: number;
 }
 
-export interface PhotoInfoUpdateParams extends WaterfallItem { }
-//---------------------------------------文件操作 本机--------------------------------------------------------------
-
-// 获取100K压缩照片(批量)
+export interface PhotoInfoUpdateParams extends WaterfallItem { }// 获取100K压缩照片(批量)
 export const getThumbnail100KPhotos = async (ids: string): Promise<any> => {
   return await request.get(`${BASE_URL}/getThumbnail100KPhotos`, {
     params: { ids },
@@ -69,50 +64,6 @@ export const processPhotosFromFrontend = async (formData: FormData) => {
     }
   });
 };
-
-//---------------------------------------文件操作 服务器--------------------------------------------------------------
-// // 获取100K压缩照片(批量)
-// export const getThumbnail100KPhotos = async (ids: string) => {
-//   return await request.get(`${BASE_FILE_URL}/getThumbnail100KPhotos`, {
-//     params: { ids },
-//     responseType: 'arraybuffer'
-//   });
-
-// };
-
-// // 获取100K压缩照片(单张)
-// export const getThumbnail100KPhoto = async (id: string) => {
-//   return await request.get(`${BASE_FILE_URL}/getThumbnail100KPhoto`, {
-//     params: { id },
-//     responseType: 'blob'
-//   });
-// };
-
-// // 获取1000K压缩照片
-// export const getThumbnail1000KPhoto = async (id: string) => {
-//   return await request.get(`${BASE_FILE_URL}/getThumbnail1000KPhoto`, {
-//     params: { id },
-//     responseType: 'blob'
-//   });
-// };
-
-// // 获取原图
-// export const getFullSizePhoto = async (id: string) => {
-//   return await request.get(`${BASE_FILE_URL}/getFullSizePhoto`, {
-//     params: { id },
-//     responseType: 'blob'
-//   });
-// };
-
-// // 上传照片
-// export const processPhotosFromFrontend = async (formData: FormData) => {
-//   return await request.post(`${BASE_FILE_URL}/processPhotosFromFrontend`, formData, {
-//     headers: {
-//       'Content-Type': 'multipart/form-data'
-//     }
-//   });
-// };
-//-------------------------------------数据操作 本机----------------------------------------------------------
 // 获取照片分页数据
 export const getPhotosByPage = async (params: PhotoQueryParams): Promise<any> => {
   return await request.get<PhotoResponse>(`${BASE_URL}/getPhotosByPage`, { params });

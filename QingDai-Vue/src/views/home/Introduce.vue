@@ -103,7 +103,7 @@
                     <el-tag size="large">Nikkor 50mm-250mm f4.5-6.3</el-tag>
                     <el-tag size="large">Nikkor 50mm f1.8</el-tag>
                     <el-tag size="large">DJI Air3S</el-tag>
-
+                    <el-tag size="large">TTArtisan 10mm f2</el-tag>
                 </div>
 
 
@@ -124,7 +124,6 @@ import {
     Tickets,
     User,
 } from '@element-plus/icons-vue'
-import LoginDialog from '@/components/LoginDialog.vue'
 import PhotoViewer from '@/components/PhotoViewer.vue' // 引入预览组件
 
 const backgroundImageUrl = '/img/introduce/background.jpg'
@@ -154,20 +153,17 @@ const columnCount = computed(() => {
         return 3; // 大屏幕显示3列
     }
 })
-
 const manageOpacity = computed(() => {
-    return scrollY.value > 650 ? 0.6 : 1
+    return scrollY > 650 ? 0.6 : 1
 })
 
 const hasToken = computed(() => {
     return !!localStorage.getItem('token');
 });
-
 const handleLogout = () => {
-    localStorage.clear('token');
+    localStorage.removeItem('token');
     window.location.href = '/';
 };
-
 
 // 添加预览相关变量
 const previewVisible = ref(false)

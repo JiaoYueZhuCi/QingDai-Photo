@@ -35,7 +35,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
+import { ref, onMounted, onUnmounted, watch, computed ,toRaw} from 'vue';
 import type { WaterfallItem } from '@/types';
 import { ElImage, ElIcon, ElMessage, ElLoading, ElPopover, ElEmpty } from 'element-plus';
 import { Picture as IconPicture, FullScreen, Star, StarFilled } from '@element-plus/icons-vue'
@@ -45,7 +45,7 @@ import { debounce } from 'lodash';
 import JSZip from 'jszip';
 import type { GroupPhotoDTO } from '@/types/groupPhoto';
 import GroupPhotoPreview from '@/components/GroupPhotoPreview.vue';
-import { get100KPhotos as getThumbnail, processPhotoData } from '@/utils/photo';
+import { get100KPhotos, processPhotoData } from '@/utils/photo';
 
 // 添加新的状态保存选中的组图和照片
 const selectedGroupId = ref<string | null>(null);
@@ -132,6 +132,8 @@ const getPhotos = async () => {
             });
         }).filter(Boolean);
 
+
+
         // 记录添加前的长度
         const previousLength = images.value.length;
         // 更新数据时保留原有数据
@@ -139,8 +141,9 @@ const getPhotos = async () => {
         // 计算布局
         calculateLayout();
 
+        const imgs= images.value.slice(previousLength)
         // 加载缩略图
-        await getThumbnail(images.value.slice(previousLength));
+        await get100KPhotos(imgs);
 
         // 由于API一次性返回所有数据，设置hasMore为false
         hasMore.value = false;

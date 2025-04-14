@@ -466,8 +466,8 @@ public class PhotoController {
             File thumbnail1000KDir = FileUtils.validateFolder(thumbnail1000KUrl);
 
             if (pendingDir == null || fullSizeDir == null || thumbnail100KDir == null || thumbnail1000KDir == null) {
-                log.error("目录验证失败，pendingDir: {}, fullSizeDir: {}, thumbnail100KDir: {}, thumbnail1000KDir: {}", 
-                    pendingDir, fullSizeDir, thumbnail100KDir, thumbnail1000KDir);
+                log.error("目录验证失败，pendingDir: {}, fullSizeDir: {}, thumbnail100KDir: {}, thumbnail1000KDir: {}",
+                        pendingDir, fullSizeDir, thumbnail100KDir, thumbnail1000KDir);
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("目录验证失败");
             }
 
@@ -479,29 +479,14 @@ public class PhotoController {
             }
             log.info("找到{}张待处理照片", photos.size());
 
-            // 压缩图片到100K目录
-            photoService.thumbnailPhotosFromFolderToFolder(pendingDir, thumbnail100KDir, 100, overwrite);
-            log.info("完成100K压缩");
-
-            // 压缩图片到1000K目录
-            photoService.thumbnailPhotosFromFolderToFolder(pendingDir, thumbnail1000KDir, 1000, overwrite);
-            log.info("完成1000K压缩");
-
-            // 复制原图到fullSizeDir
-            File[] imageFiles = FileUtils.getImageFiles(pendingDir);
-            log.info("待复制的原图文件数量: {}", imageFiles.length);
-            
-            Arrays.stream(imageFiles)
-                    .forEach(file -> {
-                        try {
-                            log.debug("正在复制文件: {}", file.getName());
-                            FileUtils.copyFile(file, new File(fullSizeDir, file.getName()), overwrite);
-                        } catch (IOException e) {
-                            log.error("复制文件时出错: {}, 错误: {}", file.getName(), e.getMessage(), e);
-                            throw new RuntimeException(e);
-                        }
-                    });
-            log.info("完成原图复制");
+            // 处理图片压缩流程
+            try {
+                photoService.processPhotoCompression(pendingDir, thumbnail100KDir, thumbnail1000KDir, fullSizeDir, overwrite);
+            } catch (IOException e) {
+                log.error("处理文件时出错, 错误: {}", e.getMessage(), e);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("处理文件时出错: " + e.getMessage());
+            }
 
             // 存入数据库
             boolean result = photoService.saveBatch(photos);
@@ -523,11 +508,12 @@ public class PhotoController {
     }
 
     @Transactional
-    @Operation(summary = "处理前端传入的待处理图片", description = "将前端传入的图片添加到数据库，压缩到thumbnailSizeUrl，复制到fullSizeUrl")
+    @Operation(summary = "上传图片", description = "将前端传入的图片添加到数据库，压缩到thumbnailSizeUrl，复制到fullSizeUrl")
     @PostMapping("/processPhotosFromFrontend")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> processPhotosFromFrontend(
-            @RequestParam(defaultValue = "false") boolean overwrite,
+            @RequestParam(defaultValue = "true") boolean overwrite,
+            @RequestParam(defaultValue = "0") Integer start,
             @Parameter(description = "上传的图片文件数组", content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE,
                     array = @ArraySchema(arraySchema = @Schema(type = "array", implementation = File.class),
                             schema = @Schema(type = "string", format = "binary")))) @RequestParam("files") MultipartFile[] files) {
@@ -548,6 +534,13 @@ public class PhotoController {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("目录验证失败");
             }
 
+            // !!!!创建随机名称的临时目录
+            File tempDir = FileUtils.createTempDir(pendingDir);
+            if (!tempDir.exists() && !tempDir.mkdirs()) {
+                throw new IOException("无法创建临时目录: " + tempDir.getAbsolutePath());
+            }
+            log.info("创建临时目录: {}", tempDir.getAbsolutePath());
+
             // 验证文件类型
             List<MultipartFile> validFiles = Arrays.stream(files)
                     .filter(photoService::multipartFileIsSupportedPhoto)
@@ -560,43 +553,70 @@ public class PhotoController {
 
             // 保存到临时目录
             for (MultipartFile file : validFiles) {
-                FileUtils.saveFile(file, pendingDir);
+                FileUtils.saveFile(file, tempDir);
                 log.debug("已保存文件到临时目录: {}", file.getOriginalFilename());
             }
 
             // 处理照片元数据
             List<Photo> photos = photoService.getPhotosByMultipartFiles(validFiles.toArray(new MultipartFile[0]));
 
-            // 单个文件处理遍历
-            for (MultipartFile file : validFiles) {
-                try {
-                    // 压缩到100K目录
-                    photoService.thumbnailPhotoFromMultipartFileToFolder(file, pendingDir, thumbnail100KDir, 100, overwrite);
-                    // 压缩到1000K目录
-                    photoService.thumbnailPhotoFromMultipartFileToFolder(file, pendingDir, thumbnail1000KDir, 1000, overwrite);
-                    // 复制到原图目录
-                    File destFile = new File(fullSizeDir, file.getOriginalFilename());
-                    if (!destFile.exists() || overwrite) {
-                        FileUtils.saveFile(file, fullSizeDir);
-                    }
-                    log.debug("成功处理文件: {}", file.getOriginalFilename());
-                } catch (IOException e) {
-                    log.error("处理文件时出错: {}, 错误: {}", file.getOriginalFilename(), e.getMessage(), e);
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                            .body("处理文件时出错: " + e.getMessage());
+            // 检查重复文件名
+            List<Photo> existingPhotos = new ArrayList<>();
+            List<Photo> newPhotos = new ArrayList<>();
+            
+            for (Photo photo : photos) {
+                Photo existingPhoto = photoService.getOne(
+                    new LambdaQueryWrapper<Photo>()
+                        .eq(Photo::getFileName, photo.getFileName())
+                );
+                
+                if (existingPhoto != null) {
+                    // 保留原有字段
+                    photo.setId(existingPhoto.getId());
+                    photo.setTitle(existingPhoto.getTitle());
+                    photo.setFileName(existingPhoto.getFileName());
+                    photo.setAuthor(existingPhoto.getAuthor());
+                    photo.setIntroduce(existingPhoto.getIntroduce());
+                    photo.setStart(existingPhoto.getStart());
+                    
+                    // 删除原有文件
+                    photoService.deletePhotoFiles(fullSizeUrl, thumbnail100KUrl, thumbnail1000KUrl, photo.getFileName());
+                    
+                    existingPhotos.add(photo);
+                } else {
+                    // 设置新的start值
+                    photo.setStart(start);
+                    newPhotos.add(photo);
                 }
             }
 
+            try {
+                // 处理图片压缩流程
+                photoService.processPhotoCompression(tempDir, thumbnail100KDir, thumbnail1000KDir, fullSizeDir, overwrite);
+            } catch (IOException e) {
+                log.error("处理文件时出错, 错误: {}", e.getMessage(), e);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("处理文件时出错: " + e.getMessage());
+            }
+
             // 保存到数据库
-            boolean result = photoService.saveBatch(photos);
+            boolean result = true;
+            if (!existingPhotos.isEmpty()) {
+                result = result && photoService.updateBatchById(existingPhotos);
+            }
+            if (!newPhotos.isEmpty()) {
+                result = result && photoService.saveBatch(newPhotos);
+            }
 
             // 清理临时目录
-            FileUtils.clearFolder(pendingDir, true);
+            FileUtils.clearFolder(tempDir, true);
             log.info("已清理临时目录");
 
             if (result) {
-                log.info("成功处理{}张图片", photos.size());
-                return ResponseEntity.ok("成功处理 " + photos.size() + " 张图片");
+                log.info("成功处理{}张图片，其中更新{}张，新增{}张", 
+                    photos.size(), existingPhotos.size(), newPhotos.size());
+                return ResponseEntity.ok("成功处理 " + photos.size() + " 张图片，其中更新 " + 
+                    existingPhotos.size() + " 张，新增 " + newPhotos.size() + " 张");
             } else {
                 log.error("数据库保存失败");
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("数据库保存失败");
@@ -646,7 +666,7 @@ public class PhotoController {
 
             photoService.deletePhotoFiles(fullSizeUrl, thumbnail100KUrl, thumbnail1000KUrl, photo.getFileName());
             boolean result = photoService.removeById(photoId);
-            
+
             if (result) {
                 log.info("成功删除照片，ID: {}, 文件名: {}", id, photo.getFileName());
                 return ResponseEntity.ok("照片删除成功");

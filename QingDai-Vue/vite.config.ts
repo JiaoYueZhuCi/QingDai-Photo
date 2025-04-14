@@ -28,12 +28,8 @@ export default defineConfig({
     port: 80, 
     proxy: {
       '/api': {
-        target: process.env.NODE_ENV === 'development' ? 'http://localhost:8080' : 'http://qingdai-sp:8080',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
-      },
-      '/api2': {
-        target: process.env.NODE_ENV = 'http://qingdai.art:8080' ,
+        target: process.env.NODE_ENV === 'development' ? 'http://129.226.192.212:8080' : 'http://qingdai-sp:8080',
+        // target: process.env.NODE_ENV === 'development' ? 'http://localhost:8080' : 'http://qingdai-sp:8080',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       }

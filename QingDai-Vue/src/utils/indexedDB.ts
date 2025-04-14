@@ -136,3 +136,63 @@ export const clearPhotoDB = async (): Promise<void> => {
   const db = await initDB();
   await db.clear('photos');
 };
+
+// 删除原始尺寸照片
+export const deleteFullPhotoFromDB = async (photoId: string): Promise<void> => {
+  try {
+    const db = await initDB();
+    const existing = await db.get('photos', photoId);
+    if (existing) {
+      await db.put('photos', {
+        ...existing,
+        fullBlob: new Blob()
+      });
+    }
+  } catch (error) {
+    console.error('删除原始尺寸照片失败:', {
+      error: error,
+      photoId: photoId
+    });
+    throw new Error(`无法删除原始尺寸照片 ${photoId}`);
+  }
+};
+
+// 删除100K尺寸照片
+export const delete100KPhotoFromDB = async (photoId: string): Promise<void> => {
+  try {
+    const db = await initDB();
+    const existing = await db.get('photos', photoId);
+    if (existing) {
+      await db.put('photos', {
+        ...existing,
+        blob100K: new Blob()
+      });
+    }
+  } catch (error) {
+    console.error('删除100K尺寸照片失败:', {
+      error: error,
+      photoId: photoId
+    });
+    throw new Error(`无法删除100K尺寸照片 ${photoId}`);
+  }
+};
+
+// 删除1000K尺寸照片
+export const delete1000KPhotoFromDB = async (photoId: string): Promise<void> => {
+  try {
+    const db = await initDB();
+    const existing = await db.get('photos', photoId);
+    if (existing) {
+      await db.put('photos', {
+        ...existing,
+        blob1000K: new Blob()
+      });
+    }
+  } catch (error) {
+    console.error('删除1000K尺寸照片失败:', {
+      error: error,
+      photoId: photoId
+    });
+    throw new Error(`无法删除1000K尺寸照片 ${photoId}`);
+  }
+};

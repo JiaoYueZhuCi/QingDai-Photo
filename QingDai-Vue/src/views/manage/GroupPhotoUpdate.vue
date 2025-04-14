@@ -87,6 +87,7 @@ import type { GroupPhotoDTO, GroupPhoto } from '@/types/groupPhoto'
 import { DeleteFilled, Rank } from '@element-plus/icons-vue'
 import draggable from 'vuedraggable'
 import { get100KPhotos, processPhotoData } from '@/utils/photo'
+import { clearPhotoDB } from '@/utils/indexedDB'
 
 // 定义props和emit用于支持v-model
 const props = defineProps({
@@ -305,6 +306,7 @@ const submitForm = async () => {
                     emit('group-photo-added');
                 }
 
+                
                 resetForm();
                 dialogVisible.value = false;
             } catch (error) {

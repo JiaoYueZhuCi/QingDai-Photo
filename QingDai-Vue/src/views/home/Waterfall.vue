@@ -13,34 +13,71 @@
                 :style="{ height: `${row.height}px`, width: `${rowWidth}px`, flex: '0 0 auto', margin: `0 ${sideMarginStyle} ${sideMarginStyle} ${sideMarginStyle}` }">
                 <div class="image-item" v-for="(item, index) in row.items" :key="item.id"
                     @click="handleImageClick(item)">
-                    <el-popover placement="top" :width="200" trigger="click" title="设置星标状态"
-                        :popper-style="{ padding: '12px' }" :teleported="true">
-                        <template #reference>
-                            <div class="star-icon" @click.stop>
-                                <el-icon :color="getStarColor(item.start)">
-                                    <StarFilled v-if="item.start === 1" />
-                                    <Star v-else :class="{ 'star-disabled': item.start === -1 }" />
+                    <div class="image-actions">
+                        <div class="left-actions">
+                            <el-popover placement="top" :width="200" trigger="click" title="设置星标状态"
+                                :popper-style="{ padding: '12px' }" :teleported="true">
+                                <template #reference>
+                                    <div class="action-icon" @click.stop>
+                                        <el-icon :color="getStarColor(item.start)">
+                                            <StarFilled v-if="item.start === 1" />
+                                            <Star v-else :class="{ 'star-disabled': item.start === -1 }" />
+                                        </el-icon>
+                                    </div>
+                                </template>
+                                <div class="star-selection">
+                                    <!-- <p>请选择此照片的星标状态：</p> -->
+                                    <div class="star-option" @click="updateStarStatus(item, 1)">
+                                        <span style="color: #e6a23c; font-size: 16px;">★</span> 星标照片
+                                    </div>
+                                    <div class="star-option" @click="updateStarStatus(item, 0)">
+                                        <span style="color: #ffffff; font-size: 16px;">☆</span> 普通照片
+                                    </div>
+                                    <div class="star-option" @click="updateStarStatus(item, -1)">
+                                        <span style="color: #c0c4cc; font-size: 16px;">☆</span> 隐藏照片
+                                    </div>
+                                </div>
+                            </el-popover>
+                            <div class="group-icon" @click.stop>
+                                <el-popover placement="top" :width="200" trigger="click" title="添加到组图"
+                                    :popper-style="{ padding: '12px' }" :teleported="true">
+                                    <template #reference>
+                                        <div class="action-icon">
+                                            <el-icon>
+                                                <Collection />
+                                            </el-icon>
+                                        </div>
+                                    </template>
+                                    <div class="group-selection">
+                                        <div v-if="groupPhotos.length === 0" class="no-groups">
+                                            暂无组图，请先创建组图
+                                        </div>
+                                        <div v-else class="group-options">
+                                            <div v-for="group in groupPhotos" :key="group.groupPhoto.id"
+                                                class="group-option" @click="addToGroup(item, group)">
+                                                <div class="group-option-left">
+                                                    <el-icon v-if="group.photoIds?.includes(item.id)"
+                                                        class="check-icon">
+                                                        <Check />
+                                                    </el-icon>
+                                                    <span>{{ group.groupPhoto.title || '未命名组图' }}</span>
+                                                </div>
+                                                <span class="photo-count">({{ group.photoIds?.length || 0 }}张)</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </el-popover>
+                            </div>
+
+                        </div>
+                        <div class="right-actions">
+                            <div class="action-icon fullscreen-icon" @click.stop="openFullImg(item.id)">
+                                <el-icon>
+                                    <FullScreen />
                                 </el-icon>
                             </div>
-                        </template>
-                        <div class="star-selection">
-                            <!-- <p>请选择此照片的星标状态：</p> -->
-                            <div class="star-option" @click="updateStarStatus(item, 1)">
-                                <span style="color: #e6a23c; font-size: 16px;">★</span> 星标照片
-                            </div>
-                            <div class="star-option" @click="updateStarStatus(item, 0)">
-                                <span style="color: #ffffff; font-size: 16px;">☆</span> 普通照片
-                            </div>
-                            <div class="star-option" @click="updateStarStatus(item, -1)">
-                                <span style="color: #c0c4cc; font-size: 16px;">☆</span> 隐藏照片
-                            </div>
-                        </div>
-                    </el-popover>
 
-                    <div class="fullscreen-icon" @click.stop="openFullImg(item.id)">
-                        <el-icon>
-                            <FullScreen />
-                        </el-icon>
+                        </div>
                     </div>
                     <el-image :src="item.compressedSrc" :key="item.id" lazy
                         :style="{ width: item.calcWidth + 'px', height: item.calcHeight + 'px' }">
@@ -61,14 +98,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
+import { ref, onMounted, onUnmounted, watch, computed, toRaw } from 'vue';
 import { ElImage, ElIcon, ElMessage, ElPopover, ElEmpty } from 'element-plus';
-import { Picture as IconPicture, FullScreen, Star, StarFilled } from '@element-plus/icons-vue';
+import { Picture as IconPicture, FullScreen, Star, StarFilled, Collection, Check } from '@element-plus/icons-vue';
 import { getVisiblePhotosByPage, getStartPhotosByPage, updatePhotoStartStatus as updatePhotoStart } from '@/api/photo';
+import { getAllGroupPhotos, updateGroupPhoto } from '@/api/groupPhoto';
 import { debounce } from 'lodash';
 import PhotoPreview from "@/components/PhotoPreview.vue";
 import PhotoViewer from "@/components/PhotoViewer.vue";
 import { get100KPhotos, processPhotoData, type EnhancedWaterfallItem } from '@/utils/photo';
+import type { GroupPhotoDTO } from '@/types/groupPhoto';
 
 // 添加 props 来接收父组件传递的值
 const props = defineProps({
@@ -93,7 +132,7 @@ const props = defineProps({
 //// 照片流数据
 const images = ref<EnhancedWaterfallItem[]>([]);
 const currentPage = ref(1);
-const pageSize = ref(50);
+const pageSize = ref(30);
 const hasMore = ref(true);
 const containerRef = ref<HTMLElement | null>(null);
 
@@ -113,18 +152,16 @@ const getPhotos = async () => {
 
         // 记录添加前的长度
         const previousLength = images.value.length;
-        
+
         // 预处理数据，使用工具函数
         const processedData = response.records.map(processPhotoData);
-        
         // 更新数据时保留原有数据
         images.value = [...images.value, ...processedData];
-        
         // 计算布局
         calculateLayout();
-
+        const sliceImages = images.value.slice(previousLength)
         // 使用统一工具函数加载缩略图
-        await get100KPhotos(images.value.slice(previousLength));
+        await get100KPhotos(sliceImages);
 
         // 更新分页信息
         hasMore.value = response.records.length >= pageSize.value;
@@ -180,6 +217,7 @@ const handleResize = () => {
 onMounted(async () => {
     handleResize();
     await getPhotos();
+    await fetchGroupPhotos();
     window.addEventListener('scroll', handleScroll);
     window.addEventListener('resize', handleResize); // 添加 resize 事件监听
 });
@@ -306,6 +344,48 @@ const updateStarStatus = async (item: EnhancedWaterfallItem, startVal: number) =
     }
 };
 
+// 组图相关
+const groupPhotos = ref<GroupPhotoDTO[]>([]);
+
+// 获取所有组图
+const fetchGroupPhotos = async () => {
+    try {
+        const response = await getAllGroupPhotos();
+        groupPhotos.value = response;
+    } catch (error) {
+        console.error('获取组图列表失败:', error);
+        ElMessage.error('获取组图列表失败');
+    }
+};
+
+// 添加到组图或从组图中移除
+const addToGroup = async (photo: EnhancedWaterfallItem, group: GroupPhotoDTO) => {
+    try {
+        // 检查照片是否已经在组图中
+        const isInGroup = group.photoIds?.includes(photo.id);
+
+        // 更新组图数据
+        const updatedGroup: GroupPhotoDTO = {
+            groupPhoto: group.groupPhoto,
+            photoIds: isInGroup
+                ? group.photoIds.filter(id => id !== photo.id) // 如果已在组图中，则移除
+                : [...(group.photoIds || []), photo.id] // 如果不在组图中，则添加
+        };
+
+        await updateGroupPhoto(updatedGroup);
+        ElMessage.success(isInGroup ? '从组图中移除照片成功' : '添加照片到组图成功');
+
+        // 更新本地组图数据
+        const groupIndex = groupPhotos.value.findIndex(g => g.groupPhoto.id === group.groupPhoto.id);
+        if (groupIndex !== -1) {
+            groupPhotos.value[groupIndex] = updatedGroup;
+        }
+    } catch (error) {
+        console.error('操作失败:', error);
+        ElMessage.error('操作失败');
+    }
+};
+
 </script>
 
 <style>
@@ -340,23 +420,44 @@ const updateStarStatus = async (item: EnhancedWaterfallItem, startVal: number) =
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
 }
 
-.fullscreen-icon {
+.image-actions {
     position: absolute;
     top: 8px;
-    right: 8px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 8px;
     z-index: 2;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.image-item:hover .image-actions {
+    opacity: 1;
+}
+
+.left-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.right-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.action-icon {
     cursor: pointer;
     border-radius: 4px;
     padding: 4px;
     transition: all 0.3s;
-    opacity: 0;
     color: white;
 }
 
-.image-item:hover .fullscreen-icon {
+.action-icon:hover {
     background: rgba(0, 0, 0, 0.7);
     transform: scale(1.1);
-    opacity: 1;
 }
 
 .image-info {
@@ -413,25 +514,6 @@ const updateStarStatus = async (item: EnhancedWaterfallItem, startVal: number) =
     }
 }
 
-.star-icon {
-    position: absolute;
-    top: 8px;
-    left: 8px;
-    z-index: 2;
-    cursor: pointer;
-    border-radius: 4px;
-    padding: 4px;
-    transition: all 0.3s;
-    opacity: 0;
-    color: white;
-}
-
-.image-item:hover .star-icon {
-    background: rgba(0, 0, 0, 0.7);
-    transform: scale(1.1);
-    opacity: 1;
-}
-
 .star-disabled {
     opacity: 0.5;
 }
@@ -450,5 +532,51 @@ const updateStarStatus = async (item: EnhancedWaterfallItem, startVal: number) =
 
 .star-option:hover {
     background-color: #f5f7fa;
+}
+
+.group-selection {
+    padding: 0;
+}
+
+.group-options {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.group-option {
+    padding: 10px;
+    cursor: pointer;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    transition: background-color 0.3s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.group-option:hover {
+    background-color: #f5f7fa;
+}
+
+.photo-count {
+    color: #909399;
+    font-size: 12px;
+}
+
+.no-groups {
+    padding: 10px;
+    color: #909399;
+    text-align: center;
+}
+
+.group-option-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.check-icon {
+    color: #67c23a;
+    font-size: 16px;
 }
 </style>

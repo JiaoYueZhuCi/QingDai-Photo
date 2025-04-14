@@ -5,8 +5,10 @@ import com.qingdai.mapper.PhotoMapper;
 import com.qingdai.service.PhotoService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
+import lombok.extern.slf4j.Slf4j;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+
 import java.time.YearMonth;
 import java.time.Year;
 import java.time.LocalDate;
@@ -32,7 +34,6 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.Date;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -48,6 +49,7 @@ import java.util.List;
  * @since 2025-02-28
  */
 @Service
+@Slf4j
 public class PhotoServiceImpl extends ServiceImpl<PhotoMapper, Photo> implements PhotoService {
 
     @Value("${qingdai.defaultAuthor}")
@@ -123,32 +125,32 @@ public class PhotoServiceImpl extends ServiceImpl<PhotoMapper, Photo> implements
                 .forEach(file -> compressPhoto(file, thumbnailDir, maxSizeKB, overwrite));
     }
 
-    @Override
-    public void thumbnailPhotoFromMultipartFileToFolder(MultipartFile photo,
-            File pendingDir,
-            File thumbnailDir,
-            int maxSizeKB,
-            boolean overwrite) throws IOException {
-        // 创建随机名称的临时目录
-        File tempDir = FileUtils.createTempDir(pendingDir);
-        if (!tempDir.exists() && !tempDir.mkdirs()) {
-            throw new IOException("无法创建临时目录: " + tempDir.getAbsolutePath());
-        }
+    // @Override
+    // public void thumbnailPhotoFromMultipartFileToFolder(MultipartFile photo,
+    //         File pendingDir,
+    //         File thumbnailDir,
+    //         int maxSizeKB,
+    //         boolean overwrite) throws IOException {
+    //     // 创建随机名称的临时目录
+    //     File tempDir = FileUtils.createTempDir(pendingDir);
+    //     if (!tempDir.exists() && !tempDir.mkdirs()) {
+    //         throw new IOException("无法创建临时目录: " + tempDir.getAbsolutePath());
+    //     }
 
-        // 保存所有图片到临时目录
-        File thumbnailUrl = new File(tempDir, photo.getOriginalFilename());
-        try {
-            FileUtils.saveFile(photo, tempDir);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    //     // 保存所有图片到临时目录
+    //     File thumbnailUrl = new File(tempDir, photo.getOriginalFilename());
+    //     try {
+    //         FileUtils.saveFile(photo, tempDir);
+    //     } catch (IOException e) {
+    //         throw new RuntimeException(e);
+    //     }
 
-        // 调用压缩方法处理临时目录中的文件
-        compressPhoto(thumbnailUrl, thumbnailDir, maxSizeKB, overwrite);
+    //     // 调用压缩方法处理临时目录中的文件
+    //     compressPhoto(thumbnailUrl, thumbnailDir, maxSizeKB, overwrite);
 
-        // 删除临时目录及其内容
-        FileUtils.deleteFolder(tempDir);
-    }
+    //     // 删除临时目录及其内容
+    //     FileUtils.deleteFolder(tempDir);
+    // }
 
     // 根据照片ID获取文件名
     @Override
@@ -235,9 +237,6 @@ public class PhotoServiceImpl extends ServiceImpl<PhotoMapper, Photo> implements
 
             long maxSizeBytes = maxSizeKB * 1024L;
             boolean sizeMet = false;
-
-            System.out.println(fullSizeUrl);
-            System.out.println(thumbnailUrl);
 
             // 优先调整质量参数
             sizeMet = adjustPhotoQuality(fullSizeUrl, thumbnailUrl, formatName, maxSizeBytes);
@@ -454,5 +453,30 @@ public class PhotoServiceImpl extends ServiceImpl<PhotoMapper, Photo> implements
         FileUtils.deleteFile(new File(fullSizeUrl, fileName));
         FileUtils.deleteFile(new File(thumbnail100KUrl, fileName));
         FileUtils.deleteFile(new File(thumbnail1000KUrl, fileName));
+    }
+
+    @Override
+    public void processPhotoCompression(File tempDir, File thumbnail100KDir, File thumbnail1000KDir, File fullSizeDir, boolean overwrite) throws IOException {
+        // 在tempDir下创建1000K临时目录
+        File temp1000KDir = new File(tempDir, "1000K");
+        if (!temp1000KDir.exists() && !temp1000KDir.mkdirs()) {
+            throw new IOException("无法创建1000K临时目录: " + temp1000KDir.getAbsolutePath());
+        }
+        
+        // 压缩到1000K临时目录
+        thumbnailPhotosFromFolderToFolder(tempDir, temp1000KDir, 1000, overwrite);
+        log.info("完成1000K压缩");
+        
+        // 基于1000K临时目录的图片压缩到100K目录
+        thumbnailPhotosFromFolderToFolder(temp1000KDir, thumbnail100KDir, 100, overwrite);
+        log.info("完成100K压缩");
+        
+        // 将1000K临时目录的图片复制到1000K目录
+        FileUtils.copyFiles(temp1000KDir, thumbnail1000KDir);
+        log.info("完成1000K图片复制");
+        
+        // 复制到原图目录
+        FileUtils.copyFiles(tempDir, fullSizeDir);
+        log.info("完成原图复制");
     }
 }
