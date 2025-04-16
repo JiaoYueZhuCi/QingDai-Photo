@@ -26,24 +26,32 @@
                                     </div>
                                 </template>
                                 <div class="star-selection">
-                                    <!-- <p>请选择此照片的星标状态：</p> -->
                                     <div class="star-option" @click="updateStarStatus(item, 1)">
-                                        <span style="color: #e6a23c; font-size: 16px;">★</span> 星标照片
+                                        <el-icon :color="getStarColor(1)">
+                                            <StarFilled />
+                                        </el-icon>
+                                        <span>星标照片</span>
                                     </div>
                                     <div class="star-option" @click="updateStarStatus(item, 0)">
-                                        <span style="color: #ffffff; font-size: 16px;">☆</span> 普通照片
+                                        <el-icon :color="getStarColor(0)">
+                                            <Star />
+                                        </el-icon>
+                                        <span>普通照片</span>
                                     </div>
                                     <div class="star-option" @click="updateStarStatus(item, -1)">
-                                        <span style="color: #c0c4cc; font-size: 16px;">☆</span> 隐藏照片
+                                        <el-icon :color="getStarColor(-1)">
+                                            <Star />
+                                        </el-icon>
+                                        <span>隐藏照片</span>
                                     </div>
                                 </div>
                             </el-popover>
-                            <div class="group-icon" @click.stop>
+                            <div class=" group-icon" @click.stop>
                                 <el-popover placement="top" :width="200" trigger="click" title="添加到组图"
                                     :popper-style="{ padding: '12px' }" :teleported="true">
                                     <template #reference>
                                         <div class="action-icon">
-                                            <el-icon>
+                                            <el-icon class="icon-color">
                                                 <Collection />
                                             </el-icon>
                                         </div>
@@ -72,7 +80,7 @@
                         </div>
                         <div class="right-actions">
                             <div class="action-icon fullscreen-icon" @click.stop="openFullImg(item.id)">
-                                <el-icon>
+                                <el-icon class="icon-color">
                                     <FullScreen />
                                 </el-icon>
                             </div>
@@ -128,6 +136,8 @@ const props = defineProps({
         default: 0,
     },
 });
+
+console.log(props.photoType);
 
 //// 照片流数据
 const images = ref<EnhancedWaterfallItem[]>([]);
@@ -323,10 +333,10 @@ const openFullImg = (id: string) => {
 
 // 获取星星颜色
 const getStarColor = (startVal: number) => {
-    if (startVal === 1) return '#e6a23c'; // 星标
-    if (startVal === -1) return '#c0c4cc'; // 隐藏
-    if (startVal === 2) return '#409eff'; // 气象
-    return '#ffffff'; // 普通
+    if (startVal === 1) return 'var(--qd-color-primary)'; // 星标
+    if (startVal === -1) return 'var(--qd-color-primary-light-8)'; // 隐藏
+    if (startVal === 0) return 'var(--qd-color-primary-light-6)'; // 普通
+    return 'var(--qd-color-primary-light-6)'; // 默认
 };
 
 // 更新星标状态
@@ -399,6 +409,10 @@ const addToGroup = async (photo: EnhancedWaterfallItem, group: GroupPhotoDTO) =>
 </style>
 
 <style scoped>
+.icon-color {
+    color: var(--qd-color-primary-light-6);
+}
+
 .container {
     width: 100%;
     margin: 0 0;
@@ -528,10 +542,17 @@ const addToGroup = async (photo: EnhancedWaterfallItem, group: GroupPhotoDTO) =>
     border-radius: 4px;
     margin-bottom: 8px;
     transition: background-color 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .star-option:hover {
-    background-color: #f5f7fa;
+    background-color: var(--qd-color-primary-light-9);
+}
+
+.star-option .el-icon {
+    font-size: 16px;
 }
 
 .group-selection {

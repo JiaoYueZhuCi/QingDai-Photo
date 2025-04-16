@@ -327,6 +327,9 @@ const closeFullScreen = () => {
 </script>
 
 <style scoped>
+:deep(.el-tabs__item){
+ padding: 0 10px !important;   
+}
 .preview-dialog {
     border-radius: 12px;
     overflow: hidden;
@@ -400,7 +403,7 @@ const closeFullScreen = () => {
     bottom: 20px;
     right: 20px;
     background-color: rgba(0, 0, 0, 0.6);
-    color: white;
+    color: var(--qd-color-primary-light-8);
     padding: 5px 12px;
     border-radius: 15px;
     font-size: 14px;
@@ -412,16 +415,6 @@ const closeFullScreen = () => {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-}
-
-.info-tabs {
-    flex: 1;
-    overflow: hidden;
-    display: flex;
-}
-
-.info-tabs :deep(.el-tabs__content) {
-    overflow-y: auto;
 }
 
 .description-content {
@@ -460,7 +453,7 @@ const closeFullScreen = () => {
 .thumbnail-browser h4 {
     margin: 0 0 8px 0;
     font-size: 14px;
-    color: #606266;
+    color: var(--qd-color-primary-light-2);
 }
 
 .thumbnail-list {
@@ -475,7 +468,7 @@ const closeFullScreen = () => {
 .thumbnail-item {
     width: 35px;
     height: 35px;
-    background-color: #f5f7fa;
+    background-color: var(--qd-color-primary-light-7);
     border-radius: 4px;
     display: flex;
     align-items: center;
@@ -485,12 +478,12 @@ const closeFullScreen = () => {
 }
 
 .thumbnail-item:hover {
-    background-color: #e6e9ed;
+    background-color: var(--qd-color-primary-light-6);
 }
 
 .thumbnail-item.active {
-    background-color: var(--el-color-primary);
-    color: white;
+    background-color: var(--qd-color-primary);
+    color: var(--qd-color-primary-light-9);
 }
 
 .thumbnail-index {

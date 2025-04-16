@@ -210,9 +210,9 @@ onUnmounted(() => {
 .loading-spinner {
     width: 50px;
     height: 50px;
-    border: 5px solid rgba(249, 202, 36, 0.2);
+    border: 5px solid var(--qd-color-primary);
     border-radius: 50%;
-    border-top-color: #f9ca24;
+    border-top-color: var(--qd-color-primary-light-5);
     animation: spin 1s ease-in-out infinite;
     margin-bottom: 15px;
 }
@@ -228,16 +228,7 @@ onUnmounted(() => {
     margin-bottom: 40px;
 }
 
-.timeline-header h2 {
-    font-size: 2rem;
-    margin-bottom: 10px;
-    color: #333;
-}
 
-.timeline-header p {
-    font-size: 1rem;
-    color: #666;
-}
 
 .timeline-container {
     position: relative;
@@ -263,7 +254,7 @@ onUnmounted(() => {
     position: absolute;
     width: 20px;
     height: 20px;
-    background-color: #f9ca24;
+    background-color: var(--qd-color-primary-light-6);
     border-radius: 50%;
     left:25px;
     top: -10px;
@@ -275,9 +266,9 @@ onUnmounted(() => {
     position: absolute;
     top: -11px;
     font-size: 15px;
-    color: #666;
+    color: var(--qd-color-primary);
     z-index: 3;
-    background-color: white;
+    background-color: var(--qd-color-primary-light-9);
     padding: 2px 6px;
     border-radius: 4px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -288,7 +279,7 @@ onUnmounted(() => {
 
 .timeline-card {
     padding: 5px;
-    background-color: white;
+    background-color: var(--qd-color-primary-light-9);
     border-radius: 6px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease;
@@ -364,7 +355,7 @@ onUnmounted(() => {
 .stats-container {
     text-align: center;
     padding: 10px 0 0 0;
-    color: #f9ca24;
+    color: var(--qd-color-primary-light-7);
     font-size: 18px;
 }
 
@@ -379,8 +370,8 @@ onUnmounted(() => {
 }
 
 .sort-btn {
-    background-color: #f9ca24;
-    color: #333;
+    background-color:var(--qd-color-primary-light-2);
+    color: var(--qd-color-primary-light-9);
     border: none;
     padding: 8px 16px;
     border-radius: 4px;
@@ -390,7 +381,7 @@ onUnmounted(() => {
 }
 
 .sort-btn:hover {
-    background-color: #e6b913;
+    background-color: var(--qd-color-primary-light-4);
     transform: translateY(-2px);
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
     opacity: 1 !important;

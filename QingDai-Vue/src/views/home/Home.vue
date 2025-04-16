@@ -17,7 +17,7 @@
     </el-tabs>
 
     <router-view v-slot="{ Component }">
-        <component :is="Component" :photoType="photoType" :meteorologyType="meteorologyType" />
+        <component :is="Component" :meteorologyType="meteorologyType" />
     </router-view>
 
 </template>
@@ -41,16 +41,11 @@ watch(
     },
     { immediate: true }
 )
-const photoType = ref(0)
+
 const meteorologyType = ref('')
 // 处理标签切换
 const handleTabClick = (tab: TabsPaneContext) => {
     router.push(`/home/${tab.paneName}`)
-    if (tab.paneName === 'featured') {
-        photoType.value = 1
-    } else if (tab.paneName === 'photos') {
-        photoType.value = 0
-    }
     if (tab.paneName === 'sunriseGlow') {
         meteorologyType.value = '1'
     } else if (tab.paneName === 'sunsetGlow') {
@@ -60,16 +55,6 @@ const handleTabClick = (tab: TabsPaneContext) => {
     } else if (tab.paneName === 'sunset') {
         meteorologyType.value = '4'
     }
-
-
-    // 初始化时根据当前标签页设置 photoType
-    watch(activeTab, (newTab) => {
-        if (newTab === 'featured') {
-            photoType.value = 1
-        } else if (newTab === 'photos') {
-            photoType.value = 0
-        }
-    }, { immediate: true })
 }
 </script>
 

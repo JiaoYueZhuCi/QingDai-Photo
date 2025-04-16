@@ -20,44 +20,47 @@ const router = createRouter({
         {
           path: '/home',
           component: () => import('@/views/home/Home.vue').catch(() => errorPage),
+          props: true,
           children: [
             {
               path: '',
               redirect: '/home/featured'
             },
             {
-              path: '/home/featured',
-              component: () => import('@/views/home/Waterfall.vue').catch(() => errorPage)
+              path: 'featured',
+              component: () => import('@/views/home/Waterfall.vue').catch(() => errorPage),
+              props: { photoType: 1 }
             },
             {
-              path: '/home/photos',
-              component: () => import('@/views/home/Waterfall.vue').catch(() => errorPage)
+              path: 'photos',
+              component: () => import('@/views/home/Waterfall.vue').catch(() => errorPage),
+              props: { photoType: 0 }
             },
             {
-              path: '/home/timeline',
+              path: 'timeline',
               component: () => import('@/views/home/Timeline.vue').catch(() => errorPage)
             },
             {
-              path: '/home/data',
+              path: 'data',
               component: () => import('@/views/home/Data.vue').catch(() => errorPage)
             },
             {
-              path: '/home/groupPhotos',
+              path: 'groupPhotos',
               component: () => import('@/views/home/GroupPhotos.vue').catch(() => errorPage)
             },
             {
-              path: '/home/sunriseGlow',
+              path: 'sunriseGlow',
               component: () => import('@/views/home/MeteorologyTimeLine.vue').catch(() => errorPage)
             },
             {
-              path: '/home/sunsetGlow',
+              path: 'sunsetGlow',
               component: () => import('@/views/home/MeteorologyTimeLine.vue').catch(() => errorPage)
             },
             {
-              path: '/home/sunrise',
+              path: 'sunrise',
               component: () => import('@/views/home/MeteorologyTimeLine.vue').catch(() => errorPage)
             },{
-              path: '/home/sunset',
+              path: 'sunset',
               component: () => import('@/views/home/MeteorologyTimeLine.vue').catch(() => errorPage)
             }
           ]
@@ -72,29 +75,21 @@ const router = createRouter({
               redirect: '/manage/photoList'
             },
             {
-              path: '/manage/photoList',
+              path: 'photoList',
               component: () => import('@/views/manage/PhotoList.vue').catch(() => errorPage)
             },
             {
-              path: '/manage/timelineList',
+              path: 'timelineList',
               component: () => import('@/views/manage/TimelineList.vue').catch(() => errorPage)
             },
             {
-              path: '/manage/groupPhotosList',
+              path: 'groupPhotosList',
               component: () => import('@/views/manage/GroupPhotosList.vue').catch(() => errorPage)
             }
           ]
         },
       ]
     },
-    // {
-    //   path: '/404',
-    //   component: () => import('@/components/errorpage.vue')
-    // },
-    // {
-    //   path: '/:pathMatch(.*)*', 
-    //   redirect: '/404' // 将未匹配路径重定向到明确地址
-    // }
   ]
 })
 

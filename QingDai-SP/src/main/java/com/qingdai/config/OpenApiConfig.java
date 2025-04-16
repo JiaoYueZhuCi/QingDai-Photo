@@ -18,13 +18,11 @@ import java.util.Map;
     security = {@SecurityRequirement(name = "BearerAuth")},
     servers = {
         @Server(url = "http://localhost:8080/QingDai", description = "本地环境"),
-        @Server(url = "https://hd6.com:8080/QingDai", description = "正式环境")
+        @Server(url = "https://qingdai.art:8080/QingDai", description = "正式环境")
     }
 )
 public class OpenApiConfig {
 
-    @Value("${qingdai.perpetualAdminJwt}")
-    private String perpetualAdminJwt;
 
     @Bean
     public OpenApiCustomizer securityOpenApiCustomizer() {
@@ -37,15 +35,4 @@ public class OpenApiConfig {
                                 .description("从配置读取永久令牌"));
     }
 
-    // 添加 Bean 以注入全局请求拦截器
-    @Bean
-    public OpenApiCustomizer globalHeaderCustomizer() {
-        return openApi -> openApi.addExtension("x-global-headers", Map.of(
-                "Authorization", Map.of(
-                        "description", "Bearer Token",
-                        "required", true,
-                        "default", "Bearer " + perpetualAdminJwt
-                )
-        ));
-    }
 }

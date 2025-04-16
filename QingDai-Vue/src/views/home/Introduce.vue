@@ -1,21 +1,24 @@
 <template>
     <div>
         <!-- 背景图静态展示 -->
-        <div class="cover-container" :style="{ backgroundImage: `url(${backgroundImageUrl})` }" @click="openPreview(backgroundImageUrl)">
+        <div class="cover-container" :style="{ backgroundImage: `url(${backgroundImageUrl})` }"
+            @click="openPreview(backgroundImageUrl)">
         </div>
 
         <!-- 头像静态展示 -->
         <div class="avatar-section">
             <div>
                 <div class="avatar-container">
-                    <el-avatar :size="avatarSize" :src="avatarImageUrl" class="avatar-static" @click="$router.push('/manage')">
+                    <el-avatar :size="avatarSize" :src="avatarImageUrl" class="avatar-static"
+                        @click="$router.push('/manage')">
                         <template #default>
                             <el-icon :size="50">
                                 <User />
                             </el-icon>
                         </template>
                     </el-avatar>
-                    <el-button class="logout" v-if="hasToken" type="danger" @click="handleLogout" style="margin-top: 10px;">
+                    <el-button class="logout" v-if="hasToken" type="danger" @click="handleLogout"
+                        style="margin-top: 10px;">
                         注销
                     </el-button>
                 </div>
@@ -41,23 +44,20 @@
                     </div>
                 </template>
                 <div class="device">
-                    <el-tag size="large">500px</el-tag>
-                    <el-tag size="large">小红书</el-tag>
-                </div>
-            </el-descriptions-item>
-            <el-descriptions-item label-class-name="my-label" class-name="my-content">
-                <template #label>
-                    <div class="cell-item">
-                        <el-icon :style="iconStyle">
-                            <iphone />
+                    <el-tag size="large" class="link-tag" @click="openLink('https://500px.com.cn/jiaoyuezhuci')">
+                        500px
+                        <el-icon class="link-icon">
+                            <Link />
                         </el-icon>
-                        微信
-                    </div>
-                </template>
-                <div class="device">
-                    <el-tag size="large">L3335308825</el-tag>
+                    </el-tag>
+                    <el-tag size="large" class="link-tag"
+                        @click="openLink('https://www.xiaohongshu.com/user/profile/6513978c0000000002013ba8')">
+                        小红书
+                        <el-icon class="link-icon">
+                            <Link />
+                        </el-icon>
+                    </el-tag>
                 </div>
-
             </el-descriptions-item>
             <el-descriptions-item label-class-name="my-label" class-name="my-content">
                 <template #label>
@@ -105,8 +105,37 @@
                     <el-tag size="large">DJI Air3S</el-tag>
                     <el-tag size="large">TTArtisan 10mm f2</el-tag>
                 </div>
-
-
+            </el-descriptions-item>
+            <el-descriptions-item label-class-name="my-label" class-name="my-content">
+                <template #label>
+                    <div class="cell-item">
+                        <el-icon :style="iconStyle">
+                            <iphone />
+                        </el-icon>
+                        微信
+                    </div>
+                </template>
+                <div class="device">
+                    <el-tag size="large">L3335308825</el-tag>
+                </div>
+            </el-descriptions-item>
+            <el-descriptions-item label-class-name="my-label" class-name="my-content">
+                <template #label>
+                    <div class="cell-item">
+                        <el-icon :style="iconStyle">
+                            <Message />
+                        </el-icon>
+                        邮箱
+                    </div>
+                </template>
+                <div class="device">
+                    <el-tag size="large" class="link-tag" @click="sendEmail('jiaoyuezhuci@163.com')">
+                        3335308825@qq.com
+                        <el-icon class="link-icon">
+                            <Link />
+                        </el-icon>
+                    </el-tag>
+                </div>
             </el-descriptions-item>
         </el-descriptions>
 
@@ -123,12 +152,13 @@ import {
     Camera,
     Tickets,
     User,
+    Link,
+    Message,
 } from '@element-plus/icons-vue'
-import PhotoViewer from '@/components/PhotoViewer.vue' // 引入预览组件
+import PhotoViewer from '@/components/PhotoViewer.vue'
 
 const backgroundImageUrl = '/img/introduce/background.jpg'
 const avatarImageUrl = '/img/introduce/avatar.jpg'
-const loginDialogVisible = ref(false)
 
 const iconStyle = computed(() => {
     const marginMap = {
@@ -174,21 +204,36 @@ const openPreview = (url: string) => {
     previewImageUrl.value = url
     previewVisible.value = true
 }
+
+// 添加打开链接的方法
+const openLink = (url: string) => {
+    window.open(url, '_blank');
+}
+
+// 添加发送邮件的方法
+const sendEmail = (email: string) => {
+    window.location.href = `mailto:${email}`;
+}
 </script>
 
 
 <style scoped>
+.el-descriptions {
+    margin-bottom: 5px !important;
+}
 .cover-container {
     height: 400px;
     background-size: cover;
     background-position: 50% 50%;
     background-repeat: no-repeat;
-    cursor: pointer; /* 添加鼠标指针样式 */
+    cursor: pointer;
+    /* 添加鼠标指针样式 */
 }
 
 .avatar-static {
     margin-top: -66px;
-    cursor: pointer; /* 添加鼠标指针样式 */
+    cursor: pointer;
+    /* 添加鼠标指针样式 */
 }
 
 .avatar-container {
@@ -209,20 +254,15 @@ const openPreview = (url: string) => {
     color: white;
 }
 
-:deep(.my-label) {
-    background: rgb(230, 230, 230) !important;
-}
-
-:deep(.my-content) {
-    background: rgb(255, 255, 255);
-}
-
 .username {
+    color: var(--qd-color-primary-dark-2);
     font-size: 48px;
     margin: 5px;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 }
-
+.description {
+    color: var(--qd-color-primary);
+}
 .username:hover {
     transform: scale(1.05);
     text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
@@ -247,15 +287,18 @@ const openPreview = (url: string) => {
     }
 }
 
-.el-descriptions__body .el-descriptions__table.is-bordered .el-descriptions__cell {
-    padding: 1px 1px;
+
+.device {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: -5px;
 }
 
 .el-tag {
     margin-right: 5px;
     margin-bottom: 5px;
 }
-
 
 .manage {
     position: absolute;
@@ -267,13 +310,34 @@ const openPreview = (url: string) => {
 }
 
 @media (max-width: 600px) {
-    /* .el-tag{
-        margin-bottom: 5px;
-    } */
+    .device {
+        gap: 3px;
+    }
+
+    .el-tag {
+        margin-right: 3px;
+        margin-bottom: 3px;
+    }
 }
 
-.logout{
+.logout {
     position: absolute;
     right: 10px;
+}
+
+.link-tag {
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+}
+
+.link-tag:hover {
+    transform: scale(1.05);
+}
+
+.link-icon {
+    margin-left: 4px;
+    font-size: 14px;
 }
 </style>

@@ -2,7 +2,7 @@
   <div class="common-layout">
     <el-container>
       <el-header>
-        <el-menu :default-active="$route.path" router active-text-color="#409EFF" mode="horizontal">
+        <el-menu :default-active="$route.path" router mode="horizontal">
           <el-menu-item index="/home">
             我的主页
           </el-menu-item>
