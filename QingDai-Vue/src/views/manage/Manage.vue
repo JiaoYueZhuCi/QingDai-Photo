@@ -15,6 +15,9 @@
           <el-menu-item index="/manage/timelineList" style="width: 100px;">
             时间线管理
           </el-menu-item>
+          <el-menu-item index="/manage/userInfo" style="width: 100px;">
+            个人信息设置
+          </el-menu-item>
           <el-menu-item class="logout" style="width: 100px;" @click="handleLogout">
             注销
           </el-menu-item>

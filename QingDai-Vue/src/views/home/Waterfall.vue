@@ -1,7 +1,7 @@
 <template>
     <div class="container" ref="containerRef">
-        <PhotoPreview v-model="previewVisible" :photo-id="currentPreviewId" @close="previewVisible = false"
-            @image-click="openFullImg" />
+        <FilmPreview v-model="previewVisible" :photo-id="currentPreviewId" :photo-ids="extractedPhotoIds" @close="previewVisible = false"
+            @image-click="openFullImg" @navigate="handleNavigate" />
 
         <PhotoViewer v-if="fullImgShow" :photo-id="currentPreviewId" :initial-index="currentIndex"
             :use-direct-render="true" @close="fullImgShow = false" />
@@ -34,9 +34,15 @@
                                     </div>
                                     <div class="star-option" @click="updateStarStatus(item, 0)">
                                         <el-icon :color="getStarColor(0)">
-                                            <Star />
+                                            <StarFilled />
                                         </el-icon>
                                         <span>普通照片</span>
+                                    </div>
+                                    <div class="star-option" @click="updateStarStatus(item, 2)">
+                                        <el-icon :color="getStarColor(2)">
+                                            <StarFilled />
+                                        </el-icon>
+                                        <span>气象照片</span>
                                     </div>
                                     <div class="star-option" @click="updateStarStatus(item, -1)">
                                         <el-icon :color="getStarColor(-1)">
@@ -112,7 +118,7 @@ import { Picture as IconPicture, FullScreen, Star, StarFilled, Collection, Check
 import { getVisiblePhotosByPage, getStartPhotosByPage, updatePhotoStartStatus as updatePhotoStart } from '@/api/photo';
 import { getAllGroupPhotos, updateGroupPhoto } from '@/api/groupPhoto';
 import { debounce } from 'lodash';
-import PhotoPreview from "@/components/PhotoPreview.vue";
+import FilmPreview from "@/components/FilmPreview.vue";
 import PhotoViewer from "@/components/PhotoViewer.vue";
 import { get100KPhotos, processPhotoData, type EnhancedWaterfallItem } from '@/utils/photo';
 import type { GroupPhotoDTO } from '@/types/groupPhoto';
@@ -137,7 +143,6 @@ const props = defineProps({
     },
 });
 
-console.log(props.photoType);
 
 //// 照片流数据
 const images = ref<EnhancedWaterfallItem[]>([]);
@@ -333,9 +338,10 @@ const openFullImg = (id: string) => {
 
 // 获取星星颜色
 const getStarColor = (startVal: number) => {
-    if (startVal === 1) return 'var(--qd-color-primary)'; // 星标
+    if (startVal === 1) return 'gold'; // 星标
     if (startVal === -1) return 'var(--qd-color-primary-light-8)'; // 隐藏
-    if (startVal === 0) return 'var(--qd-color-primary-light-6)'; // 普通
+    if (startVal === 0) return 'var(--qd-color-primary)'; // 普通
+    if (startVal === 2) return 'darkturquoise'; // 气象
     return 'var(--qd-color-primary-light-6)'; // 默认
 };
 
@@ -396,6 +402,15 @@ const addToGroup = async (photo: EnhancedWaterfallItem, group: GroupPhotoDTO) =>
     }
 };
 
+// 提取所有照片ID，供FilmPreview组件使用
+const extractedPhotoIds = computed(() => {
+    return images.value.map(image => image.id);
+});
+
+// 处理FilmPreview的导航事件
+const handleNavigate = (photoId: string) => {
+    currentPreviewId.value = photoId;
+};
 </script>
 
 <style>

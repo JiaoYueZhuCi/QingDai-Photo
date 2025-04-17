@@ -39,6 +39,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.nio.file.Files;
 import java.util.List;
+import java.util.Collections;
+import java.util.ArrayList;
 
 /**
  * <p>
@@ -54,6 +56,15 @@ public class PhotoServiceImpl extends ServiceImpl<PhotoMapper, Photo> implements
 
     @Value("${qingdai.defaultAuthor}")
     private String defaultAuthor;
+
+    @Value("${qingdai.fullSizeUrl}")
+    private String fullSizeUrl;
+    
+    @Value("${qingdai.thumbnail100KUrl}")
+    private String thumbnail100KUrl;
+    
+    @Value("${qingdai.thumbnail1000KUrl}")
+    private String thumbnail1000KUrl;
 
     // 雪花算法生成器
     private final SnowflakeIdGenerator idGenerator = new SnowflakeIdGenerator(1, 1);
@@ -249,6 +260,7 @@ public class PhotoServiceImpl extends ServiceImpl<PhotoMapper, Photo> implements
             if (!sizeMet) {
                 throw new IOException("无法压缩到指定大小: " + fullSizeUrl.getName());
             }
+            log.info("图片{}压缩成功",fullSizeUrl.getName());
         } catch (IOException e) {
             throw new RuntimeException("文件处理失败: " + fullSizeUrl.getName(), e);
         }
@@ -465,18 +477,87 @@ public class PhotoServiceImpl extends ServiceImpl<PhotoMapper, Photo> implements
         
         // 压缩到1000K临时目录
         thumbnailPhotosFromFolderToFolder(tempDir, temp1000KDir, 1000, overwrite);
-        log.info("完成1000K压缩");
+        log.info("目录{}完成1000K压缩",tempDir.getName());
         
         // 基于1000K临时目录的图片压缩到100K目录
         thumbnailPhotosFromFolderToFolder(temp1000KDir, thumbnail100KDir, 100, overwrite);
-        log.info("完成100K压缩");
+        log.info("目录{}完成100K压缩",tempDir.getName());
         
         // 将1000K临时目录的图片复制到1000K目录
         FileUtils.copyFiles(temp1000KDir, thumbnail1000KDir);
-        log.info("完成1000K图片复制");
+        log.info("目录{}完成1000K图片复制",tempDir.getName());
         
         // 复制到原图目录
         FileUtils.copyFiles(tempDir, fullSizeDir);
-        log.info("完成原图复制");
+        log.info("目录{}完成原图复制",tempDir.getName());
+    }
+
+    @Override
+    public ProcessResult processPhotosFromFrontend(MultipartFile[] files, Integer start, boolean overwrite) {
+        try {
+            if (files == null || files.length == 0) {
+                log.warn("没有收到文件");
+                return new ProcessResult(Collections.emptyList(), Collections.emptyList(), false);
+            }
+
+            // 验证文件类型
+            List<MultipartFile> validFiles = Arrays.stream(files)
+                    .filter(this::multipartFileIsSupportedPhoto)
+                    .collect(Collectors.toList());
+
+            if (validFiles.isEmpty()) {
+                log.warn("没有有效的图片文件");
+                return new ProcessResult(Collections.emptyList(), Collections.emptyList(), false);
+            }
+
+            // 处理照片元数据
+            List<Photo> photos = getPhotosByMultipartFiles(validFiles.toArray(new MultipartFile[0]));
+
+            // 检查重复文件名
+            List<Photo> existingPhotos = new ArrayList<>();
+            List<Photo> newPhotos = new ArrayList<>();
+            
+            for (Photo photo : photos) {
+                Photo existingPhoto = getOne(
+                    new LambdaQueryWrapper<Photo>()
+                        .eq(Photo::getFileName, photo.getFileName())
+                );
+                
+                if (existingPhoto != null) {
+                    // 保留原有字段
+                    photo.setId(existingPhoto.getId());
+                    photo.setTitle(existingPhoto.getTitle());
+                    photo.setFileName(existingPhoto.getFileName());
+                    photo.setAuthor(existingPhoto.getAuthor());
+                    photo.setIntroduce(existingPhoto.getIntroduce());
+                    photo.setStart(existingPhoto.getStart());
+                    
+                    // 删除原有文件
+                    deletePhotoFiles(fullSizeUrl, thumbnail100KUrl, thumbnail1000KUrl, photo.getFileName());
+                    
+                    existingPhotos.add(photo);
+                } else {
+                    // 设置新的start值
+                    photo.setStart(start);
+                    newPhotos.add(photo);
+                }
+            }
+
+            // 保存到数据库
+            boolean result = true;
+            if (!existingPhotos.isEmpty()) {
+                result = result && updateBatchById(existingPhotos);
+                log.info("图片信息更新数据库成功");
+            }
+            if (!newPhotos.isEmpty()) {
+                result = result && saveBatch(newPhotos);
+                log.info("新图片信息保存数据库成功");
+            }
+
+            return new ProcessResult(existingPhotos, newPhotos, result);
+        } catch (Exception e) {
+            log.error("处理图片时发生错误: {}", e.getMessage(), e);
+            return new ProcessResult(Collections.emptyList(), Collections.emptyList(), false);
+        }
     }
 }

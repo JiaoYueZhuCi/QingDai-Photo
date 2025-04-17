@@ -3,6 +3,7 @@ package com.qingdai.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.qingdai.entity.User;
+import com.qingdai.entity.dto.UserUpdateDTO;
 
 import java.util.List;
 
@@ -20,4 +21,5 @@ public interface UserService extends IService<User> {
     List<String> getPermissionsByUserId(String userId);
 
     User getByUsername(String username);
+
 }

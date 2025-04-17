@@ -2,6 +2,8 @@ import { createRouter, createWebHistory } from 'vue-router'
 import errorPage from '@/components/Error.vue' 
 import { getRolesPermissions } from '@/api/user.ts'; 
 import { ElMessage } from 'element-plus';
+import UserInfo from '@/views/manage/UserInfo.vue'
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -85,6 +87,11 @@ const router = createRouter({
             {
               path: 'groupPhotosList',
               component: () => import('@/views/manage/GroupPhotosList.vue').catch(() => errorPage)
+            },
+            {
+              path: 'userInfo',
+              name: 'UserInfo',
+              component: UserInfo
             }
           ]
         },

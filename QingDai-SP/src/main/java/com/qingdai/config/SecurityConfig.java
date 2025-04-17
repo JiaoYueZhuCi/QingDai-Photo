@@ -25,14 +25,6 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-                // .authorizeHttpRequests(auth -> auth
-                // .requestMatchers("/photo/getVisiblePhotosByPage",
-                // "/photo/getThumbnail100KPhotos",
-                // "/photo/getThumbnail100KPhoto",
-                // "/photo/getThumbnail1000KPhoto")
-                // .permitAll()
-                // .anyRequest().authenticated()
-                // )
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
                 // 配置会话管理策略
                 .cors(cors -> {})

@@ -70,3 +70,22 @@ export const getRolesPermissions = async (): Promise<any> => {
     throw error;
   }
 };
+
+export interface UpdateUserInfoParams {
+  username: string;
+  password: string;
+}
+
+export const updateUserInfo = async (data: UpdateUserInfoParams): Promise<any> => {
+  try {
+    const response = await request.put<any>(`${BASE_URL}/info`, data, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+    return response;
+  } catch (error) {
+    console.error('更新用户信息失败:', error);
+    throw error;
+  }
+};

@@ -517,6 +517,7 @@ public class PhotoController {
             @Parameter(description = "上传的图片文件数组", content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE,
                     array = @ArraySchema(arraySchema = @Schema(type = "array", implementation = File.class),
                             schema = @Schema(type = "string", format = "binary")))) @RequestParam("files") MultipartFile[] files) {
+        long startTime = System.currentTimeMillis();
         try {
             if (files == null || files.length == 0) {
                 log.warn("没有收到文件");
@@ -534,60 +535,17 @@ public class PhotoController {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("目录验证失败");
             }
 
-            // !!!!创建随机名称的临时目录
+            // 创建随机名称的临时目录
             File tempDir = FileUtils.createTempDir(pendingDir);
             if (!tempDir.exists() && !tempDir.mkdirs()) {
                 throw new IOException("无法创建临时目录: " + tempDir.getAbsolutePath());
             }
             log.info("创建临时目录: {}", tempDir.getAbsolutePath());
 
-            // 验证文件类型
-            List<MultipartFile> validFiles = Arrays.stream(files)
-                    .filter(photoService::multipartFileIsSupportedPhoto)
-                    .collect(Collectors.toList());
-
-            if (validFiles.isEmpty()) {
-                log.warn("没有有效的图片文件");
-                return ResponseEntity.badRequest().body("没有有效的图片文件");
-            }
-
             // 保存到临时目录
-            for (MultipartFile file : validFiles) {
+            for (MultipartFile file : files) {
                 FileUtils.saveFile(file, tempDir);
-                log.debug("已保存文件到临时目录: {}", file.getOriginalFilename());
-            }
-
-            // 处理照片元数据
-            List<Photo> photos = photoService.getPhotosByMultipartFiles(validFiles.toArray(new MultipartFile[0]));
-
-            // 检查重复文件名
-            List<Photo> existingPhotos = new ArrayList<>();
-            List<Photo> newPhotos = new ArrayList<>();
-            
-            for (Photo photo : photos) {
-                Photo existingPhoto = photoService.getOne(
-                    new LambdaQueryWrapper<Photo>()
-                        .eq(Photo::getFileName, photo.getFileName())
-                );
-                
-                if (existingPhoto != null) {
-                    // 保留原有字段
-                    photo.setId(existingPhoto.getId());
-                    photo.setTitle(existingPhoto.getTitle());
-                    photo.setFileName(existingPhoto.getFileName());
-                    photo.setAuthor(existingPhoto.getAuthor());
-                    photo.setIntroduce(existingPhoto.getIntroduce());
-                    photo.setStart(existingPhoto.getStart());
-                    
-                    // 删除原有文件
-                    photoService.deletePhotoFiles(fullSizeUrl, thumbnail100KUrl, thumbnail1000KUrl, photo.getFileName());
-                    
-                    existingPhotos.add(photo);
-                } else {
-                    // 设置新的start值
-                    photo.setStart(start);
-                    newPhotos.add(photo);
-                }
+                log.debug("图片：{},已保存文件到临时目录", file.getOriginalFilename());
             }
 
             try {
@@ -599,32 +557,35 @@ public class PhotoController {
                         .body("处理文件时出错: " + e.getMessage());
             }
 
-            // 保存到数据库
-            boolean result = true;
-            if (!existingPhotos.isEmpty()) {
-                result = result && photoService.updateBatchById(existingPhotos);
-            }
-            if (!newPhotos.isEmpty()) {
-                result = result && photoService.saveBatch(newPhotos);
-            }
+            // 处理图片元数据和数据库操作
+            PhotoService.ProcessResult result = photoService.processPhotosFromFrontend(files, start, overwrite);
 
             // 清理临时目录
             FileUtils.clearFolder(tempDir, true);
             log.info("已清理临时目录");
 
-            if (result) {
-                log.info("成功处理{}张图片，其中更新{}张，新增{}张", 
-                    photos.size(), existingPhotos.size(), newPhotos.size());
-                return ResponseEntity.ok("成功处理 " + photos.size() + " 张图片，其中更新 " + 
-                    existingPhotos.size() + " 张，新增 " + newPhotos.size() + " 张");
+            if (result.isSuccess()) {
+                long endTime = System.currentTimeMillis();
+                long duration = endTime - startTime;
+                log.info("成功处理{}张图片，其中更新{}张，新增{}张，耗时{}毫秒", 
+                    result.getExistingPhotos().size() + result.getNewPhotos().size(), 
+                    result.getExistingPhotos().size(), 
+                    result.getNewPhotos().size(), 
+                    duration);
+                return ResponseEntity.ok("成功处理 " + (result.getExistingPhotos().size() + result.getNewPhotos().size()) + 
+                    " 张图片，其中更新 " + result.getExistingPhotos().size() + 
+                    " 张，新增 " + result.getNewPhotos().size() + 
+                    " 张，耗时" + duration + "毫秒");
             } else {
                 log.error("数据库保存失败");
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("数据库保存失败");
             }
         } catch (Exception e) {
-            log.error("处理图片时发生错误: {}", e.getMessage(), e);
+            long endTime = System.currentTimeMillis();
+            long duration = endTime - startTime;
+            log.error("处理图片时发生错误: {}, 耗时{}毫秒", e.getMessage(), duration, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("处理出错: " + e.getMessage());
+                    .body("处理出错: " + e.getMessage() + "，耗时" + duration + "毫秒");
         }
     }
 
@@ -634,7 +595,7 @@ public class PhotoController {
     public ResponseEntity<String> updatePhotoInfo(@RequestBody Photo photo) {
         try {
             if (photo.getId() == null) {
-                log.error("更新照片信息失败：ID为空");
+                log.error("更新照片信息失败:ID为空");
                 return ResponseEntity.badRequest().body("ID不能为空");
             }
 
@@ -644,10 +605,10 @@ public class PhotoController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("未找到对应照片记录");
             }
 
-            log.info("成功更新照片信息，ID: {}", photo.getId());
+            log.info("成功更新照片信息,ID: {}", photo.getId());
             return ResponseEntity.ok("照片信息更新成功");
         } catch (Exception e) {
-            log.error("更新照片信息时发生错误，ID: {}, 错误: {}", photo.getId(), e.getMessage(), e);
+            log.error("更新照片信息时发生错误,ID: {}, 错误: {}", photo.getId(), e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("更新过程中发生错误: " + e.getMessage());
         }
     }

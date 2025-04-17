@@ -24,125 +24,113 @@
                 </div>
             </div>
 
-            <!-- 用户信息保持原样 -->
+            <!-- 用户信息 -->
             <div class="profile-info">
                 <div class="profile-info-in">
-                    <div class="username">皎月祝辞</div>
-                    <div class="description">吾生本无乡 心安是归处</div>
+                    <div class="username" ref="usernameRef">{{ userInfo.username }}</div>
+                    <div class="description" ref="descriptionRef">{{ userInfo.description }}</div>
                 </div>
             </div>
         </div>
 
-        <el-descriptions class="margin-top" :column="columnCount" border>
-            <el-descriptions-item label-class-name="my-label" class-name="my-content">
-                <template #label>
-                    <div class="cell-item">
-                        <el-icon :style="iconStyle">
-                            <user />
-                        </el-icon>
-                        同名账号
+        <div class="descriptions-wrapper" ref="descriptionsRef">
+            <el-descriptions class="margin-top" :column="columnCount" border>
+                <el-descriptions-item label-class-name="my-label" class-name="my-content">
+                    <template #label>
+                        <div class="cell-item">
+                            <el-icon :style="iconStyle">
+                                <user />
+                            </el-icon>
+                            同名账号
+                        </div>
+                    </template>
+                    <div class="device">
+                        <el-tag v-for="account in userInfo.accounts" :key="account.name" size="large" class="link-tag"
+                            @click="openLink(account.url)">
+                            {{ account.name }}
+                            <el-icon class="link-icon">
+                                <Link />
+                            </el-icon>
+                        </el-tag>
                     </div>
-                </template>
-                <div class="device">
-                    <el-tag size="large" class="link-tag" @click="openLink('https://500px.com.cn/jiaoyuezhuci')">
-                        500px
-                        <el-icon class="link-icon">
-                            <Link />
-                        </el-icon>
-                    </el-tag>
-                    <el-tag size="large" class="link-tag"
-                        @click="openLink('https://www.xiaohongshu.com/user/profile/6513978c0000000002013ba8')">
-                        小红书
-                        <el-icon class="link-icon">
-                            <Link />
-                        </el-icon>
-                    </el-tag>
-                </div>
-            </el-descriptions-item>
-            <el-descriptions-item label-class-name="my-label" class-name="my-content">
-                <template #label>
-                    <div class="cell-item">
-                        <el-icon :style="iconStyle">
-                            <location />
-                        </el-icon>
-                        地点
+                </el-descriptions-item>
+                <el-descriptions-item label-class-name="my-label" class-name="my-content">
+                    <template #label>
+                        <div class="cell-item">
+                            <el-icon :style="iconStyle">
+                                <location />
+                            </el-icon>
+                            地点
+                        </div>
+                    </template>
+                    <div class="device">
+                        <el-tag v-for="location in userInfo.locations" :key="location" size="large">{{ location }}</el-tag>
                     </div>
-                </template>
-                <div class="device">
-                    <el-tag size="large">北京通州</el-tag>
-                    <el-tag size="large">天津滨海</el-tag>
-                </div>
-            </el-descriptions-item>
-            <el-descriptions-item label-class-name="my-label" class-name="my-content">
-                <template #label>
-                    <div class="cell-item">
-                        <el-icon :style="iconStyle">
-                            <tickets />
-                        </el-icon>
-                        领域
+                </el-descriptions-item>
+                <el-descriptions-item label-class-name="my-label" class-name="my-content">
+                    <template #label>
+                        <div class="cell-item">
+                            <el-icon :style="iconStyle">
+                                <tickets />
+                            </el-icon>
+                            领域
+                        </div>
+                    </template>
+                    <div class="device">
+                        <el-tag v-for="domain in userInfo.domains" :key="domain" size="large">{{ domain }}</el-tag>
                     </div>
-                </template>
-                <div class="device">
-                    <el-tag size="large">风光</el-tag>
-                    <el-tag size="large">人文</el-tag>
-                    <el-tag size="large">动植物</el-tag>
-                </div>
-            </el-descriptions-item>
-            <el-descriptions-item label-class-name="my-label" class-name="my-content">
-                <template #label>
-                    <div class="cell-item">
-                        <el-icon :style="iconStyle">
-                            <Camera />
-                        </el-icon>
-                        设备
+                </el-descriptions-item>
+                <el-descriptions-item label-class-name="my-label" class-name="my-content">
+                    <template #label>
+                        <div class="cell-item">
+                            <el-icon :style="iconStyle">
+                                <Camera />
+                            </el-icon>
+                            设备
+                        </div>
+                    </template>
+                    <div class="device">
+                        <el-tag v-for="device in userInfo.devices" :key="device" size="large">{{ device }}</el-tag>
                     </div>
-                </template>
-                <div class="device">
-                    <el-tag size="large">Nikon Z50</el-tag>
-                    <el-tag size="large">Nikkor 16mm-50mm f3.5-6.3</el-tag>
-                    <el-tag size="large">Nikkor 50mm-250mm f4.5-6.3</el-tag>
-                    <el-tag size="large">Nikkor 50mm f1.8</el-tag>
-                    <el-tag size="large">DJI Air3S</el-tag>
-                    <el-tag size="large">TTArtisan 10mm f2</el-tag>
-                </div>
-            </el-descriptions-item>
-            <el-descriptions-item label-class-name="my-label" class-name="my-content">
-                <template #label>
-                    <div class="cell-item">
-                        <el-icon :style="iconStyle">
-                            <iphone />
-                        </el-icon>
-                        微信
+                </el-descriptions-item>
+                <el-descriptions-item label-class-name="my-label" class-name="my-content">
+                    <template #label>
+                        <div class="cell-item">
+                            <el-icon :style="iconStyle">
+                                <iphone />
+                            </el-icon>
+                            微信
+                        </div>
+                    </template>
+                    <div class="device">
+                        <el-tag size="large" class="link-tag" @click="copyText(userInfo.wechat)">
+                            {{ userInfo.wechat }}
+                            <el-icon class="link-icon">
+                                <CopyDocument />
+                            </el-icon>
+                        </el-tag>
                     </div>
-                </template>
-                <div class="device">
-                    <el-tag size="large" class="link-tag" @click="copyText('L3335308825')">
-                        L3335308825
-                        <el-icon class="link-icon">
-                            <CopyDocument />
-                        </el-icon>
-                    </el-tag>
-                </div>
-            </el-descriptions-item>
-            <el-descriptions-item label-class-name="my-label" class-name="my-content">
-                <template #label>
-                    <div class="cell-item">
-                        <el-icon :style="iconStyle">
-                            <Message />
-                        </el-icon>
-                        邮箱
+                </el-descriptions-item>
+                <el-descriptions-item label-class-name="my-label" class-name="my-content">
+                    <template #label>
+                        <div class="cell-item">
+                            <el-icon :style="iconStyle">
+                                <Message />
+                            </el-icon>
+                            邮箱
+                        </div>
+                    </template>
+                    <div class="device">
+                        <el-tag size="large" class="link-tag" @click="sendEmail(userInfo.email)">
+                            {{ userInfo.email }}
+                            <el-icon class="link-icon">
+                                <Link />
+                            </el-icon>
+                        </el-tag>
                     </div>
-                </template>
-                <div class="device">
-                    <el-tag size="large" class="link-tag" @click="sendEmail('jiaoyuezhuci@163.com')">
-                        3335308825@qq.com
-                        <el-icon class="link-icon">
-                            <Link />
-                        </el-icon>
-                    </el-tag>
-                </div>
-            </el-descriptions-item>
-        </el-descriptions>
+                </el-descriptions-item>
+            </el-descriptions>
+        </div>
 
         <PhotoViewer v-if="previewVisible" :urlList="[previewImageUrl]" @close="previewVisible = false" />
     </div>
@@ -162,6 +150,9 @@ import {
     CopyDocument
 } from '@element-plus/icons-vue'
 import PhotoViewer from '@/components/PhotoViewer.vue'
+import { userInfo } from '@/data/userInfo'
+import gsap from 'gsap';
+import { useIntersectionObserver } from '@vueuse/core'
 
 const backgroundImageUrl = '/img/introduce/background.jpg'
 const avatarImageUrl = '/img/introduce/avatar.jpg'
@@ -229,6 +220,67 @@ const copyText = (text: string) => {
         ElMessage.error('复制失败，请手动复制');
     });
 }
+
+// 添加用户名动画
+const usernameRef = ref<HTMLElement | null>(null);
+const descriptionRef = ref<HTMLElement | null>(null);
+const descriptionsRef = ref<HTMLElement | null>(null);
+
+onMounted(() => {
+    if (usernameRef.value) {
+        gsap.from(usernameRef.value, {
+            duration: 1.5,
+            y: -50,
+            opacity: 0,
+            ease: "power3.out",
+            delay: 0.5
+        });
+    }
+
+    if (descriptionRef.value) {
+        gsap.from(descriptionRef.value, {
+            duration: 1.5,
+            y: -50,
+            opacity: 0,
+            ease: "power3.out",
+            delay: 0.8
+        });
+    }
+
+    // 使用 Intersection Observer 监听元素是否进入视口
+    if (descriptionsRef.value) {
+        const { stop } = useIntersectionObserver(
+            descriptionsRef.value,
+            ([{ isIntersecting }]) => {
+                if (isIntersecting) {
+                    // 初始状态
+                    gsap.set(descriptionsRef.value, {
+                        height: 0,
+                        overflow: 'hidden',
+                        willChange: 'height'
+                    });
+
+                    // 动画效果
+                    gsap.to(descriptionsRef.value, {
+                        duration: 3,
+                        height: 'auto',
+                        ease: "expo.out",
+                        onComplete: () => {
+                            // 动画完成后移除 will-change
+                            gsap.set(descriptionsRef.value, {
+                                willChange: 'auto'
+                            });
+                        }
+                    });
+                    stop(); // 动画触发后停止监听
+                }
+            },
+            {
+                threshold: 0.1 // 当元素 10% 进入视口时触发
+            }
+        );
+    }
+});
 </script>
 
 
@@ -267,20 +319,17 @@ const copyText = (text: string) => {
 .margin-top {
     margin: 10px auto;
     color: white;
+    transform-origin: center;
 }
 
 .username {
     color: var(--qd-color-primary-dark-2);
     font-size: 48px;
     margin: 5px;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 }
 .description {
     color: var(--qd-color-primary);
-}
-.username:hover {
-    transform: scale(1.05);
-    text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+    margin-top: 10px;
 }
 
 /* 添加媒体查询来调整列数 */
@@ -354,5 +403,33 @@ const copyText = (text: string) => {
 .link-icon {
     margin-left: 4px;
     font-size: 14px;
+}
+
+.descriptions-wrapper {
+    overflow: hidden;
+    transform-origin: center;
+    position: relative;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+}
+
+.descriptions-wrapper::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--el-border-color);
+    transform: scaleX(0);
+    transform-origin: center;
+    transition: transform 0.3s ease;
+    will-change: transform;
+}
+
+.descriptions-wrapper:hover::before {
+    transform: scaleX(1);
 }
 </style>

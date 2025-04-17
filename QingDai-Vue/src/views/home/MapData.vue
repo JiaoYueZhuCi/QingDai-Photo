@@ -14,7 +14,7 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount, nextTick, watch } from 'vue';
 import * as echarts from 'echarts';
-import chinaJson from '@/map-data/china.json';
+import chinaJson from '@/data/china.json';
 import Timeline from '@/views/home/Timeline.vue';
 
 const activatedProvinces = ref([

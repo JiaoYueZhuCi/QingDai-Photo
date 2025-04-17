@@ -60,4 +60,39 @@ public interface PhotoService extends IService<Photo> {
     void processPhotoCompression(File tempDir, File thumbnail100KDir, File thumbnail1000KDir, File fullSizeDir,
             boolean overwrite) throws IOException;
 
+    /**
+     * 处理前端上传的图片
+     * @param files 上传的图片文件数组
+     * @param start 图片的start值
+     * @param overwrite 是否覆盖已存在的文件
+     * @return 处理结果，包含更新和新增的图片列表
+     */
+    ProcessResult processPhotosFromFrontend(MultipartFile[] files, Integer start, boolean overwrite);
+
+    /**
+     * 处理结果类
+     */
+    class ProcessResult {
+        private final List<Photo> existingPhotos;
+        private final List<Photo> newPhotos;
+        private final boolean success;
+
+        public ProcessResult(List<Photo> existingPhotos, List<Photo> newPhotos, boolean success) {
+            this.existingPhotos = existingPhotos;
+            this.newPhotos = newPhotos;
+            this.success = success;
+        }
+
+        public List<Photo> getExistingPhotos() {
+            return existingPhotos;
+        }
+
+        public List<Photo> getNewPhotos() {
+            return newPhotos;
+        }
+
+        public boolean isSuccess() {
+            return success;
+        }
+    }
 }

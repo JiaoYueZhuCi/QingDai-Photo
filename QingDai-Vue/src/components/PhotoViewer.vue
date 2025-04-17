@@ -64,10 +64,8 @@ onMounted(async () => {
             let imageResult
             if (hasViewPermission) {
                 imageResult = await getFullPhoto(props.photoId)
-                console.log('获取全尺寸图片结果', imageResult)
             } else {
                 imageResult = await get1000KPhoto(props.photoId)
-                console.log('获取1000K图片结果', imageResult)
             }
             
             if (imageResult?.url) {
@@ -88,9 +86,6 @@ onMounted(async () => {
                 handleClose()
             }
 
-            console.log('获取全尺寸图片',props.photoId)
-            console.log('imageResult',imageResult)
-            console.log('urlList',urlList.value)
         }  else {
             ElMessage.error('未提供照片信息')
             handleClose()

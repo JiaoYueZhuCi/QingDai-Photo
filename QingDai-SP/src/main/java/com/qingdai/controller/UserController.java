@@ -4,6 +4,7 @@ import com.qingdai.entity.dto.LoginRequest;
 import com.qingdai.entity.dto.UserCreateDTO;
 import com.qingdai.entity.dto.UserInfoDTO;
 import com.qingdai.entity.User;
+import com.qingdai.entity.dto.UserUpdateDTO;
 import com.qingdai.service.UserService;
 import com.qingdai.utils.DateUtils;
 import com.qingdai.utils.JwtTokenUtil;
@@ -148,6 +149,11 @@ public class UserController {
         try {
             log.info("用户登录请求，用户名: {}", user.getUsername());
             User storedUser = userService.getByUsername(user.getUsername());
+            if (storedUser == null) {
+                log.warn("用户登录失败，用户不存在，用户名: {}", user.getUsername());
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("用户名或密码错误");
+            }
+
             Boolean matches = passwordEncoder.matches(user.getPassword(), storedUser.getPassword());
 
             if (matches) {
@@ -239,6 +245,56 @@ public class UserController {
             }
         } catch (Exception e) {
             log.error("获取用户角色及权限信息时发生错误: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    // 用户更新
+    @Operation(summary = "更新用户信息", description = "更新当前登录用户的基本信息")
+    @PutMapping("/info")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<User> updateUserInfo(
+            @Parameter(description = "用户更新信息", required = true) @RequestBody UserUpdateDTO userDTO,
+            @RequestHeader(value = "Authorization", required = false) String authorization) {
+        try {
+            if (authorization == null || !authorization.startsWith("Bearer ")) {
+                log.warn("无效的Authorization头");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
+            String token = authorization.replace("Bearer ", "");
+            try {
+                Jws<Claims> claims = jwtTokenUtil.parseToken(token);
+                String username = claims.getBody().getSubject();
+                User existingUser = userService.getByUsername(username);
+
+                if (existingUser == null) {
+                    log.warn("未找到用户名为{}的用户", username);
+                    return ResponseEntity.notFound().build();
+                }
+
+                // 更新用户信息
+                if (userDTO.getUsername() != null) {
+                    existingUser.setUsername(userDTO.getUsername());
+                }
+                if (userDTO.getPassword() != null) {
+                    existingUser.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+                }
+
+                boolean isUpdated = userService.updateById(existingUser);
+                if (isUpdated) {
+                    log.info("成功更新用户信息，用户名: {}", username);
+                    return ResponseEntity.ok(existingUser);
+                } else {
+                    log.error("更新用户信息失败，用户名: {}", username);
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+                }
+            } catch (io.jsonwebtoken.JwtException e) {
+                log.error("JWT Token解析失败: {}", e.getMessage());
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+        } catch (Exception e) {
+            log.error("更新用户信息时发生错误: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

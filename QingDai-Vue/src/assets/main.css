@@ -105,7 +105,6 @@ body {
 
 /* descriptions样式 */
 .el-descriptions {
-    /* --el-descriptions-table-border: 1px solid var(--qd-color-primary-light-6) !important; */
     --el-descriptions-item-bordered-label-background: var(--qd-color-primary-light-7) !important;
 }
 
@@ -134,7 +133,7 @@ body {
 .el-menu-item {
     color: var(--qd-color-primary-light-3) !important;
     background-color: var(--qd-color-primary-light-9);
-    border-right: 1px solid var(--qd-color-primary-light-6);
+    border-right: none;
 }
 
 .el-menu-item:hover {
