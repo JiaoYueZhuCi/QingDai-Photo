@@ -116,7 +116,12 @@
                     </div>
                 </template>
                 <div class="device">
-                    <el-tag size="large">L3335308825</el-tag>
+                    <el-tag size="large" class="link-tag" @click="copyText('L3335308825')">
+                        L3335308825
+                        <el-icon class="link-icon">
+                            <CopyDocument />
+                        </el-icon>
+                    </el-tag>
                 </div>
             </el-descriptions-item>
             <el-descriptions-item label-class-name="my-label" class-name="my-content">
@@ -145,7 +150,7 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
-import { ElIcon } from 'element-plus';
+import { ElIcon, ElMessage } from 'element-plus';
 import {
     Iphone,
     Location,
@@ -154,6 +159,7 @@ import {
     User,
     Link,
     Message,
+    CopyDocument
 } from '@element-plus/icons-vue'
 import PhotoViewer from '@/components/PhotoViewer.vue'
 
@@ -213,6 +219,15 @@ const openLink = (url: string) => {
 // 添加发送邮件的方法
 const sendEmail = (email: string) => {
     window.location.href = `mailto:${email}`;
+}
+
+// 添加复制文本的方法
+const copyText = (text: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+        ElMessage.success('微信号复制成功');
+    }).catch(() => {
+        ElMessage.error('复制失败，请手动复制');
+    });
 }
 </script>
 

@@ -15,7 +15,7 @@
           <el-menu-item index="/manage/timelineList" style="width: 100px;">
             时间线管理
           </el-menu-item>
-          <el-menu-item style="width: 100px; color: #F56C6C;" @click="handleLogout">
+          <el-menu-item class="logout" style="width: 100px;" @click="handleLogout">
             注销
           </el-menu-item>
         </el-menu>
@@ -31,6 +31,11 @@
 .el-main {
   padding: 0;
   position: relative;
+}
+
+:deep(.logout) {
+  color: rgb(255, 43, 43) !important;
+  background-color: rgb(255, 238, 238);
 }
 </style>
 

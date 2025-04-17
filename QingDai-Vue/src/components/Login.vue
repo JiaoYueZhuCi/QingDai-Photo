@@ -87,16 +87,17 @@ const submitForm = async () => {
 
 <style scoped>
 .login-form {
-  width: 400px; 
+  width: 90%; 
+  max-width: 400px;
   margin: auto;
-  padding: 30px;
+  padding: 20px;
   border-radius: 8px;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .el-form-item {
-  margin-bottom: 22px;
+  margin-bottom: 18px;
 }
 
 .el-button {
@@ -111,11 +112,45 @@ const submitForm = async () => {
 
 .loginBox {
   opacity: 0.9; 
-  padding-top: 32vh; 
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
 }
+
 .back {
-  background: url('/public/img/introduce/background.jpg') no-repeat center center fixed;
+  background: url('/public/img/introduce/background.jpg') no-repeat center center;
   background-size: cover;
   height: 100vh;
+  width: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+}
+
+/* 移动端适配 */
+@media screen and (max-width: 768px) {
+  .login-form {
+    width: 85%;
+    padding: 15px;
+  }
+  
+  .el-form-item {
+    margin-bottom: 15px;
+  }
+  
+  .el-input {
+    font-size: 14px;
+  }
+  
+  .el-button {
+    font-size: 14px;
+  }
+
+  .back {
+    background-position: -720px center;
+  }
 }
 </style>

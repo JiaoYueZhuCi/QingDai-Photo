@@ -17,67 +17,82 @@ body {
 .el-header {
     padding: 0 !important;
 }
+
 :root {
     /* 主色调 */
-    --qd-color-primary: #45465E;  /* 文字 */
-    --qd-color-primary-light-2: #5E5F7A;  /* 未选中项文字 */
-    --qd-color-primary-light-3: #787A94;  /*  */
-    --qd-color-primary-light-4: #9294AE;  /*  */
-    --qd-color-primary-light-5: #ACAFCA;  /* 深色边框 */
-    --qd-color-primary-light-6: #c2c5df;  /* 浅色边框 */
-    --qd-color-primary-light-7: #E0E3F6;  /* 选中项深色背景 */
-    --qd-color-primary-light-8: #e8ebf7;  /* 选中项浅色背景 */
-    --qd-color-primary-light-9: #F5F7FC;  /* 背景色 */
-    --qd-color-primary-light-10: #FAFBFF; /* 白色 */
+    --qd-color-primary: #45465E;
+    /* 文字 */
+    --qd-color-primary-light-2: #5E5F7A;
+    /* 未选中项文字 */
+    --qd-color-primary-light-3: #787A94;
+    /*  */
+    --qd-color-primary-light-4: #9294AE;
+    /*  */
+    --qd-color-primary-light-5: #ACAFCA;
+    /* 深色边框 */
+    --qd-color-primary-light-6: #c2c5df;
+    /* 浅色边框 */
+    --qd-color-primary-light-7: #E0E3F6;
+    /* 选中项深色背景 */
+    --qd-color-primary-light-8: #e8ebf7;
+    /* 选中项浅色背景 */
+    --qd-color-primary-light-9: #F5F7FC;
+    /* 背景色 */
+    --qd-color-primary-light-10: #FAFBFF;
+
     /* 主色调深色系列 */
-    --qd-color-primary-dark-2: #3A3B4E; 
-    --qd-color-primary-dark-3: #30313E;  
-    --qd-color-primary-dark-4: #26272E;  
-    --qd-color-primary-dark-5: #1C1D1E;  
-    --qd-color-primary-dark-6: #121314; 
-    --qd-color-primary-dark-7: #08090A;  
-    --qd-color-primary-dark-8: #040506;  
-    --qd-color-primary-dark-9: #020203;  
-    --qd-color-primary-dark-10: #000000; 
+    --qd-color-primary-dark-2: #3A3B4E;
+    --qd-color-primary-dark-3: #30313E;
+    --qd-color-primary-dark-4: #26272E;
+    --qd-color-primary-dark-5: #1C1D1E;
+    --qd-color-primary-dark-6: #121314;
+    --qd-color-primary-dark-7: #08090A;
+    --qd-color-primary-dark-8: #040506;
+    --qd-color-primary-dark-9: #020203;
+    --qd-color-primary-dark-10: #000000;
 }
 
 /* 按钮样式 */
-.el-button {
-    --el-button-hover-border-color: var(--qd-color-primary-light-2);
-    --el-button-hover-bg-color: var(--qd-color-primary-light-5);
+.el-button:hover {
+    border: 1px solid var(--qd-color-primary-light-2) !important;
+    background-color: var(--qd-color-primary-light-5) !important;
+    color: var(--qd-color-primary-light-2) !important;
+}
+
+.el-button--primary {
+    background-color: var(--qd-color-primary) !important;
+    border: 1px solid var(--qd-color-primary-light-2) !important;
 }
 
 /* 标签样式 */
 .el-tag--primary {
     --el-tag-bg-color: var(--qd-color-primary-light-8) !important;
     color: var(--qd-color-primary);
-    border: 1px solid var(--qd-color-primary-light-5) !important;
+    border: none;
 }
 
 .el-tag:hover {
     --el-tag-bg-color: var(--qd-color-primary-light-8) !important;
     color: var(--qd-color-primary-light-2);
-    border: 1px solid var(--qd-color-primary-light-3) !important;
 }
 
 /* tabs样式 */
 .el-tabs {
-    border: 1px solid var(--qd-color-primary-light-6) !important;
+    border: none !important;
 }
 
 .el-tabs__nav-scroll {
-    background-color: var(--qd-color-primary-light-9) !important;
+    background-color: var(--qd-color-primary-light-10) !important;
 }
 
 .el-tabs__item {
     color: var(--qd-color-primary-light-2) !important;
-    background-color: var(--qd-color-primary-light-7) !important;
-    border: 1px solid var(--qd-color-primary-light-6) !important;
+    background-color: var(--qd-color-primary-light-8) !important;
 }
 
 .el-tabs__item.is-active {
     color: var(--qd-color-primary) !important;
-    background-color: var(--qd-color-primary-light-10) !important;
+    background-color: var(--qd-color-primary-light-6) !important;
 }
 
 .el-tabs__active-bar {
@@ -90,8 +105,12 @@ body {
 
 /* descriptions样式 */
 .el-descriptions {
-    --el-descriptions-table-border: 1px solid var(--qd-color-primary-light-6) !important;
+    /* --el-descriptions-table-border: 1px solid var(--qd-color-primary-light-6) !important; */
     --el-descriptions-item-bordered-label-background: var(--qd-color-primary-light-7) !important;
+}
+
+.el-descriptions__cell {
+    border: none !important;
 }
 
 .el-descriptions__label {
@@ -99,11 +118,13 @@ body {
 }
 
 .el-descriptions__content {
-    background-color: var(--qd-color-primary-light-9) !important;
+    background-color: var(--qd-color-primary-light-10) !important;
 }
-.el-descriptions__title{
+
+.el-descriptions__title {
     color: var(--qd-color-primary) !important;
 }
+
 /* menu样式 */
 .el-menu {
     --el-menu-active-color: var(--qd-color-primary) !important;
@@ -111,9 +132,13 @@ body {
 }
 
 .el-menu-item {
+    color: var(--qd-color-primary-light-3) !important;
+    background-color: var(--qd-color-primary-light-9);
+    border-right: 1px solid var(--qd-color-primary-light-6);
+}
+
+.el-menu-item:hover {
     color: var(--qd-color-primary-light-2) !important;
-    background-color: var(--qd-color-primary-light-9) !important;
-    border-right: 1px solid var(--qd-color-primary-light-6) !important;
 }
 
 .el-menu-item.is-active {
@@ -126,32 +151,59 @@ body {
 }
 
 /* dialog样式 */
-.el-dialog{
+.el-dialog {
     background-color: var(--qd-color-primary-light-9) !important;
 }
-.el-dialog__close{
+
+.el-dialog__close {
     color: var(--qd-color-primary-light-5) !important;
 }
-.el-dialog__close:hover{
+
+.el-dialog__close:hover {
     color: var(--qd-color-primary) !important;
 }
 
 /* timeline样式 */
-.el-timeline-item__tail{
+.el-timeline-item__tail {
     border-color: var(--qd-color-primary-light-7) !important;
 }
-.el-timeline-item__node{
+
+.el-timeline-item__node {
     background-color: var(--qd-color-primary-light-5) !important;
 }
-.el-timeline-item__timestamp{
+
+.el-timeline-item__timestamp {
     color: var(--qd-color-primary) !important;
 }
 
 /* statistic样式 */
-.el-statistic__number{
+.el-statistic__number {
     color: var(--qd-color-primary) !important;
 }
 
-.el-backtop{
+.el-backtop {
     --el-backtop-text-color: var(--qd-color-primary) !important;
+}
+
+/* image-viewer样式 */
+.el-image-viewer__close {
+    background-color: var(--qd-color-primary) !important;
+    color: var(--qd-color-primary-light-9) !important;
+}
+
+.el-image-viewer__close:hover {
+    background-color: var(--qd-color-primary-light-2) !important;
+}
+
+.el-image-viewer__actions {
+    background-color: var(--qd-color-primary) !important;
+    color: var(--qd-color-primary-light-9) !important;
+}
+
+.el-image-viewer__actions:hover {
+    background-color: var(--qd-color-primary-light-2) !important;
+}
+
+.el-input__wrapper.is-focus {
+    box-shadow: 0 0 0 1px var(--qd-color-primary) !important;
 }

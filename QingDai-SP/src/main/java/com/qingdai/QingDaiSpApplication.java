@@ -3,9 +3,11 @@ package com.qingdai;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cache.annotation.EnableCaching;
 
 @SpringBootApplication(scanBasePackages = "com.qingdai")
 @MapperScan("com.qingdai.mapper")
+@EnableCaching
 public class QingDaiSpApplication {
 
     public static void main(String[] args) {

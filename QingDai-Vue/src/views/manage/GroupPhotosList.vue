@@ -25,7 +25,7 @@
             <el-table-column label="操作" width="180" fixed="right">
                 <template #default="scope">
                     <div>
-                        <el-button size="small" type="primary" @click="handleManagePhotos(scope.row)">管理照片</el-button>
+                        <el-button size="small" @click="handleManagePhotos(scope.row)">管理照片</el-button>
                         <el-button size="small" type="danger" @click="handleDelete(scope.row)">删除</el-button>
                     </div>
                     
