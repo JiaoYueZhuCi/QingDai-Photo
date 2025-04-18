@@ -115,7 +115,7 @@
 import { ref, onMounted, onUnmounted, watch, computed, toRaw } from 'vue';
 import { ElImage, ElIcon, ElMessage, ElPopover, ElEmpty } from 'element-plus';
 import { Picture as IconPicture, FullScreen, Star, StarFilled, Collection, Check } from '@element-plus/icons-vue';
-import { getVisiblePhotosByPage, getStartPhotosByPage, updatePhotoStartStatus as updatePhotoStart } from '@/api/photo';
+import { getVisiblePhotosByPage, getStartPhotosByPage, updatePhotoStartStatus as updatePhotoStart, getHiddenPhotosByPage, getWeatherPhotosByPage } from '@/api/photo';
 import { getAllGroupPhotos, updateGroupPhoto } from '@/api/groupPhoto';
 import { debounce } from 'lodash';
 import FilmPreview from "@/components/FilmPreview.vue";
@@ -156,9 +156,25 @@ const getPhotos = async () => {
     if (!hasMore.value) return;
 
     try {
-        const apiEndpoint = props.photoType === 0
-            ? getVisiblePhotosByPage
-            : getStartPhotosByPage;
+        let apiEndpoint;
+        
+        // 根据photoType选择不同的API
+        switch (props.photoType) {
+            case 0: // 可见照片
+                apiEndpoint = getVisiblePhotosByPage;
+                break;
+            case 1: // 星标照片
+                apiEndpoint = getStartPhotosByPage;
+                break;
+            case 2: // 隐藏照片
+                apiEndpoint = getHiddenPhotosByPage;
+                break;
+            case 3: // 气象照片
+                apiEndpoint = getWeatherPhotosByPage;
+                break;
+            default:
+                apiEndpoint = getVisiblePhotosByPage;
+        }
 
         const response = await apiEndpoint({
             page: currentPage.value,

@@ -33,7 +33,7 @@
             </div>
         </div>
 
-        <div class="descriptions-wrapper" ref="descriptionsRef">
+        <ScrollReveal>
             <el-descriptions class="margin-top" :column="columnCount" border>
                 <el-descriptions-item label-class-name="my-label" class-name="my-content">
                     <template #label>
@@ -130,7 +130,7 @@
                     </div>
                 </el-descriptions-item>
             </el-descriptions>
-        </div>
+        </ScrollReveal>
 
         <PhotoViewer v-if="previewVisible" :urlList="[previewImageUrl]" @close="previewVisible = false" />
     </div>
@@ -150,6 +150,7 @@ import {
     CopyDocument
 } from '@element-plus/icons-vue'
 import PhotoViewer from '@/components/PhotoViewer.vue'
+import ScrollReveal from '@/components/ScrollReveal.vue'
 import { userInfo } from '@/data/userInfo'
 import gsap from 'gsap';
 import { useIntersectionObserver } from '@vueuse/core'
@@ -224,7 +225,6 @@ const copyText = (text: string) => {
 // 添加用户名动画
 const usernameRef = ref<HTMLElement | null>(null);
 const descriptionRef = ref<HTMLElement | null>(null);
-const descriptionsRef = ref<HTMLElement | null>(null);
 
 onMounted(() => {
     if (usernameRef.value) {
@@ -245,40 +245,6 @@ onMounted(() => {
             ease: "power3.out",
             delay: 0.8
         });
-    }
-
-    // 使用 Intersection Observer 监听元素是否进入视口
-    if (descriptionsRef.value) {
-        const { stop } = useIntersectionObserver(
-            descriptionsRef.value,
-            ([{ isIntersecting }]) => {
-                if (isIntersecting) {
-                    // 初始状态
-                    gsap.set(descriptionsRef.value, {
-                        height: 0,
-                        overflow: 'hidden',
-                        willChange: 'height'
-                    });
-
-                    // 动画效果
-                    gsap.to(descriptionsRef.value, {
-                        duration: 3,
-                        height: 'auto',
-                        ease: "expo.out",
-                        onComplete: () => {
-                            // 动画完成后移除 will-change
-                            gsap.set(descriptionsRef.value, {
-                                willChange: 'auto'
-                            });
-                        }
-                    });
-                    stop(); // 动画触发后停止监听
-                }
-            },
-            {
-                threshold: 0.1 // 当元素 10% 进入视口时触发
-            }
-        );
     }
 });
 </script>
@@ -413,6 +379,11 @@ onMounted(() => {
     -webkit-backface-visibility: hidden;
     transform: translateZ(0);
     -webkit-transform: translateZ(0);
+    visibility: hidden; /* 初始状态不可见 */
+}
+
+.descriptions-wrapper.visible {
+    visibility: visible; /* 动画触发后可见 */
 }
 
 .descriptions-wrapper::before {

@@ -25,10 +25,11 @@
         </div>
 
         <!-- 组图预览组件 -->
-        <group-photo-preview
+        <group-film-preview
             v-if="selectedGroupId !== null"
             :group-id="selectedGroupId || ''"
             :initial-photo-id="selectedPhotoId || undefined"
+            :model-value="!!selectedGroupId"
             @close="closeGroupPhotoPreview"
         />
     </div>
@@ -44,7 +45,7 @@ import { getAllGroupPhotos } from '@/api/groupPhoto';
 import { debounce } from 'lodash';
 import JSZip from 'jszip';
 import type { GroupPhotoDTO } from '@/types/groupPhoto';
-import GroupPhotoPreview from '@/components/GroupPhotoPreview.vue';
+import GroupFilmPreview from '@/components/GroupFilmPreview.vue';
 import { get100KPhotos, processPhotoData } from '@/utils/photo';
 
 // 添加新的状态保存选中的组图和照片

@@ -79,6 +79,16 @@ export const getStartPhotosByPage = async (params: PhotoQueryParams): Promise<an
   return await request.get<PhotoResponse>(`${BASE_URL}/getStartPhotosByPage`, { params });
 };
 
+// 获取隐藏照片数据
+export const getHiddenPhotosByPage = async (params: PhotoQueryParams): Promise<any> => {
+  return await request.get<PhotoResponse>(`${BASE_URL}/getHiddenPhotosByPage`, { params });
+};
+
+// 获取气象照片数据
+export const getWeatherPhotosByPage = async (params: PhotoQueryParams): Promise<any> => {
+  return await request.get<PhotoResponse>(`${BASE_URL}/getWeatherPhotosByPage`, { params });
+};
+
 // 获取照片详细信息
 export const getPhotoInfo = async (id: string) => {
   return await request.get(`${BASE_URL}/getPhotoInfo`, { params: { id } });

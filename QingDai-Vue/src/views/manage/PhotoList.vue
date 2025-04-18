@@ -4,7 +4,7 @@
             <el-table-column label="缩略图" width="220" fixed>
                 <template #default="scope">
                     <el-image :src="scope.row.compressedSrc" style="height: 150px" fit="contain"
-                        @click="openPreview(scope.row.id)" />
+                        @click="openPreview(scope.row)" />
                 </template>
             </el-table-column>
 
@@ -129,7 +129,7 @@
 
         <PhotoUpdate v-model="photoUploadVisible" ref="photoUpdateRef" @photo-uploaded="fetchData" />
 
-        <PhotoViewer v-if="previewVisible" :photo-id="currentPreviewId" @close="previewVisible = false" />
+        <PhotoPreview v-model="previewVisible" :photo-id="currentPreviewId" @close="previewVisible = false"/>
 
         <div class="pagination-wrapper">
             <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize"
@@ -141,13 +141,14 @@
 
 <script setup lang="ts">
 import PhotoUpdate from '@/views/manage/PhotoUpdate.vue'
-import PhotoViewer from '@/components/PhotoViewer.vue'
+import PhotoPreview from '@/components/PhotoPreview.vue'
 import { ref, watchEffect } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Upload } from '@element-plus/icons-vue'
 import { getPhotosByPage, updatePhotoInfo, deletePhotoById, updatePhotoStartStatus } from '@/api/photo'
 import type { PhotoResponse } from '@/api/photo'
 import { get100KPhotos, processPhotoData, type EnhancedWaterfallItem } from '@/utils/photo'
+import type { WaterfallItem } from '@/types'
 
 const photoUpdateRef = ref()
 const photoUploadVisible = ref(false)
@@ -257,8 +258,8 @@ const handleDelete = async (row: EnhancedWaterfallItem) => {
 }
 
 // 打开预览
-const openPreview = (photoId: string) => {
-    currentPreviewId.value = photoId;
+const openPreview = (item: WaterfallItem) => {
+    currentPreviewId.value = item.id;
     previewVisible.value = true;
 }
 

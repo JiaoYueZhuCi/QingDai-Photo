@@ -51,19 +51,33 @@ const router = createRouter({
               component: () => import('@/views/home/GroupPhotos.vue').catch(() => errorPage)
             },
             {
+              path: 'hidden',
+              component: () => import('@/views/home/Waterfall.vue').catch(() => errorPage),
+              props: { photoType: 2 }
+            },
+            {
+              path: 'weather',
+              component: () => import('@/views/home/Waterfall.vue').catch(() => errorPage),
+              props: { photoType: 3 }
+            },
+            {
               path: 'sunriseGlow',
-              component: () => import('@/views/home/MeteorologyTimeLine.vue').catch(() => errorPage)
+              component: () => import('@/views/home/MeteorologyTimeLine.vue').catch(() => errorPage),
+              props: { meteorologyType: '1' }
             },
             {
               path: 'sunsetGlow',
-              component: () => import('@/views/home/MeteorologyTimeLine.vue').catch(() => errorPage)
+              component: () => import('@/views/home/MeteorologyTimeLine.vue').catch(() => errorPage),
+              props: { meteorologyType: '2' }
             },
             {
               path: 'sunrise',
-              component: () => import('@/views/home/MeteorologyTimeLine.vue').catch(() => errorPage)
+              component: () => import('@/views/home/MeteorologyTimeLine.vue').catch(() => errorPage),
+              props: { meteorologyType: '3' }
             },{
               path: 'sunset',
-              component: () => import('@/views/home/MeteorologyTimeLine.vue').catch(() => errorPage)
+              component: () => import('@/views/home/MeteorologyTimeLine.vue').catch(() => errorPage),
+              props: { meteorologyType: '4' }
             }
           ]
         },

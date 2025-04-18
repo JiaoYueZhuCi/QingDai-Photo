@@ -12,7 +12,13 @@
 
                 <!-- 照片展示区域 -->
                 <div class="photo-container">
-                    <el-image :src="prevThumbnailUrl" fit="contain" class="preview-image"></el-image>
+                    <div class="preview-wrapper">
+                        <img v-for="(url, id) in preloadedImages" :key="'prev-' + id" :src="url" class="preview-image"
+                            v-show="id === prevPhotoId" alt="上一张照片">
+                        <!-- 预加载图片的占位，但不显示 -->
+                        <img v-if="!prevPhotoId || !preloadedImages[prevPhotoId]" src=""
+                            class="preview-image placeholder-image" alt="预加载占位">
+                    </div>
                 </div>
 
                 <!-- 下胶片孔 -->
@@ -21,7 +27,7 @@
                 </div>
 
                 <!-- 照片信息区域 -->
-                <div class="info-container">
+                <div class="info-container" v-loading="isInfoLoading" element-loading-text="正在加载信息...">
 
                 </div>
             </div>
@@ -35,10 +41,14 @@
 
                 <!-- 照片展示区域 -->
                 <div class="photo-container">
-                    <el-image :src="thumbnailUrl" fit="contain" class="preview-image" v-loading="isLoading"
-                        element-loading-text="正在加载图片..." element-loading-background="rgba(0, 0, 0, 0.8)"
-                        @click="handleImageClick">
-                    </el-image>
+                    <div class="preview-wrapper" v-loading="isLoading" element-loading-text="正在加载图片..."
+                        element-loading-background="rgba(0, 0, 0, 0.8)">
+                        <img v-for="(url, id) in preloadedImages" :key="'current-' + id" :src="url"
+                            class="preview-image" v-show="id === props.photoId" @click="handleImageClick" alt="当前照片">
+                        <!-- 预加载图片的占位，但不显示 -->
+                        <img v-if="!props.photoId || !preloadedImages[props.photoId]" src=""
+                            class="preview-image placeholder-image" alt="预加载占位">
+                    </div>
                 </div>
 
                 <!-- 下胶片孔 -->
@@ -47,7 +57,7 @@
                 </div>
 
                 <!-- 照片信息区域 -->
-                <div class="info-container">
+                <div class="info-container" v-loading="isInfoLoading" element-loading-text="正在加载信息...">
                     <div class="info-content">
                         <div class="title-row">
                             <div class="tag-container">
@@ -87,7 +97,13 @@
 
                 <!-- 照片展示区域 -->
                 <div class="photo-container">
-                    <el-image :src="nextThumbnailUrl" fit="contain" class="preview-image"></el-image>
+                    <div class="preview-wrapper">
+                        <img v-for="(url, id) in preloadedImages" :key="'next-' + id" :src="url" class="preview-image"
+                            v-show="id === nextPhotoId" alt="下一张照片">
+                        <!-- 预加载图片的占位，但不显示 -->
+                        <img v-if="!nextPhotoId || !preloadedImages[nextPhotoId]" src=""
+                            class="preview-image placeholder-image" alt="预加载占位">
+                    </div>
                 </div>
 
                 <!-- 下胶片孔 -->
@@ -96,7 +112,7 @@
                 </div>
 
                 <!-- 照片信息区域 -->
-                <div class="info-container">
+                <div class="info-container" v-loading="isInfoLoading" element-loading-text="正在加载信息...">
 
                 </div>
             </div>
@@ -111,7 +127,13 @@
 
                 <!-- 照片展示区域 -->
                 <div class="photo-container">
-                    <el-image :src="extremePrevThumbnailUrl" fit="contain" class="preview-image"></el-image>
+                    <div class="preview-wrapper">
+                        <img v-for="(url, id) in preloadedImages" :key="'extremePrev-' + id" :src="url"
+                            class="preview-image" v-show="id === extremePrevPhotoId" alt="最左侧照片">
+                        <!-- 预加载图片的占位，但不显示 -->
+                        <img v-if="!extremePrevPhotoId || !preloadedImages[extremePrevPhotoId]" src=""
+                            class="preview-image placeholder-image" alt="预加载占位">
+                    </div>
                 </div>
 
                 <!-- 下胶片孔 -->
@@ -120,7 +142,7 @@
                 </div>
 
                 <!-- 照片信息区域 -->
-                <div class="info-container">
+                <div class="info-container" v-loading="isInfoLoading" element-loading-text="正在加载信息...">
 
                 </div>
             </div>
@@ -135,7 +157,13 @@
 
                 <!-- 照片展示区域 -->
                 <div class="photo-container">
-                    <el-image :src="extremeNextThumbnailUrl" fit="contain" class="preview-image"></el-image>
+                    <div class="preview-wrapper">
+                        <img v-for="(url, id) in preloadedImages" :key="'extremeNext-' + id" :src="url"
+                            class="preview-image" v-show="id === extremeNextPhotoId" alt="最右侧照片">
+                        <!-- 预加载图片的占位，但不显示 -->
+                        <img v-if="!extremeNextPhotoId || !preloadedImages[extremeNextPhotoId]" src=""
+                            class="preview-image placeholder-image" alt="预加载占位">
+                    </div>
                 </div>
 
                 <!-- 下胶片孔 -->
@@ -144,7 +172,7 @@
                 </div>
 
                 <!-- 照片信息区域 -->
-                <div class="info-container">
+                <div class="info-container" v-loading="isInfoLoading" element-loading-text="正在加载信息...">
 
                 </div>
             </div>
@@ -154,7 +182,7 @@
 
 <script setup lang="ts">
 import { ref, watch, onUnmounted, computed, onMounted } from 'vue'
-import { ElImage, ElTag, ElTooltip } from 'element-plus'
+import { ElImage, ElTag, ElTooltip, ElMessage } from 'element-plus'
 import { get1000KPhoto, getPhotoDetailInfo, type EnhancedWaterfallItem } from '@/utils/photo'
 import gsap from 'gsap'
 
@@ -167,9 +195,8 @@ const props = defineProps<{
 const emit = defineEmits(['close', 'image-click', 'update:modelValue', 'navigate'])
 
 const visible = ref(props.modelValue)
-const thumbnailUrl = ref('')
-const prevThumbnailUrl = ref('')
-const nextThumbnailUrl = ref('')
+// 对象映射存储预加载的图片，key为photoId
+const preloadedImages = ref<Record<string, string>>({})
 const previewData = ref<EnhancedWaterfallItem>({
     id: "",
     fileName: "",
@@ -194,7 +221,7 @@ const isAnimating = ref(false)
 // 获取动画移动距离
 const getAnimationDistance = () => {
     // 检测是否为移动设备
-    return window.innerWidth <= 768 ? '41vh' : '91vh'
+    return window.innerWidth <= 768 ? '81vw' : '71vw'
 }
 
 // 触摸相关状态
@@ -240,11 +267,11 @@ const extremeNextPhotoId = computed(() => {
     return null
 })
 
-// 存储极左和极右照片的URL
-const extremePrevThumbnailUrl = ref('')
-const extremeNextThumbnailUrl = ref('')
-
 const isLoading = ref(false)
+const isInfoLoading = ref(false)  // 新增：专门用于控制信息加载状态
+
+// 图片和照片信息缓存系统
+const photoInfoCache = ref<Map<string, EnhancedWaterfallItem>>(new Map())
 
 // 监听 modelValue 变化
 watch(() => props.modelValue, (newVal) => {
@@ -272,90 +299,102 @@ watch(() => props.photoId, (newVal, oldVal) => {
     }
 })
 
+// 预加载图片，并添加到预加载对象中
+const preloadImage = async (photoId: string | null): Promise<void> => {
+    if (!photoId) return
+
+    // 如果已经预加载过，就跳过
+    if (preloadedImages.value[photoId]) return
+
+    try {
+        const imageResult = await get1000KPhoto(photoId)
+        if (imageResult) {
+            // Vue的响应式系统不会自动检测到对象属性的添加
+            // 使用这种方式确保响应式更新
+            preloadedImages.value = { ...preloadedImages.value, [photoId]: imageResult.url }
+        }
+    } catch (error) {
+        console.error(`预加载图片 ${photoId} 失败:`, error)
+    }
+}
+
+// 获取照片信息（从缓存或API）
+const getPhotoInfo = async (photoId: string | null): Promise<EnhancedWaterfallItem | null> => {
+    if (!photoId) return null
+
+    // 检查缓存中是否已有该照片信息
+    if (photoInfoCache.value.has(photoId)) {
+        return photoInfoCache.value.get(photoId)!
+    }
+
+    // 缓存中没有，需要加载
+    try {
+        const photoInfo = await getPhotoDetailInfo(photoId)
+        if (photoInfo) {
+            photoInfoCache.value.set(photoId, photoInfo)
+            return photoInfo
+        }
+    } catch (error) {
+        console.error(`加载照片信息 ${photoId} 失败:`, error)
+    }
+
+    return null
+}
+
 // 打开对话框时获取数据
 const handleOpen = async () => {
     isLoading.value = true
+    isInfoLoading.value = true
 
     // 锁定滚动
     document.body.style.overflow = 'hidden'
 
     try {
-        // 加载主图片
-        const imageResult = await get1000KPhoto(props.photoId, (loading) => isLoading.value = loading)
-        if (imageResult) {
-            thumbnailUrl.value = imageResult.url
-        }
-
         // 获取照片详细信息
-        const photoInfo = await getPhotoDetailInfo(props.photoId)
+        const photoInfo = await getPhotoInfo(props.photoId)
         if (photoInfo) {
             previewData.value = photoInfo
         }
 
-        // 加载前一张图片（如果有）
-        if (prevPhotoId.value) {
-            const prevImageResult = await get1000KPhoto(prevPhotoId.value)
-            if (prevImageResult) {
-                prevThumbnailUrl.value = prevImageResult.url
-            }
-        } else {
-            prevThumbnailUrl.value = ''
-        }
+        // 按优先级定义需要预加载的照片ID数组
+        const idsToPreload = [
+            props.photoId,           // 当前照片（最高优先级）
+            prevPhotoId.value,       // 上一张
+            nextPhotoId.value,       // 下一张
+            extremePrevPhotoId.value, // 极左
+            extremeNextPhotoId.value  // 极右
+        ].filter(Boolean) as string[]
 
-        // 加载后一张图片（如果有）
-        if (nextPhotoId.value) {
-            const nextImageResult = await get1000KPhoto(nextPhotoId.value)
-            if (nextImageResult) {
-                nextThumbnailUrl.value = nextImageResult.url
-            }
-        } else {
-            nextThumbnailUrl.value = ''
-        }
+        // 先加载当前照片
+        await preloadImage(props.photoId)
 
-        // 加载极左图片（如果有）
-        if (extremePrevPhotoId.value) {
-            const extremePrevImageResult = await get1000KPhoto(extremePrevPhotoId.value)
-            if (extremePrevImageResult) {
-                extremePrevThumbnailUrl.value = extremePrevImageResult.url
-            }
-        } else {
-            extremePrevThumbnailUrl.value = ''
-        }
+        // 然后异步加载其他照片（不阻塞UI）
+        const otherIds = idsToPreload.filter(id => id !== props.photoId)
+        Promise.all(otherIds.map(id => preloadImage(id)))
 
-        // 加载极右图片（如果有）
-        if (extremeNextPhotoId.value) {
-            const extremeNextImageResult = await get1000KPhoto(extremeNextPhotoId.value)
-            if (extremeNextImageResult) {
-                extremeNextThumbnailUrl.value = extremeNextImageResult.url
+        // 获取当前索引的前后几张图片ID用于预加载
+        const startIdx = Math.max(0, currentIndex.value - 4)
+        const endIdx = Math.min(props.photoIds.length - 1, currentIndex.value + 4)
+
+        // 后台预加载更多照片
+        for (let i = startIdx; i <= endIdx; i++) {
+            const id = props.photoIds[i]
+            if (id && !idsToPreload.includes(id)) {
+                // 使用setTimeout避免同时发起太多请求
+                setTimeout(() => {
+                    preloadImage(id)
+                }, (i - startIdx) * 200) // 错开时间加载
             }
-        } else {
-            extremeNextThumbnailUrl.value = ''
         }
     } catch (error) {
         console.error('数据加载失败:', error)
     } finally {
         isLoading.value = false
+        isInfoLoading.value = false
     }
 }
 
 const handleClose = () => {
-    // 清理主图片资源
-    if (thumbnailUrl.value) {
-        URL.revokeObjectURL(thumbnailUrl.value)
-        thumbnailUrl.value = ''
-    }
-
-    // 清理侧边图片资源
-    if (prevThumbnailUrl.value) {
-        URL.revokeObjectURL(prevThumbnailUrl.value)
-        prevThumbnailUrl.value = ''
-    }
-
-    if (nextThumbnailUrl.value) {
-        URL.revokeObjectURL(nextThumbnailUrl.value)
-        nextThumbnailUrl.value = ''
-    }
-
     // 解除滚动锁定
     document.body.style.overflow = ''
 
@@ -437,19 +476,46 @@ const animateToNext = () => {
     if (!filmStripRef.value || isAnimating.value) return
 
     isAnimating.value = true
+    isInfoLoading.value = true  // 添加信息加载状态
+
+    // 预先加载后续可能需要的照片
+    if (nextPhotoId.value) {
+        const nextIndex = currentIndex.value + 1
+        const nextNextId = nextIndex < props.photoIds.length - 1 ? props.photoIds[nextIndex + 1] : null
+        const extremeNextNextId = nextIndex < props.photoIds.length - 2 ? props.photoIds[nextIndex + 2] : null
+
+        // 预加载即将需要的照片
+        if (nextNextId) preloadImage(nextNextId)
+        if (extremeNextNextId) preloadImage(extremeNextNextId)
+    }
 
     gsap.to(filmStripRef.value, {
-        x: `-${getAnimationDistance()}`, // 向左移动一个卡片的宽度
+        x: `-${getAnimationDistance()}`,
         duration: 0.5,
         ease: 'power2.out',
         onComplete: () => {
             // 动画完成后切换照片
             if (nextPhotoId.value) {
-                emit('navigate', nextPhotoId.value)
-                // 重置位置
+                // 确保下一张照片的信息已加载
+                getPhotoInfo(nextPhotoId.value).then(info => {
+                    if (info) {
+                        // 使用导航事件通知父组件更新当前照片ID
+                        emit('navigate', nextPhotoId.value)
+                    }
+                    // 重置位置
+                    gsap.set(filmStripRef.value, { x: 0 })
+                    isAnimating.value = false
+                    isInfoLoading.value = false  // 重置信息加载状态
+                }).catch(() => {
+                    gsap.set(filmStripRef.value, { x: 0 })
+                    isAnimating.value = false
+                    isInfoLoading.value = false  // 重置信息加载状态
+                })
+            } else {
                 gsap.set(filmStripRef.value, { x: 0 })
+                isAnimating.value = false
+                isInfoLoading.value = false  // 重置信息加载状态
             }
-            isAnimating.value = false
         }
     })
 }
@@ -459,19 +525,46 @@ const animateToPrev = () => {
     if (!filmStripRef.value || isAnimating.value) return
 
     isAnimating.value = true
+    isInfoLoading.value = true  // 添加信息加载状态
+
+    // 预加载前面可能需要的照片
+    if (prevPhotoId.value) {
+        const prevIndex = currentIndex.value - 1
+        const prevPrevId = prevIndex > 0 ? props.photoIds[prevIndex - 1] : null
+        const extremePrevPrevId = prevIndex > 1 ? props.photoIds[prevIndex - 2] : null
+
+        // 预加载即将需要的照片
+        if (prevPrevId) preloadImage(prevPrevId)
+        if (extremePrevPrevId) preloadImage(extremePrevPrevId)
+    }
 
     gsap.to(filmStripRef.value, {
-        x: getAnimationDistance(), // 向右移动一个卡片的宽度
+        x: getAnimationDistance(),
         duration: 0.5,
         ease: 'power2.out',
         onComplete: () => {
             // 动画完成后切换照片
             if (prevPhotoId.value) {
-                emit('navigate', prevPhotoId.value)
-                // 重置位置
+                // 确保上一张照片的信息已加载
+                getPhotoInfo(prevPhotoId.value).then(info => {
+                    if (info) {
+                        // 使用导航事件通知父组件更新当前照片ID
+                        emit('navigate', prevPhotoId.value)
+                    }
+                    // 重置位置
+                    gsap.set(filmStripRef.value, { x: 0 })
+                    isAnimating.value = false
+                    isInfoLoading.value = false  // 重置信息加载状态
+                }).catch(() => {
+                    gsap.set(filmStripRef.value, { x: 0 })
+                    isAnimating.value = false
+                    isInfoLoading.value = false  // 重置信息加载状态
+                })
+            } else {
                 gsap.set(filmStripRef.value, { x: 0 })
+                isAnimating.value = false
+                isInfoLoading.value = false  // 重置信息加载状态
             }
-            isAnimating.value = false
         }
     })
 }
@@ -490,36 +583,46 @@ const navigateToNext = () => {
     }
 }
 
-// 导航到极左照片
+// 导航到极左
 const navigateToExtremePrev = () => {
     if (extremePrevPhotoId.value && !isAnimating.value) {
-        emit('navigate', extremePrevPhotoId.value)
+        ElMessage({
+            type: 'warning',
+            message: '请等当前照片加载完成',
+            duration: 2000
+        })
     }
 }
 
-// 导航到极右照片
+// 导航到极右
 const navigateToExtremeNext = () => {
     if (extremeNextPhotoId.value && !isAnimating.value) {
-        emit('navigate', extremeNextPhotoId.value)
+        ElMessage({
+            type: 'warning',
+            message: '请等当前照片加载完成',
+            duration: 2000
+        })
     }
 }
 
 // 组件卸载时确保清理资源
 onUnmounted(() => {
-    if (thumbnailUrl.value) {
-        URL.revokeObjectURL(thumbnailUrl.value)
-    }
-    if (prevThumbnailUrl.value) {
-        URL.revokeObjectURL(prevThumbnailUrl.value)
-    }
-    if (nextThumbnailUrl.value) {
-        URL.revokeObjectURL(nextThumbnailUrl.value)
-    }
-    if (extremePrevThumbnailUrl.value) {
-        URL.revokeObjectURL(extremePrevThumbnailUrl.value)
-    }
-    if (extremeNextThumbnailUrl.value) {
-        URL.revokeObjectURL(extremeNextThumbnailUrl.value)
+    // 清理所有图片资源
+    Object.values(preloadedImages.value).forEach(url => {
+        if (url.startsWith('blob:')) {
+            URL.revokeObjectURL(url)
+        }
+    })
+
+    // 清空状态
+    preloadedImages.value = {}
+    photoInfoCache.value.clear()
+})
+
+// 组件挂载后初始化
+onMounted(() => {
+    if (visible.value && props.photoId) {
+        handleOpen()
     }
 })
 </script>
@@ -553,7 +656,7 @@ onUnmounted(() => {
     flex-direction: column;
     align-items: center;
     background: #000;
-    width: 90vh;
+    width: 70vw;
     height: 90vh;
     border-radius: 8px;
     position: absolute;
@@ -580,34 +683,33 @@ onUnmounted(() => {
 }
 
 .side-film.left {
-    right: calc(50% + 46vh);
+    right: calc(50% + 36vw);
 }
 
 .side-film.right {
-    left: calc(50% + 46vh);
+    left: calc(50% + 36vw);
 }
 
 .side-film.extreme-left {
-    right: calc(50% + 137vh);
+    right: calc(50% + 107vw);
 }
 
 .side-film.extreme-right {
-    left: calc(50% + 137vh);
+    left: calc(50% + 107vw);
 }
 
 .film-holes {
     display: flex;
     justify-content: space-between;
     width: 100%;
-    padding: 0 12px;
-    margin: 10px 0;
+    margin: 7px 0;
     flex-shrink: 0;
     min-height: 20px;
 }
 
 .hole {
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
     background: #333;
     border-radius: 50%;
     border: 2px solid #666;
@@ -623,6 +725,15 @@ onUnmounted(() => {
     justify-content: center;
     background: #000;
     overflow: hidden;
+}
+
+.preview-wrapper {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .preview-image {
@@ -644,6 +755,10 @@ onUnmounted(() => {
     color: #fff;
     padding: 0;
     flex-shrink: 0;
+}
+
+.side-film .info-container {
+    opacity: 1 !important;
 }
 
 .info-content {
@@ -695,14 +810,18 @@ onUnmounted(() => {
     white-space: nowrap;
 }
 
+.placeholder-image {
+    opacity: 0;
+}
+
 @media (max-width: 768px) {
     .film-strip {
-        height: 80vh;
+        height: 85vh;
     }
 
     .film-container {
-        width: 40vh;
-        height: 80vh;
+        width: 80vw;
+        height: 85vh;
     }
 
     .metadata {
@@ -715,28 +834,43 @@ onUnmounted(() => {
         border-width: 1px;
     }
 
-    .navigation-buttons {
-        display: none;
-    }
-
-    .nav-button {
-        display: none;
-    }
-
     .side-film.left {
-        right: calc(50% + 21vh);
+        right: calc(50% + 41vw);
     }
 
     .side-film.right {
-        left: calc(50% + 21vh);
+        left: calc(50% + 41vw);
     }
 
     .side-film.extreme-left {
-        right: calc(50% + 61vh);
+        right: calc(50% + 122vw);
     }
 
     .side-film.extreme-right {
-        left: calc(50% + 61vh);
+        left: calc(50% + 122vw);
+    }
+
+    .preview-image {
+        height: auto;
+        width: 100%;
+    }
+
+    .info-container {
+        height: 20vh;
+    }
+
+    @media (max-width: 400px) {
+        .title {
+            font-size: 16px;
+        }
+
+        .description {
+            font-size: 14px;
+        }
+
+        .metadata {
+            font-size: 12px;
+        }
     }
 }
 </style>

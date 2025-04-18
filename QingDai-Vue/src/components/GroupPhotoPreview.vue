@@ -42,7 +42,8 @@
                                 {{ groupPhotoData.groupPhoto.title || '无标题' }}
                             </el-descriptions-item>
                             <el-descriptions-item label="介绍">
-                                <div class="description-content">{{ groupPhotoData.groupPhoto.introduce || '暂无介绍' }}</div>
+                                <div class="description-content">{{ groupPhotoData.groupPhoto.introduce || '暂无介绍' }}
+                                </div>
                             </el-descriptions-item>
                             <el-descriptions-item label="包含照片数">
                                 {{ photoIds.length }}
@@ -327,9 +328,12 @@ const closeFullScreen = () => {
 </script>
 
 <style scoped>
-:deep(.el-tabs__item){
- padding: 0 10px !important;   
+
+
+:deep(.el-tabs__item) {
+    padding: 0 10px !important;
 }
+
 .preview-dialog {
     border-radius: 12px;
     overflow: hidden;
@@ -411,10 +415,9 @@ const closeFullScreen = () => {
 
 .info-container {
     flex: 0 0 320px;
-    max-width: 350px;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow:scroll;
 }
 
 .description-content {

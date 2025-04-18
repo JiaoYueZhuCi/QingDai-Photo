@@ -36,8 +36,11 @@
         </div>
 
         <!-- 组图预览对话框 -->
-        <group-photo-preview v-if="selectedPhotoId" :group-id="selectedGroupId"
-            :initial-photo-id="selectedPhotoId || undefined" :photos="sortedPhotos" @close="closeGroupPhotoPreview" />
+        <group-film-preview v-if="selectedPhotoId" 
+            :group-id="selectedGroupId"
+            :initial-photo-id="selectedPhotoId || undefined" 
+            :model-value="!!selectedPhotoId"
+            @close="closeGroupPhotoPreview" />
     </div>
 </template>
 
@@ -47,7 +50,7 @@ import { getGroupPhoto } from '@/api/groupPhoto'
 import { getPhotosByIds } from '@/api/photo'
 import type { GroupPhotoDTO } from '@/types/groupPhoto'
 import { ElMessage } from 'element-plus'
-import GroupPhotoPreview from '@/components/GroupPhotoPreview.vue'
+import GroupFilmPreview from '@/components/GroupFilmPreview.vue'
 import { get100KPhotos, processPhotoData, type EnhancedWaterfallItem } from '@/utils/photo'
 
 const loading = ref(true)

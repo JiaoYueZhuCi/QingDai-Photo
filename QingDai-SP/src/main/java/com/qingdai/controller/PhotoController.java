@@ -716,4 +716,50 @@ public class PhotoController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
+
+    @GetMapping("/getHiddenPhotosByPage")
+    @Operation(summary = "获取分页隐藏照片信息(时间倒叙)", description = "从数据库获取分页隐藏照片的详细信息(start=-1)(时间倒叙)")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Page<Photo>> getHiddenPhotosByPage(
+            @RequestParam int page,
+            @RequestParam int pageSize) {
+        try {
+            if (page < 1) {
+                page = 1;
+                log.warn("页码小于1，已自动调整为1");
+            }
+            Page<Photo> photoPage = new Page<>(page, pageSize);
+            photoService.page(photoPage, new LambdaQueryWrapper<Photo>()
+                    .orderByDesc(Photo::getTime)
+                    .eq(Photo::getStart, -1));
+            log.info("成功获取隐藏照片分页信息，总记录数: {}, 总页数: {}", photoPage.getTotal(), photoPage.getPages());
+            return ResponseEntity.ok().body(photoPage);
+        } catch (Exception e) {
+            log.error("获取隐藏照片分页信息时发生错误，页码: {}, 每页大小: {}, 错误: {}", page, pageSize, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @GetMapping("/getWeatherPhotosByPage")
+    @Operation(summary = "获取分页气象照片信息(时间倒叙)", description = "从数据库获取分页气象照片的详细信息(start=2)(时间倒叙)")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Page<Photo>> getWeatherPhotosByPage(
+            @RequestParam int page,
+            @RequestParam int pageSize) {
+        try {
+            if (page < 1) {
+                page = 1;
+                log.warn("页码小于1，已自动调整为1");
+            }
+            Page<Photo> photoPage = new Page<>(page, pageSize);
+            photoService.page(photoPage, new LambdaQueryWrapper<Photo>()
+                    .orderByDesc(Photo::getTime)
+                    .eq(Photo::getStart, 2));
+            log.info("成功获取气象照片分页信息，总记录数: {}, 总页数: {}", photoPage.getTotal(), photoPage.getPages());
+            return ResponseEntity.ok().body(photoPage);
+        } catch (Exception e) {
+            log.error("获取气象照片分页信息时发生错误，页码: {}, 每页大小: {}, 错误: {}", page, pageSize, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
 }
