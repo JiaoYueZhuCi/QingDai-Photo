@@ -20,6 +20,10 @@ const router = createRouter({
           component: () => import('@/components/Login.vue').catch(() => errorPage),
         },
         {
+          path: '/test',
+          component: () => import('@/views/photo/Photo.vue').catch(() => errorPage),
+        },
+        {
           path: '/home',
           component: () => import('@/views/home/Home.vue').catch(() => errorPage),
           props: true,

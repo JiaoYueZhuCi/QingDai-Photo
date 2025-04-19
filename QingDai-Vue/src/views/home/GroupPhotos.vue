@@ -47,10 +47,44 @@ import JSZip from 'jszip';
 import type { GroupPhotoDTO } from '@/types/groupPhoto';
 import GroupFilmPreview from '@/components/GroupFilmPreview.vue';
 import { get100KPhotos, processPhotoData } from '@/utils/photo';
+import { useRouter, useRoute } from 'vue-router';
+
+// 添加路由
+const router = useRouter();
+const route = useRoute();
 
 // 添加新的状态保存选中的组图和照片
 const selectedGroupId = ref<string | null>(null);
 const selectedPhotoId = ref<string | null>(null);
+
+// 更新URL中的组图ID和照片ID参数
+const updateUrlWithGroupId = (groupId: string | null, photoId: string | null = null) => {
+    // 构建新的查询参数对象
+    const query = { ...route.query };
+    
+    if (groupId) {
+        query.groupId = groupId;
+        if (photoId) {
+            query.groupPhotoId = photoId;
+        } else {
+            delete query.groupPhotoId;
+        }
+        
+        // 如果URL中有其他预览参数，清除它们
+        if (query.photoId) delete query.photoId;
+        if (query.viewerId) delete query.viewerId;
+    } else {
+        // 如果groupId为null，则删除相关参数
+        delete query.groupId;
+        delete query.groupPhotoId;
+    }
+    
+    // 更新路由，保留当前路径，仅修改查询参数
+    router.replace({
+        path: route.path,
+        query: query
+    });
+};
 
 // 打开组图预览的方法
 const openGroupPhotoPreview = (item: WaterfallItem) => {
@@ -60,6 +94,8 @@ const openGroupPhotoPreview = (item: WaterfallItem) => {
     if (groupId) {
         selectedGroupId.value = groupId;
         selectedPhotoId.value = item.id;
+        // 更新URL
+        updateUrlWithGroupId(groupId, item.id);
     } else {
         console.error('缺少组图ID，item:', item);
         ElMessage.warning('无法找到对应的组图信息');
@@ -70,6 +106,8 @@ const openGroupPhotoPreview = (item: WaterfallItem) => {
 const closeGroupPhotoPreview = () => {
     selectedGroupId.value = null;
     selectedPhotoId.value = null;
+    // 清除URL参数
+    updateUrlWithGroupId(null);
 };
 
 // 添加 props 来接收父组件传递的值
@@ -198,6 +236,17 @@ const handleResize = () => {
 onMounted(async () => {
     handleResize();
     await getPhotos();
+    
+    // 检查URL中是否有组图ID参数
+    if (route.query.groupId) {
+        const groupIdFromUrl = route.query.groupId as string;
+        const photoIdFromUrl = route.query.groupPhotoId as string || undefined;
+        
+        // 设置当前预览的组图ID和照片ID，并打开预览
+        selectedGroupId.value = groupIdFromUrl;
+        selectedPhotoId.value = photoIdFromUrl || null;
+    }
+    
     window.addEventListener('scroll', handleScroll);
     window.addEventListener('resize', handleResize); // 添加 resize 事件监听
 });

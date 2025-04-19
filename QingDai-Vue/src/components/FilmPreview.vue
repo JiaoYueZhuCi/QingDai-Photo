@@ -4,7 +4,7 @@
         <!-- 水平胶片条 -->
         <div class="film-strip" ref="filmStripRef">
             <!-- 左侧卡片(上一张) -->
-            <div class="film-container side-film left" v-if="prevPhotoId" @click.stop="navigateToPrev">
+            <div class="film-container side-film left" v-if="prevPhotoId" @click.stop="navigateToPrev" ref="leftFilmRef">
                 <!-- 上胶片孔 -->
                 <div class="film-holes top">
                     <div v-for="n in 18" :key="'prev-top-' + n" class="hole"></div>
@@ -33,7 +33,7 @@
             </div>
 
             <!-- 中间卡片(当前) -->
-            <div class="film-container current-film" @click.stop>
+            <div class="film-container current-film" @click.stop ref="currentFilmRef">
                 <!-- 上胶片孔 -->
                 <div class="film-holes top">
                     <div v-for="n in 18" :key="'top-' + n" class="hole"></div>
@@ -89,7 +89,7 @@
             </div>
 
             <!-- 右侧卡片(下一张) -->
-            <div class="film-container side-film right" v-if="nextPhotoId" @click.stop="navigateToNext">
+            <div class="film-container side-film right" v-if="nextPhotoId" @click.stop="navigateToNext" ref="rightFilmRef">
                 <!-- 上胶片孔 -->
                 <div class="film-holes top">
                     <div v-for="n in 18" :key="'next-top-' + n" class="hole"></div>
@@ -216,6 +216,9 @@ const previewData = ref<EnhancedWaterfallItem>({
 
 // 动画相关状态
 const filmStripRef = ref<HTMLElement | null>(null)
+const currentFilmRef = ref<HTMLElement | null>(null)
+const leftFilmRef = ref<HTMLElement | null>(null)
+const rightFilmRef = ref<HTMLElement | null>(null)
 const isAnimating = ref(false)
 
 // 获取动画移动距离
@@ -227,7 +230,7 @@ const getAnimationDistance = () => {
 // 触摸相关状态
 const touchStartX = ref(0)
 const touchEndX = ref(0)
-const minSwipeDistance = 100 // 最小滑动距离，单位像素
+const minSwipeDistance = 10 // 最小滑动距离，单位像素
 const isDragging = ref(false)
 
 // 当前照片在数组中的索引
@@ -385,6 +388,57 @@ const handleOpen = async () => {
                     preloadImage(id)
                 }, (i - startIdx) * 200) // 错开时间加载
             }
+        }
+
+        // 卡片打开的动画效果
+        if (currentFilmRef.value) {
+            gsap.fromTo(currentFilmRef.value, 
+                {
+                    scale: 0.8,
+                    opacity: 0,
+                    y: 50
+                },
+                {
+                    scale: 1,
+                    opacity: 1,
+                    y: 0,
+                    duration: 0.5,
+                    ease: "back.out(1.7)"
+                }
+            )
+        }
+
+        // 左右两侧卡片的滑入动画
+        if (leftFilmRef.value) {
+            gsap.fromTo(leftFilmRef.value,
+                {
+                    x: -100,
+                    opacity: 0
+                },
+                {
+                    x: 0,
+                    opacity: 0.6,
+                    duration: 0.5,
+                    ease: "power2.out",
+                    delay: 0.2
+                }
+            )
+        }
+
+        if (rightFilmRef.value) {
+            gsap.fromTo(rightFilmRef.value,
+                {
+                    x: 100,
+                    opacity: 0
+                },
+                {
+                    x: 0,
+                    opacity: 0.6,
+                    duration: 0.5,
+                    ease: "power2.out",
+                    delay: 0.2
+                }
+            )
         }
     } catch (error) {
         console.error('数据加载失败:', error)
@@ -737,8 +791,9 @@ onMounted(() => {
 }
 
 .preview-image {
-    height: 100%;
-    /* width: auto; */
+    max-height: 100%;
+    max-width: 100%;
+    object-fit: contain;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     transition: transform 0.3s;
     cursor: zoom-in;
@@ -848,11 +903,6 @@ onMounted(() => {
 
     .side-film.extreme-right {
         left: calc(50% + 122vw);
-    }
-
-    .preview-image {
-        height: auto;
-        width: 100%;
     }
 
     .info-container {

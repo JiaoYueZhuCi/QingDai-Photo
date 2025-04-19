@@ -227,23 +227,23 @@ const usernameRef = ref<HTMLElement | null>(null);
 const descriptionRef = ref<HTMLElement | null>(null);
 
 onMounted(() => {
+    let tl = gsap.timeline()
+
     if (usernameRef.value) {
-        gsap.from(usernameRef.value, {
-            duration: 1.5,
-            y: -50,
+        tl.from(usernameRef.value, {
+            duration: 1,
+            y: 50,
             opacity: 0,
             ease: "power3.out",
-            delay: 0.5
         });
     }
 
     if (descriptionRef.value) {
-        gsap.from(descriptionRef.value, {
-            duration: 1.5,
-            y: -50,
+        tl.from(descriptionRef.value, {
+            duration: 1,
+            y: 50,
             opacity: 0,
             ease: "power3.out",
-            delay: 0.8
         });
     }
 });

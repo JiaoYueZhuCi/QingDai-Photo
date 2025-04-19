@@ -47,6 +47,7 @@ import FilmPreview from './FilmPreview.vue'
 import PhotoViewer from '@/components/PhotoViewer.vue'
 import { getGroupPhoto } from '@/api/groupPhoto'
 import type { GroupPhotoDTO } from '@/types/groupPhoto'
+import { useRouter, useRoute } from 'vue-router'
 
 const props = defineProps<{
     groupId: string,
@@ -55,6 +56,10 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits(['close', 'update:modelValue', 'navigate'])
+
+// 路由实例
+const router = useRouter()
+const route = useRoute()
 
 // 状态变量
 const visible = ref(props.modelValue)
@@ -74,14 +79,67 @@ const groupPhotoData = ref({
     coverPhotoId: ''
 })
 
+// 更新URL中的组图预览参数
+const updateUrlWithGroupParams = (showPreview: boolean, groupId: string | null = null, photoId: string | null = null, isFullScreen: boolean = false) => {
+    // 构建新的查询参数对象
+    const query = { ...route.query }
+    
+    if (showPreview && groupId) {
+        query.groupId = groupId
+        
+        if (isFullScreen) {
+            // 如果是全屏模式
+            if (photoId) {
+                query.groupViewerId = photoId
+            } else {
+                delete query.groupViewerId
+            }
+            delete query.groupPhotoId
+        } else {
+            // 如果是普通预览模式
+            if (photoId) {
+                query.groupPhotoId = photoId
+            } else {
+                delete query.groupPhotoId
+            }
+            delete query.groupViewerId
+        }
+        
+        // 确保其他预览参数被清除
+        delete query.photoId
+        delete query.viewerId
+    } else {
+        // 清除所有组图相关参数
+        delete query.groupId
+        delete query.groupPhotoId
+        delete query.groupViewerId
+    }
+    
+    // 更新路由，保留当前路径，仅修改查询参数
+    router.replace({
+        path: route.path,
+        query: query
+    })
+}
+
 // 监听 modelValue 变化
 watch(() => props.modelValue, (newVal) => {
     visible.value = newVal
+    if (newVal) {
+        // 如果是显示组件，更新URL
+        updateUrlWithGroupParams(true, props.groupId, photoId.value)
+    } else {
+        // 如果是隐藏组件，清除URL参数
+        updateUrlWithGroupParams(false)
+    }
 })
 
 // 监听 visible 变化
 watch(visible, (newVal) => {
     emit('update:modelValue', newVal)
+    if (!newVal) {
+        updateUrlWithGroupParams(false)
+    }
 })
 
 // 加载组图数据
@@ -99,8 +157,12 @@ const loadGroupData = async () => {
         // 设置初始照片ID
         if (props.initialPhotoId && photoIds.value.includes(props.initialPhotoId)) {
             photoId.value = props.initialPhotoId
+            // 更新URL
+            updateUrlWithGroupParams(true, props.groupId, photoId.value)
         } else if (photoIds.value.length > 0) {
             photoId.value = photoIds.value[0]
+            // 更新URL
+            updateUrlWithGroupParams(true, props.groupId, photoId.value)
         }
     } catch (error) {
         console.error('组图数据加载失败:', error)
@@ -110,12 +172,15 @@ const loadGroupData = async () => {
 // 处理关闭事件
 const handleClose = () => {
     visible.value = false
+    updateUrlWithGroupParams(false)
     emit('close')
 }
 
 // 处理导航事件
 const handleNavigate = (id: string) => {
     photoId.value = id
+    // 更新URL
+    updateUrlWithGroupParams(true, props.groupId, id)
     emit('navigate', id)
 }
 
@@ -128,17 +193,24 @@ const handleImageClick = (id: string) => {
 const openFullScreen = (id: string) => {
     fullScreenPhotoId.value = id
     showFullScreen.value = true
+    // 更新URL为全屏查看模式
+    updateUrlWithGroupParams(true, props.groupId, id, true)
 }
 
 // 添加关闭全屏预览的方法
 const closeFullScreen = () => {
     showFullScreen.value = false
     fullScreenPhotoId.value = ''
+    // 恢复为普通预览模式
+    updateUrlWithGroupParams(true, props.groupId, photoId.value)
 }
 
 // 更新visible状态
 const updateVisible = (val: boolean) => {
     visible.value = val
+    if (!val) {
+        updateUrlWithGroupParams(false)
+    }
 }
 
 // 切换组图信息显示状态
@@ -150,6 +222,15 @@ const toggleGroupInfo = () => {
 onMounted(() => {
     if (visible.value) {
         loadGroupData()
+        
+        // 检查URL中是否有全屏查看的参数
+        if (route.query.groupViewerId) {
+            const viewerId = route.query.groupViewerId as string
+            if (viewerId) {
+                fullScreenPhotoId.value = viewerId
+                showFullScreen.value = true
+            }
+        }
     }
 })
 
@@ -160,8 +241,6 @@ watch(() => props.groupId, () => {
     }
 })
 </script>
-
-
 
 <style scoped>
 .group-film-preview {

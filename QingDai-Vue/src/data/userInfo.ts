@@ -16,5 +16,5 @@ export const userInfo = {
         'TTArtisan 10mm f2'
     ],
     wechat: 'L3335308825',
-    email: '3335308825@qq.com',
+    email: 'jiaoyuezhuci@163.com',
 } 

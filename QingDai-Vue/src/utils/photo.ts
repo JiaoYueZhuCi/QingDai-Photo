@@ -1,6 +1,6 @@
 import JSZip from 'jszip';
 import { ElMessage } from 'element-plus';
-import { getThumbnail100KPhotos, getPhotosByIds, getThumbnail1000KPhoto, getFullSizePhoto, getPhotoInfo } from '@/api/photo';
+import { getThumbnail100KPhotos, getPhotosByIds, getThumbnail1000KPhoto, getFullSizePhoto, getPhotoInfo, getThumbnail100KPhoto } from '@/api/photo';
 import type { WaterfallItem } from '@/types';
 import { get100KPhotoFromDB, save100KPhotoToDB, get1000KPhotoFromDB, save1000KPhotoToDB, getFullPhotoFromDB, saveFullPhotoToDB } from "@/utils/indexedDB";
 import { toRaw, triggerRef } from 'vue';
@@ -258,6 +258,47 @@ export const getFullPhoto = async (
     }
   } catch (error) {
     console.error('获取原图失败:', error);
+    return null;
+  } finally {
+    setLoading?.(false);
+  }
+};
+
+/**
+ * 获取单张100K照片
+ * @param photoId 照片ID
+ * @param setLoading 设置加载状态的函数，可选
+ * @returns Blob对象和URL
+ */
+export const get100KPhoto = async (
+  photoId: string,
+  setLoading?: (loading: boolean) => void
+): Promise<{ blob: Blob, url: string } | null> => {
+  try {
+    setLoading?.(true);
+
+    // 优先从缓存获取
+    const cachedBlob = await get100KPhotoFromDB(photoId);
+
+    if (cachedBlob && cachedBlob.size) {
+      // 从缓存加载
+      return {
+        blob: cachedBlob,
+        url: URL.createObjectURL(cachedBlob)
+      };
+    } else {
+      // 从API加载
+      const res = await getThumbnail100KPhoto(photoId);
+      const blob = res.data;
+      // 存储到数据库
+      await save100KPhotoToDB(photoId, blob);
+      return {
+        blob,
+        url: URL.createObjectURL(blob)
+      };
+    }
+  } catch (error) {
+    console.error('获取100K图片失败:', error);
     return null;
   } finally {
     setLoading?.(false);

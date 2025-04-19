@@ -4,8 +4,10 @@
             <el-form-item label="时间" prop="time">
                 <el-date-picker 
                     v-model="form.time" 
-                    type="date" 
-                    placeholder="选择日期" 
+                    type="daterange" 
+                    range-separator="至"
+                    start-placeholder="开始日期"
+                    end-placeholder="结束日期"
                     format="YYYY/MM/DD"
                     value-format="YYYY/MM/DD"
                     style="width: 100%"
@@ -28,7 +30,7 @@
         <div class="preview-container">
             <h3>预览效果</h3>
             <el-timeline>
-                <el-timeline-item :timestamp="form.time || '日期未选择'" placement="top">
+                <el-timeline-item :timestamp="form.time ? `${form.time[0]} 至 ${form.time[1]}` : '日期未选择'" placement="top">
                     <el-card>
                         <h4>{{ form.title || '标题未填写' }}</h4>
                         <p>{{ form.text || '内容未填写' }}</p>
@@ -70,14 +72,14 @@ watch(dialogVisible, (val) => {
 const formRef = ref<FormInstance>();
 
 const form = reactive({
-    time: '',
+    time: [] as string[],
     title: '',
     text: ''
 })
 
 const rules = reactive<FormRules>({
     time: [
-        { required: true, message: '请选择时间', trigger: 'change' }
+        { required: true, message: '请选择时间范围', trigger: 'change' }
     ],
     title: [
         { required: true, message: '请输入标题', trigger: 'blur' },
@@ -95,7 +97,7 @@ const submitForm = async () => {
         if (valid) {
             try {
                 await addTimeline({
-                    time: form.time,
+                    time: `${form.time[0]} - ${form.time[1]}`,
                     title: form.title,
                     text: form.text
                 })
@@ -131,7 +133,6 @@ defineExpose({
 
 <style scoped>
 .preview-container {
-    margin-top: 20px;
     padding: 15px;
     background-color: #f5f7fa;
     border-radius: 6px;

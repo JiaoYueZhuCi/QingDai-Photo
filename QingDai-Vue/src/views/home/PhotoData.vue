@@ -6,7 +6,7 @@
           <el-statistic :value="startPhotoCount">
             <template #title>
               <div style="display: inline-flex; align-items: center">
-                代表作照片总数
+                精选照片总数
                 <el-tooltip effect="dark" content="具有个人代表的的照片累计和" placement="top">
                   <el-icon style="margin-left: 4px" :size="12">
                     <Warning />
@@ -35,12 +35,12 @@
           </div>
         </div>
       </el-col>
-      <el-col :span="8" >
+      <el-col :span="8">
         <div class="statistic-card">
           <el-statistic :value="photoCount">
             <template #title>
               <div style="display: inline-flex; align-items: center">
-                精选照片总数
+                普通照片总数
                 <el-tooltip effect="dark" content="普通照片累积和" placement="top">
                   <el-icon style="margin-left: 4px" :size="12">
                     <Warning />
@@ -88,7 +88,8 @@
             </template>
           </el-statistic>
           <div class="statistic-footer">
-            <div class="footer-item">
+            统计截止于 {{ CountTime }}
+            <!-- <div class="footer-item">
               <span>本月变化</span>
               <span :class="photoMonthlyChange < 0 ? 'red' : 'green'">
                 {{ photoAccumulateMonthlyChange }}
@@ -103,7 +104,7 @@
                   <component :is="photoMonthlyChange < 0 ? CaretBottom : CaretTop" />
                 </el-icon>
               </span>
-            </div>
+            </div> -->
           </div>
         </div>
       </el-col>
@@ -276,7 +277,8 @@ const fetchPhotoCount = async () => {
   }
 };
 
-const cameraCount = ref<number>(71765);
+const CountTime = ref<string>('2025-04-12');
+const cameraCount = ref<number>(79656);
 const droneCount = ref<number>(7405);
 
 // 在fetchPhotoCount方法中添加
@@ -390,6 +392,7 @@ onMounted(() => {
   .phopoDataContainer {
     /* height: 200px; */
   }
+
   .el-row {
     margin-top: 10px !important
   }

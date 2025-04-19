@@ -1,10 +1,12 @@
 <template>
     <div class="container" ref="containerRef">
-        <FilmPreview v-model="previewVisible" :photo-id="currentPreviewId" :photo-ids="extractedPhotoIds" @close="previewVisible = false"
+        <FilmPreview v-model="previewVisible" :photo-id="currentPreviewId" :photo-ids="extractedPhotoIds" @close="handlePreviewClose"
             @image-click="openFullImg" @navigate="handleNavigate" />
 
         <PhotoViewer v-if="fullImgShow" :photo-id="currentPreviewId" :initial-index="currentIndex"
-            :use-direct-render="true" @close="fullImgShow = false" />
+            :use-direct-render="true" @close="handleViewerClose" />
+
+        <PhotoEditor v-model="editorVisible" :photo-id="currentPreviewId" @updated="handlePhotoUpdated" />
 
         <el-empty v-if="images.length === 0" description="暂无照片数据"></el-empty>
 
@@ -14,7 +16,7 @@
                 <div class="image-item" v-for="(item, index) in row.items" :key="item.id"
                     @click="handleImageClick(item)">
                     <div class="image-actions">
-                        <div class="left-actions">
+                        <div class="actions-container">
                             <el-popover placement="top" :width="200" trigger="click" title="设置星标状态"
                                 :popper-style="{ padding: '12px' }" :teleported="true">
                                 <template #reference>
@@ -52,9 +54,9 @@
                                     </div>
                                 </div>
                             </el-popover>
-                            <div class=" group-icon" @click.stop>
+                            <div class="group-icon" @click.stop>
                                 <el-popover placement="top" :width="200" trigger="click" title="添加到组图"
-                                    :popper-style="{ padding: '12px' }" :teleported="true">
+                                    :popper-style="{ padding: '12px' }" :teleported="true" @show="fetchGroupPhotos">
                                     <template #reference>
                                         <div class="action-icon">
                                             <el-icon class="icon-color">
@@ -82,15 +84,18 @@
                                     </div>
                                 </el-popover>
                             </div>
-
-                        </div>
-                        <div class="right-actions">
+                            
+                            <div class="action-icon" @click.stop="openPhotoEditor(item)">
+                                <el-icon class="icon-color">
+                                    <Edit />
+                                </el-icon>
+                            </div>
+                            
                             <div class="action-icon fullscreen-icon" @click.stop="openFullImg(item.id)">
                                 <el-icon class="icon-color">
                                     <FullScreen />
                                 </el-icon>
                             </div>
-
                         </div>
                     </div>
                     <el-image :src="item.compressedSrc" :key="item.id" lazy
@@ -114,14 +119,20 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, computed, toRaw } from 'vue';
 import { ElImage, ElIcon, ElMessage, ElPopover, ElEmpty } from 'element-plus';
-import { Picture as IconPicture, FullScreen, Star, StarFilled, Collection, Check } from '@element-plus/icons-vue';
+import { Picture as IconPicture, FullScreen, Star, StarFilled, Collection, Check, Edit } from '@element-plus/icons-vue';
 import { getVisiblePhotosByPage, getStartPhotosByPage, updatePhotoStartStatus as updatePhotoStart, getHiddenPhotosByPage, getWeatherPhotosByPage } from '@/api/photo';
 import { getAllGroupPhotos, updateGroupPhoto } from '@/api/groupPhoto';
 import { debounce } from 'lodash';
 import FilmPreview from "@/components/FilmPreview.vue";
 import PhotoViewer from "@/components/PhotoViewer.vue";
+import PhotoEditor from "@/components/PhotoEditor.vue";
 import { get100KPhotos, processPhotoData, type EnhancedWaterfallItem } from '@/utils/photo';
 import type { GroupPhotoDTO } from '@/types/groupPhoto';
+import { useRouter, useRoute } from 'vue-router';
+
+// 添加路由
+const router = useRouter();
+const route = useRoute();
 
 // 添加 props 来接收父组件传递的值
 const props = defineProps({
@@ -248,7 +259,31 @@ const handleResize = () => {
 onMounted(async () => {
     handleResize();
     await getPhotos();
-    await fetchGroupPhotos();
+    
+    // 检查URL中是否有photoId或viewerId参数
+    if (route.query.photoId) {
+        const photoIdFromUrl = route.query.photoId as string;
+        // 设置当前预览的照片ID并打开预览
+        currentPreviewId.value = photoIdFromUrl;
+        // 等待照片加载完成后再打开预览
+        // setTimeout(() => {
+            previewVisible.value = true;
+        // }, 500); // 给一点时间让照片加载
+    } else if (route.query.viewerId) {
+        const viewerIdFromUrl = route.query.viewerId as string;
+        // 设置当前查看的照片ID并打开查看器
+        currentPreviewId.value = viewerIdFromUrl;
+        // 查找当前索引
+        const index = images.value.findIndex(img => img.id === viewerIdFromUrl);
+        if (index !== -1) {
+            currentIndex.value = index;
+        }
+        // 等待照片加载完成后再打开查看器
+        setTimeout(() => {
+            fullImgShow.value = true;
+        }, 500); // 给一点时间让照片加载
+    }
+    
     window.addEventListener('scroll', handleScroll);
     window.addEventListener('resize', handleResize); // 添加 resize 事件监听
 });
@@ -271,10 +306,66 @@ watch(() => props.photoType, (newVal, oldVal) => {
 
 //// 预览相关状态
 const previewVisible = ref(false);
+const editorVisible = ref(false);
 const currentPreviewId = ref('');
 const handleImageClick = (item: EnhancedWaterfallItem) => {
     currentPreviewId.value = item.id;
     previewVisible.value = true;
+    // 更新URL，添加照片ID参数
+    updateUrlWithPhotoId(item.id);
+};
+
+// 处理预览关闭
+const handlePreviewClose = () => {
+    previewVisible.value = false;
+    // 清除URL中的照片ID参数
+    updateUrlWithPhotoId(null);
+};
+
+// 更新URL中的照片ID参数
+const updateUrlWithPhotoId = (photoId: string | null) => {
+    // 构建新的查询参数对象
+    const query = { ...route.query };
+    
+    if (photoId) {
+        query.photoId = photoId;
+        // 如果同时打开了全屏查看器，则清除viewerId参数避免冲突
+        if (query.viewerId) {
+            delete query.viewerId;
+        }
+    } else {
+        // 如果photoId为null，则删除该参数
+        delete query.photoId;
+    }
+    
+    // 更新路由，保留当前路径，仅修改查询参数
+    router.replace({
+        path: route.path,
+        query: query
+    });
+};
+
+// 更新URL中的查看器ID参数
+const updateUrlWithViewerId = (viewerId: string | null) => {
+    // 构建新的查询参数对象
+    const query = { ...route.query };
+    
+    if (viewerId) {
+        query.viewerId = viewerId;
+        // 如果同时有预览窗口打开，则清除photoId参数避免冲突
+        if (query.photoId) {
+            delete query.photoId;
+        }
+    } else {
+        // 如果viewerId为null，则删除该参数
+        delete query.viewerId;
+    }
+    
+    // 更新路由，保留当前路径，仅修改查询参数
+    router.replace({
+        path: route.path,
+        query: query
+    });
 };
 
 ////计算图片宽度
@@ -350,6 +441,15 @@ const openFullImg = (id: string) => {
     if (index !== -1) {
         currentIndex.value = index;
     }
+    // 更新URL，添加查看器ID参数
+    updateUrlWithViewerId(id);
+};
+
+// 处理PhotoViewer关闭
+const handleViewerClose = () => {
+    fullImgShow.value = false;
+    // 清除URL中的viewerId参数
+    updateUrlWithViewerId(null);
 };
 
 // 获取星星颜色
@@ -426,6 +526,31 @@ const extractedPhotoIds = computed(() => {
 // 处理FilmPreview的导航事件
 const handleNavigate = (photoId: string) => {
     currentPreviewId.value = photoId;
+    // 更新URL中的照片ID
+    updateUrlWithPhotoId(photoId);
+};
+
+// 添加图片编辑图标
+const openPhotoEditor = (item: EnhancedWaterfallItem) => {
+    currentPreviewId.value = item.id;
+    editorVisible.value = true;
+};
+
+// 处理照片信息更新
+const handlePhotoUpdated = (updatedPhoto: any) => {
+    // 更新本地数据
+    const index = images.value.findIndex(img => img.id === updatedPhoto.id);
+    if (index !== -1) {
+        // 更新对应字段
+        images.value[index].title = updatedPhoto.title;
+        images.value[index].introduce = updatedPhoto.introduce;
+        images.value[index].start = updatedPhoto.start;
+        images.value[index].camera = updatedPhoto.camera;
+        images.value[index].lens = updatedPhoto.lens;
+        images.value[index].aperture = updatedPhoto.aperture;
+        images.value[index].shutter = updatedPhoto.shutter;
+        images.value[index].iso = updatedPhoto.iso;
+    }
 };
 </script>
 
@@ -471,7 +596,7 @@ const handleNavigate = (photoId: string) => {
     left: 0;
     right: 0;
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     padding: 0 8px;
     z-index: 2;
     opacity: 0;
@@ -482,14 +607,12 @@ const handleNavigate = (photoId: string) => {
     opacity: 1;
 }
 
-.left-actions {
+.actions-container {
     display: flex;
+    flex-wrap: wrap; 
+    justify-content: left;
     gap: 8px;
-}
-
-.right-actions {
-    display: flex;
-    gap: 8px;
+    width: 100%;
 }
 
 .action-icon {
@@ -556,6 +679,14 @@ const handleNavigate = (photoId: string) => {
 @media (max-width: 600px) {
     .container-in {
         padding: 4px 0;
+    }
+    
+    .actions-container {
+        gap: 4px;
+    }
+    
+    .action-icon {
+        padding: 3px;
     }
 }
 
@@ -630,5 +761,18 @@ const handleNavigate = (photoId: string) => {
 .check-icon {
     color: #67c23a;
     font-size: 16px;
+}
+
+.edit-icon {
+    cursor: pointer;
+    border-radius: 4px;
+    padding: 4px;
+    transition: all 0.3s;
+    color: white;
+}
+
+.edit-icon:hover {
+    background: rgba(0, 0, 0, 0.7);
+    transform: scale(1.1);
 }
 </style>
