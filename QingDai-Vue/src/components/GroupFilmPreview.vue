@@ -1,14 +1,20 @@
 <template>
-    <div class="group-film-preview">
+    <div v-if="visible" class="group-film-preview">
         <!-- 引用FilmPreview组件 -->
-        <FilmPreview :photo-id="photoId" :model-value="visible" :photo-ids="photoIds" @close="handleClose"
-            @navigate="handleNavigate" @image-click="openFullScreen" @update:model-value="updateVisible" />
+        <FilmPreview 
+            v-model="visible"
+            :photo-id="photoId" 
+            :photo-ids="photoIds" 
+            @close="handleClose"
+            @navigate="handleNavigate" 
+            @image-click="openFullScreen" 
+        />
 
         <!-- 全屏预览组件 -->
-        <PhotoViewer v-if="showFullScreen" :photo-id="fullScreenPhotoId" @close="closeFullScreen" />
+        <PhotoViewer v-model="showFullScreen" :photo-id="fullScreenPhotoId" @close="closeFullScreen" />
 
         <!-- 组图标题和信息按钮 -->
-        <div class="group-title-container" v-if="visible">
+        <div class="group-title-container">
             <div class="group-title-box" @click="toggleGroupInfo">
                 <span class="group-title">{{ groupPhotoData.title || '无标题组图' }}</span>
                 <el-icon><arrow-down v-if="!showGroupInfo" /><arrow-up v-if="showGroupInfo" /></el-icon>
@@ -50,19 +56,41 @@ import type { GroupPhotoDTO } from '@/types/groupPhoto'
 import { useRouter, useRoute } from 'vue-router'
 
 const props = defineProps<{
+    modelValue: boolean;
     groupId: string,
     initialPhotoId?: string,
-    modelValue: boolean
 }>()
 
 const emit = defineEmits(['close', 'update:modelValue', 'navigate'])
+
+// 内部可见性状态
+const visible = ref(false)
+
+// 监听 modelValue 变化
+watch(() => props.modelValue, (newVal) => {
+    visible.value = newVal
+    if (newVal) {
+        // 如果是显示组件，更新URL并加载数据
+        loadGroupData()
+        updateUrlWithGroupParams(true, props.groupId, photoId.value)
+    } else {
+        // 如果是隐藏组件，清除URL参数
+        updateUrlWithGroupParams(false)
+    }
+})
+
+// 监听内部状态变化
+watch(() => visible.value, (newVal) => {
+    if (newVal !== props.modelValue) {
+        emit('update:modelValue', newVal)
+    }
+})
 
 // 路由实例
 const router = useRouter()
 const route = useRoute()
 
 // 状态变量
-const visible = ref(props.modelValue)
 const photoId = ref(props.initialPhotoId || '')
 const photoIds = ref<string[]>([])
 const showGroupInfo = ref(false)
@@ -121,26 +149,6 @@ const updateUrlWithGroupParams = (showPreview: boolean, groupId: string | null =
         query: query
     })
 }
-
-// 监听 modelValue 变化
-watch(() => props.modelValue, (newVal) => {
-    visible.value = newVal
-    if (newVal) {
-        // 如果是显示组件，更新URL
-        updateUrlWithGroupParams(true, props.groupId, photoId.value)
-    } else {
-        // 如果是隐藏组件，清除URL参数
-        updateUrlWithGroupParams(false)
-    }
-})
-
-// 监听 visible 变化
-watch(visible, (newVal) => {
-    emit('update:modelValue', newVal)
-    if (!newVal) {
-        updateUrlWithGroupParams(false)
-    }
-})
 
 // 加载组图数据
 const loadGroupData = async () => {
@@ -205,14 +213,6 @@ const closeFullScreen = () => {
     updateUrlWithGroupParams(true, props.groupId, photoId.value)
 }
 
-// 更新visible状态
-const updateVisible = (val: boolean) => {
-    visible.value = val
-    if (!val) {
-        updateUrlWithGroupParams(false)
-    }
-}
-
 // 切换组图信息显示状态
 const toggleGroupInfo = () => {
     showGroupInfo.value = !showGroupInfo.value
@@ -220,7 +220,7 @@ const toggleGroupInfo = () => {
 
 // 组件挂载时加载数据
 onMounted(() => {
-    if (visible.value) {
+    if (props.modelValue) {
         loadGroupData()
         
         // 检查URL中是否有全屏查看的参数
@@ -236,7 +236,7 @@ onMounted(() => {
 
 // 监听 groupId 变化
 watch(() => props.groupId, () => {
-    if (visible.value) {
+    if (props.modelValue) {
         loadGroupData()
     }
 })

@@ -1,12 +1,11 @@
 <template>
-    <el-dialog v-model="visible" width="80%" top="5vh" align-center class="preview-dialog" @open="handleOpen"
-        @close="handleClose">
+    <el-dialog v-model="visible" width="80%" top="5vh" align-center class="preview-dialog" @close="handleClose">
         <div class="dialog-content">
             <!-- 左侧图片区域 -->
             <div class="image-container">
                 <el-image :src="thumbnailUrl" fit="contain" class="preview-image" v-loading="isLoading"
                     element-loading-text="正在加载图片..." element-loading-background="rgba(0, 0, 0, 0.8)"
-                    @click="$emit('image-click', photoId)">
+                    @click="openFullScreen">
                 </el-image>
             </div>
 
@@ -35,8 +34,7 @@
                         <span v-if="previewData.aperture">光圈：{{ previewData.aperture }}</span>
                         <span v-if="previewData.shutter"> 快门：{{ previewData.shutter }}</span>
                         <span v-if="previewData.iso"> ISO：{{ previewData.iso }}</span>
-                        <span
-                            v-if="!previewData.aperture && !previewData.shutter && !previewData.iso">未知</span>
+                        <span v-if="!previewData.aperture && !previewData.shutter && !previewData.iso">未知</span>
                     </el-descriptions-item>
                     <el-descriptions-item label="级别">
                         <el-tag v-if="previewData.start === 1" :type="'warning'">精选</el-tag>
@@ -47,21 +45,32 @@
                 </el-descriptions>
             </div>
         </div>
+        <PhotoViewer v-model="showFullScreen" :photo-id="props.photoId" />
     </el-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onUnmounted } from 'vue'
+import { ref, watch, onUnmounted, onMounted } from 'vue'
 import { ElDialog, ElImage, ElDescriptions, ElDescriptionsItem, ElTag } from 'element-plus'
 import { get1000KPhoto, getPhotoDetailInfo, type EnhancedWaterfallItem } from '@/utils/photo'
+import PhotoViewer from '@/components/PhotoViewer.vue'
 
 const props = defineProps<{
-    photoId: string
+    photoId: string,
+    modelValue: boolean
 }>()
 
-const emit = defineEmits(['close', 'image-click'])
+const emit = defineEmits(['update:modelValue'])
 
-const visible = ref(false)
+// 添加打开全屏预览的方法
+const showFullScreen = ref(false)
+const openFullScreen = () => {
+    showFullScreen.value = true;
+}
+const closeFullScreen = () => {
+    showFullScreen.value = false;
+}
+
 const thumbnailUrl = ref('')
 const previewData = ref<EnhancedWaterfallItem>({
     id: "",
@@ -81,12 +90,30 @@ const previewData = ref<EnhancedWaterfallItem>({
 })
 
 const isLoading = ref(false)
+const visible = ref(false)
 
-// 打开对话框时获取数据
-const handleOpen = async () => {
-    visible.value = true
+// 监听 modelValue 的变化
+watch(() => props.modelValue, (newVal) => {
+    visible.value = newVal
+    if (newVal) {
+        // 每次打开时都重新加载数据
+        loadData()
+    }
+})
+
+// 监听 dialogVisible 的变化
+watch(() => visible.value, (newVal) => {
+    if (newVal !== props.modelValue) {
+        emit('update:modelValue', newVal)
+    }
+})
+
+// 加载数据
+const loadData = async () => {
+    if (!props.photoId) return
+
     isLoading.value = true
-    
+
     try {
         const imageResult = await get1000KPhoto(props.photoId, (loading) => isLoading.value = loading)
         if (imageResult) {
@@ -105,20 +132,19 @@ const handleOpen = async () => {
     }
 }
 
-// 监听visible变化，确保关闭对话框时清理资源
-watch(visible, (newVal) => {
-    if (!newVal) {
-        handleClose()
-    }
-})
+// 不再需要这个监听，因为我们在modelValue变化时已经处理了加载
+// watch(() => props.photoId, (newVal) => {
+//     if (newVal) {
+//         loadData()
+//     }
+// }, { immediate: true })
 
 const handleClose = () => {
     if (thumbnailUrl.value) {
         URL.revokeObjectURL(thumbnailUrl.value)
         thumbnailUrl.value = ''
     }
-    
-    visible.value = false
+
     previewData.value = {
         id: "",
         fileName: "",
@@ -135,7 +161,7 @@ const handleClose = () => {
         introduce: "",
         start: 0,
     }
-    emit('close')
+    emit('update:modelValue', false)
 }
 
 // 组件卸载时确保清理资源
@@ -208,4 +234,4 @@ onUnmounted(() => {
         width: 100%;
     }
 }
-</style> 
+</style>

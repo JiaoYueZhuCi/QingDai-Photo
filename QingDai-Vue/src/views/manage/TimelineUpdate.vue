@@ -1,5 +1,5 @@
 <template>
-    <el-dialog v-model="dialogVisible" title="添加时间轴" width="600px" :before-close="handleClose">
+    <el-dialog v-model="visible" title="添加时间轴" width="600px" :before-close="handleClose">
         <el-form :model="form" :rules="rules" ref="formRef" label-width="120px">
             <el-form-item label="时间" prop="time">
                 <el-date-picker 
@@ -58,14 +58,14 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'timeline-added']);
 
 // 本地的对话框可见性控制
-const dialogVisible = ref(false);
+const visible = ref(false);
 
 // 同步内外部的状态
 watch(() => props.modelValue, (val) => {
-    dialogVisible.value = val;
+    visible.value = val;
 });
 
-watch(dialogVisible, (val) => {
+watch(visible, (val) => {
     emit('update:modelValue', val);
 });
 
@@ -104,7 +104,7 @@ const submitForm = async () => {
                 
                 ElMessage.success('添加成功')
                 resetForm()
-                dialogVisible.value = false
+                visible.value = false
                 emit('timeline-added')
             } catch (error) {
                 console.error('添加失败:', error)
@@ -127,7 +127,7 @@ const handleClose = (done: () => void) => {
 }
 
 defineExpose({
-    dialogVisible
+    visible
 })
 </script>
 

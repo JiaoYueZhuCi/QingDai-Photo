@@ -36,10 +36,10 @@
         </div>
 
         <!-- 组图预览对话框 -->
-        <group-film-preview v-if="selectedPhotoId" 
+        <group-film-preview 
+            v-model="groupFilmPreviewVisable"
             :group-id="selectedGroupId"
             :initial-photo-id="selectedPhotoId || undefined" 
-            :model-value="!!selectedPhotoId"
             @close="closeGroupPhotoPreview" />
     </div>
 </template>
@@ -63,16 +63,18 @@ const props = defineProps<{
 }>()
 const selectedGroupId = ref<string>(props.meteorologyType.toString())
 const selectedPhotoId = ref<string | undefined>(undefined)
-
+const groupFilmPreviewVisable = ref(false)
 
 // 打开照片预览
 const handleImageClick = (photo: EnhancedWaterfallItem) => {
     selectedPhotoId.value = photo.id
+    groupFilmPreviewVisable.value = true
 }
 
 // 关闭组图预览
 const closeGroupPhotoPreview = () => {
     selectedPhotoId.value = undefined
+    groupFilmPreviewVisable.value = false
 }
 
 // 滚动透明度控制

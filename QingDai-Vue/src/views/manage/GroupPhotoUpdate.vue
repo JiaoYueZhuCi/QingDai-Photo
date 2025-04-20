@@ -1,5 +1,5 @@
 <template>
-    <el-dialog v-model="dialogVisible" :title="editMode ? '编辑组图' : '创建组图'" top="5vh" width="87%"
+    <el-dialog v-model="visible" :title="editMode ? '编辑组图' : '创建组图'" top="5vh" width="87%"
         :before-close="handleClose">
         <el-form :model="form" :rules="rules" ref="formRef" label-width="120px">
             <el-form-item label="标题" prop="groupPhoto.title">
@@ -74,10 +74,8 @@
     </el-dialog>
 </template>
 
-
-
 <script setup lang="ts">
-import { ref, reactive, watch, defineProps, defineEmits, defineExpose } from 'vue'
+import { ref, reactive, watch, defineProps, defineEmits, onMounted } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import { getPhotosByPage } from '@/api/photo'
@@ -87,7 +85,6 @@ import type { GroupPhotoDTO, GroupPhoto } from '@/types/groupPhoto'
 import { DeleteFilled, Rank } from '@element-plus/icons-vue'
 import draggable from 'vuedraggable'
 import { get100KPhotos, processPhotoData } from '@/utils/photo'
-import { clearPhotoDB } from '@/utils/indexedDB'
 
 // 定义props和emit用于支持v-model
 const props = defineProps({
@@ -105,48 +102,21 @@ const props = defineProps({
     }
 });
 
-const emit = defineEmits(['update:modelValue', 'group-photo-added', 'group-photo-updated']);
+const emit = defineEmits(['group-photo-added', 'group-photo-updated','update:modelValue']);
 
 // 本地的对话框可见性控制
-const dialogVisible = ref(false);
+const visible = ref(false);
 
-// 处理拖拽结束事件
-const onDragEnd = () => {
-    // 当拖拽导致封面照片ID不在当前列表中时自动调整
-    if (!form.photoIds.includes(form.groupPhoto.coverPhotoId)) {
-        form.groupPhoto.coverPhotoId = form.photoIds[form.photoIds.length - 1] || ''
-    }
-}
-
-// 同步内外部的状态
-watch(() => props.modelValue, (val) => {
-    dialogVisible.value = val;
-    if (val && props.editMode && props.editData) {
-        // 编辑模式下，填充表单数据
-        form.groupPhoto = props.editData.groupPhoto
-        form.photoIds = props.editData.photoIds;
-
-        // 保存原始数据用于重置
-        originalData.value = {
-            groupPhoto: { ...form.groupPhoto },
-            photoIds: [...form.photoIds]
-        };
-
-    } else if (val && !props.editMode) {
-        // 新建模式下，清空表单
-        form.groupPhoto = {
-            id: '',
-            title: '',
-            introduce: '',
-            coverPhotoId: '',
-        };
-        form.photoIds = [];
-        originalData.value = null;
-    }
+// 监听 modelValue 变化
+watch(() => props.modelValue, (newVal) => {
+    visible.value = newVal;
 });
 
-watch(dialogVisible, (val) => {
-    emit('update:modelValue', val);
+// 监听对话框可见性状态变化
+watch(() => visible.value, (newVal) => {
+  if (newVal !== props.modelValue) {
+    emit('update:modelValue', newVal);
+  }
 });
 
 const formRef = ref<FormInstance>();
@@ -160,7 +130,6 @@ const form = reactive({
         coverPhotoId: '',
     },
     photoIds: [] as string[],
-
 });
 
 const rules = reactive<FormRules>({
@@ -172,6 +141,53 @@ const rules = reactive<FormRules>({
         { type: 'array', required: true, message: '请至少选择一张照片', trigger: 'change' }
     ]
 });
+
+// 添加原始数据引用
+const originalData = ref<{
+    groupPhoto: GroupPhoto,
+    photoIds: string[],
+} | null>(null);
+
+// 同步内外部的状态
+watch(() => props.editMode, (newEditMode) => {
+    if (newEditMode && props.editData) {
+        // 编辑模式下，填充表单数据
+        form.groupPhoto = { ...props.editData.groupPhoto };
+        form.photoIds = [...props.editData.photoIds];
+
+        // 保存原始数据用于重置
+        originalData.value = {
+            groupPhoto: { ...props.editData.groupPhoto },
+            photoIds: [...props.editData.photoIds]
+        };
+    } else if (!newEditMode) {
+        // 新建模式下，清空表单
+        form.groupPhoto = {
+            id: '',
+            title: '',
+            introduce: '',
+            coverPhotoId: '',
+        };
+        form.photoIds = [];
+        originalData.value = null;
+    }
+}, { immediate: true });
+
+// 单独监听editData的变化
+watch(() => props.editData, (newEditData) => {
+    if (props.editMode && newEditData) {
+        form.groupPhoto = { ...newEditData.groupPhoto };
+        form.photoIds = [...newEditData.photoIds];
+    }
+}, { immediate: true });
+
+// 处理拖拽结束事件
+const onDragEnd = () => {
+    // 当拖拽导致封面照片ID不在当前列表中时自动调整
+    if (!form.photoIds.includes(form.groupPhoto.coverPhotoId)) {
+        form.groupPhoto.coverPhotoId = form.photoIds[form.photoIds.length - 1] || ''
+    }
+}
 
 // 照片选择相关
 interface PhotoOptionItem extends WaterfallItem {
@@ -299,16 +315,17 @@ const submitForm = async () => {
                     await updateGroupPhoto(formData);
                     ElMessage.success('更新组图成功');
                     emit('group-photo-updated');
+                    emit('update:modelValue', false);
                 } else {
                     // 新建模式
                     await addGroupPhoto(formData);
                     ElMessage.success('创建组图成功');
                     emit('group-photo-added');
+                    emit('update:modelValue', false);
                 }
 
                 
                 resetForm();
-                dialogVisible.value = false;
             } catch (error) {
                 console.error(props.editMode ? '更新组图失败:' : '创建组图失败:', error);
                 ElMessage.error(props.editMode ? '更新组图失败' : '创建组图失败');
@@ -318,12 +335,6 @@ const submitForm = async () => {
         }
     });
 };
-
-// 添加原始数据引用
-const originalData = ref<{
-    groupPhoto: GroupPhoto,
-    photoIds: string[],
-} | null>(null);
 
 // 重置表单
 const resetForm = () => {
@@ -347,22 +358,17 @@ const resetForm = () => {
     }
 };
 
-// 关闭对话框
-const handleClose = (done: () => void) => {
-    resetForm();
-    done();
+// 处理关闭
+const handleClose = () => {
+    visible.value = false;
 };
 
-// 组件挂载时获取照片列表
-watch(dialogVisible, (val) => {
-    if (val) {
-        fetchPhotos();
-    }
+// 组件挂载时设置初始值
+onMounted(() => {
+    visible.value = props.modelValue;
+  fetchPhotos();
 });
 
-defineExpose({
-    dialogVisible
-});
 </script>
 
 <style scoped>

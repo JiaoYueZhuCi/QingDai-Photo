@@ -9,23 +9,23 @@
             </el-table-column>
             <el-table-column prop="title" label="标题" width="180">
                 <template #default="scope">
-                    <span>{{ scope.row.title || '无标题' }}</span>
+                    <span>{{ scope.row.groupPhoto.title || '无标题' }}</span>
                 </template>
             </el-table-column>
             <el-table-column prop="introduce" label="介绍">
                 <template #default="scope">
-                    <span>{{ scope.row.introduce || '无介绍' }}</span>
+                    <span>{{ scope.row.groupPhoto.introduce || '无介绍' }}</span>
                 </template>
             </el-table-column>
             <el-table-column prop="photoCount" label="照片数量" width="100">
                 <template #default="scope">
-                    {{ scope.row.photosArray ? scope.row.photosArray.length : 0 }}
+                    {{ scope.row.photoIds ? scope.row.photoIds.length : 0 }}
                 </template>
             </el-table-column>
             <el-table-column label="操作" width="180" fixed="right">
                 <template #default="scope">
                     <div>
-                        <el-button size="small" @click="handleManagePhotos(scope.row)">管理照片</el-button>
+                        <el-button size="small" @click="handleManagePhotos(scope.row)">管理组图</el-button>
                         <el-button size="small" type="danger" @click="handleDelete(scope.row)">删除</el-button>
                     </div>
                     
@@ -42,12 +42,12 @@
         </div>
 
         <GroupPhotoUpdate 
-            v-model="groupPhotoDialogVisible" 
-            ref="groupPhotoUpdateRef" 
+            v-model="groupPhotoDialogVisible"
             :edit-mode="editMode"
             :edit-data="currentEditData"
             @group-photo-added="fetchData" 
             @group-photo-updated="fetchData" 
+            @close="closeGroupPhotoUpdate"
         />
 
         <div class="pagination-wrapper">
@@ -57,8 +57,8 @@
         </div>
 
         <!-- 组图预览组件 -->
-        <group-photo-preview
-            v-if="selectedGroupId !== null"
+        <GroupPhotoPreview
+            v-model="previewVisible"
             :group-id="selectedGroupId || ''"
             :initial-photo-id="selectedPhotoId || undefined"
             @close="closeGroupPhotoPreview"
@@ -76,7 +76,6 @@ import GroupPhotoUpdate from '@/views/manage/GroupPhotoUpdate.vue'
 import GroupPhotoPreview from '@/components/GroupPhotoPreview.vue'
 import { get100KPhotos, type EnhancedWaterfallItem } from '@/utils/photo'
 
-const groupPhotoUpdateRef = ref()
 const groupPhotoDialogVisible = ref(false)
 const editMode = ref(false)
 const currentEditData = ref<GroupPhotoDTO | null>(null)
@@ -89,13 +88,42 @@ const total = ref(0)
 // 组图预览相关
 const selectedGroupId = ref<string | null>(null)
 const selectedPhotoId = ref<string | null>(null)
+const previewVisible = ref(false)
 
+// 打开组图预览
+const openPreview = (item: GroupPhotoDTO) => {
+    selectedGroupId.value = item.groupPhoto.id;
+    selectedPhotoId.value = item.groupPhoto.coverPhotoId; 
+    previewVisible.value = true;
+}
+
+// 关闭组图预览
+const closeGroupPhotoPreview = () => {
+    selectedGroupId.value = null
+    selectedPhotoId.value = null
+    previewVisible.value = false
+}
+
+// 编辑组图
+const handleManagePhotos = (row: any) => {
+    editMode.value = true
+    currentEditData.value = row;
+    groupPhotoDialogVisible.value = true
+}
+
+// 添加组图
 const showGroupPhotoAdd = () => {
     editMode.value = false
     currentEditData.value = null
     groupPhotoDialogVisible.value = true
 }
 
+// 关闭组图编辑
+const closeGroupPhotoUpdate = () => {
+    groupPhotoDialogVisible.value = false
+}
+
+// 获取组图数据
 const fetchData = async () => {
   try {
     const response = await getAllGroupPhotos();
@@ -104,7 +132,7 @@ const fetchData = async () => {
       tableData.value = response.map((item: GroupPhotoDTO) => ({
         ...item,
         isEditing: false,
-        coverImage: ''
+        coverImage: '',
       }));
 
       // 获取所有封面图ID对应的项
@@ -186,24 +214,9 @@ const handleDelete = async (row: any) => {
     }
 }
 
-// 照片预览
-const openPreview = (item: GroupPhotoDTO) => {
-    selectedGroupId.value = item.groupPhoto.id;
-    selectedPhotoId.value = item.groupPhoto.coverPhotoId; 
-}
 
-// 关闭组图预览
-const closeGroupPhotoPreview = () => {
-    selectedGroupId.value = null
-    selectedPhotoId.value = null
-}
 
-// 管理照片
-const handleManagePhotos = (row: any) => {
-    editMode.value = true
-    currentEditData.value = row;
-    groupPhotoDialogVisible.value = true
-}
+
 </script>
 
 <style scoped>

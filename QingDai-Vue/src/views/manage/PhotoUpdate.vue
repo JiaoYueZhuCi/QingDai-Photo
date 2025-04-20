@@ -1,10 +1,10 @@
 <template>
-    <div class="upload-container" v-if="dialogVisible">
-        <el-dialog v-model="dialogVisible" width="972px">
-            <div class="dialog-content" v-loading="uploadLoading" :loading-text="'上传中，请稍候...'" element-loading-background="rgba(0, 0, 0, 0.8)">
+        <el-dialog v-model="visible" width="972px" @close="handleClose">
+            <div class="dialog-content" v-loading="uploadLoading" :loading-text="'上传中，请稍候...'"
+                element-loading-background="rgba(0, 0, 0, 0.8)">
                 <span class="uploadD">
-                    <el-upload class="upload" drag :auto-upload="false" :on-change="uploadFile" :disabled="uploadLoading"
-                        :show-file-list="false" multiple accept="image/jpeg, image/png">
+                    <el-upload class="upload" drag :auto-upload="false" :on-change="uploadFile"
+                        :disabled="uploadLoading" :show-file-list="false" multiple accept="image/jpeg, image/png">
                         <el-icon class="el-icon--upload"><upload-filled /></el-icon>
                         <div class="el-upload__text">
                             点击或拖拽照片到此处上传
@@ -54,48 +54,43 @@
                 </div>
             </div>
         </el-dialog>
-    </div>
 </template>
 
 <script setup lang="ts">
 import { ElMessage } from 'element-plus';
 import { UploadFilled, Delete } from '@element-plus/icons-vue'
-import { ref, defineProps, defineEmits, watch, defineExpose } from 'vue';
+import { ref, defineProps, defineEmits, watch, defineExpose, onMounted } from 'vue';
 import { processPhotosFromFrontend } from '@/api/photo';
 import { clearPhotoDB } from '@/utils/indexedDB';
 
-// 定义props和emit用于支持v-model
-const props = defineProps({
-    modelValue: {
-        type: Boolean,
-        default: false
-    }
+const visible = ref(false)
+const props = defineProps<{
+    modelValue: boolean
+}>()
+
+const emit = defineEmits(['photo-uploaded','update:modelValue'])
+
+// 监听 modelValue 变化
+watch(() => props.modelValue, (newVal) => {
+    visible.value = newVal;
 });
 
-const emit = defineEmits(['update:modelValue']);
-
-// 本地的对话框可见性控制
-const dialogVisible = ref(false);
-const startValue = ref(0); // 默认值为0
-
-// 同步内外部的状态
-watch(() => props.modelValue, (val) => {
-    dialogVisible.value = val;
+// 监听对话框可见性状态变化
+watch(() => visible.value, (newVal) => {
+  if (newVal !== props.modelValue) {
+    emit('update:modelValue', newVal);
+  }
 });
 
-watch(dialogVisible, (val) => {
-    emit('update:modelValue', val);
+// 组件挂载时设置初始值
+onMounted(() => {
+    visible.value = props.modelValue;
 });
+
+const startValue = ref(0); 
 
 const uploadLoading = ref(false);
-
-// 暴露给父组件的属性和方法
-defineExpose({ 
-    dialogVisible
-});
-
 const previewUrls = ref<string[]>([]);
-
 const fileList = ref<any[]>([]);
 
 const handleRemove = (index: number) => {
@@ -107,7 +102,7 @@ const handleRemove = (index: number) => {
 const uploadFile = (file: any) => {
     const allowedExtensions = ['jpg', 'jpeg', 'png'];
     const fileExtension = file.name.split('.').pop().toLowerCase();
-    
+
     if (!allowedExtensions.includes(fileExtension) || !file.raw.type.startsWith('image/')) {
         ElMessage.error('仅支持 JPG/JPEG/PNG 格式的图片文件');
         return false;
@@ -116,6 +111,7 @@ const uploadFile = (file: any) => {
     previewUrls.value.push(URL.createObjectURL(file.raw));
     fileList.value.push(file.raw);
     return false; // 阻止自动上传
+
 };
 
 const clearFileList = () => {
@@ -124,6 +120,11 @@ const clearFileList = () => {
     });
     fileList.value = [];
     previewUrls.value = [];
+};
+
+const handleClose = () => {
+    clearFileList();
+    visible.value = false;
 };
 
 const handleSubmit = async () => {
@@ -145,7 +146,7 @@ const handleSubmit = async () => {
         await clearPhotoDB();
         ElMessage.success(`成功上传照片`);
         fileList.value = [];
-        dialogVisible.value = false;
+        emit('photo-uploaded');
     } catch (error) {
         console.error('上传失败:', error);
         ElMessage.error('文件上传失败');
@@ -219,19 +220,6 @@ const handleSubmit = async () => {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.upload-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(255, 255, 255, 0.9);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 2000;
-}
-
 .upload {
     width: 560px;
     /* min-height: 400px; */
@@ -239,16 +227,18 @@ const handleSubmit = async () => {
     flex-direction: column;
     justify-content: center;
 }
+
 .submit-area {
     display: flex;
     justify-content: right;
 }
 
-.uploadD{
+.uploadD {
     display: flex;
     justify-content: center;
 }
-.el-upload__tip{
+
+.el-upload__tip {
     display: flex;
     justify-content: center;
 }

@@ -1,9 +1,9 @@
 <template>
     <div class="container" ref="containerRef">
-        <FilmPreview v-model="previewVisible" :photo-id="currentPreviewId" :photo-ids="extractedPhotoIds" @close="handlePreviewClose"
-            @image-click="openFullImg" @navigate="handleNavigate" />
+        <FilmPreview v-model="previewVisible" :photo-id="currentPreviewId" :photo-ids="extractedPhotoIds"
+            @close="handlePreviewClose" @image-click="openFullImg" @navigate="handleNavigate" />
 
-        <PhotoViewer v-if="fullImgShow" :photo-id="currentPreviewId" :initial-index="currentIndex"
+        <PhotoViewer v-model="viewerVisible" :photo-id="currentPreviewId" :initial-index="currentIndex"
             :use-direct-render="true" @close="handleViewerClose" />
 
         <PhotoEditor v-model="editorVisible" :photo-id="currentPreviewId" @updated="handlePhotoUpdated" />
@@ -84,13 +84,13 @@
                                     </div>
                                 </el-popover>
                             </div>
-                            
+
                             <div class="action-icon" @click.stop="openPhotoEditor(item)">
                                 <el-icon class="icon-color">
                                     <Edit />
                                 </el-icon>
                             </div>
-                            
+
                             <div class="action-icon fullscreen-icon" @click.stop="openFullImg(item.id)">
                                 <el-icon class="icon-color">
                                     <FullScreen />
@@ -125,7 +125,7 @@ import { getAllGroupPhotos, updateGroupPhoto } from '@/api/groupPhoto';
 import { debounce } from 'lodash';
 import FilmPreview from "@/components/FilmPreview.vue";
 import PhotoViewer from "@/components/PhotoViewer.vue";
-import PhotoEditor from "@/components/PhotoEditor.vue";
+import PhotoEditor from "@/views/home/PhotoEditor.vue";
 import { get100KPhotos, processPhotoData, type EnhancedWaterfallItem } from '@/utils/photo';
 import type { GroupPhotoDTO } from '@/types/groupPhoto';
 import { useRouter, useRoute } from 'vue-router';
@@ -168,7 +168,7 @@ const getPhotos = async () => {
 
     try {
         let apiEndpoint;
-        
+
         // 根据photoType选择不同的API
         switch (props.photoType) {
             case 0: // 可见照片
@@ -259,7 +259,7 @@ const handleResize = () => {
 onMounted(async () => {
     handleResize();
     await getPhotos();
-    
+
     // 检查URL中是否有photoId或viewerId参数
     if (route.query.photoId) {
         const photoIdFromUrl = route.query.photoId as string;
@@ -267,7 +267,7 @@ onMounted(async () => {
         currentPreviewId.value = photoIdFromUrl;
         // 等待照片加载完成后再打开预览
         // setTimeout(() => {
-            previewVisible.value = true;
+        previewVisible.value = true;
         // }, 500); // 给一点时间让照片加载
     } else if (route.query.viewerId) {
         const viewerIdFromUrl = route.query.viewerId as string;
@@ -280,10 +280,10 @@ onMounted(async () => {
         }
         // 等待照片加载完成后再打开查看器
         setTimeout(() => {
-            fullImgShow.value = true;
+            viewerVisible.value = true;
         }, 500); // 给一点时间让照片加载
     }
-    
+
     window.addEventListener('scroll', handleScroll);
     window.addEventListener('resize', handleResize); // 添加 resize 事件监听
 });
@@ -326,7 +326,7 @@ const handlePreviewClose = () => {
 const updateUrlWithPhotoId = (photoId: string | null) => {
     // 构建新的查询参数对象
     const query = { ...route.query };
-    
+
     if (photoId) {
         query.photoId = photoId;
         // 如果同时打开了全屏查看器，则清除viewerId参数避免冲突
@@ -337,7 +337,7 @@ const updateUrlWithPhotoId = (photoId: string | null) => {
         // 如果photoId为null，则删除该参数
         delete query.photoId;
     }
-    
+
     // 更新路由，保留当前路径，仅修改查询参数
     router.replace({
         path: route.path,
@@ -349,7 +349,7 @@ const updateUrlWithPhotoId = (photoId: string | null) => {
 const updateUrlWithViewerId = (viewerId: string | null) => {
     // 构建新的查询参数对象
     const query = { ...route.query };
-    
+
     if (viewerId) {
         query.viewerId = viewerId;
         // 如果同时有预览窗口打开，则清除photoId参数避免冲突
@@ -360,7 +360,7 @@ const updateUrlWithViewerId = (viewerId: string | null) => {
         // 如果viewerId为null，则删除该参数
         delete query.viewerId;
     }
-    
+
     // 更新路由，保留当前路径，仅修改查询参数
     router.replace({
         path: route.path,
@@ -430,12 +430,12 @@ const calculateLayout = () => {
     rows.value = rowsData;
 };
 
-const fullImgShow = ref(false);
+const viewerVisible = ref(false);
 const currentIndex = ref(0);
 
 const openFullImg = (id: string) => {
     currentPreviewId.value = id;
-    fullImgShow.value = true;
+    viewerVisible.value = true;
     // 查找当前索引
     const index = images.value.findIndex(img => img.id === id);
     if (index !== -1) {
@@ -447,7 +447,7 @@ const openFullImg = (id: string) => {
 
 // 处理PhotoViewer关闭
 const handleViewerClose = () => {
-    fullImgShow.value = false;
+    viewerVisible.value = false;
     // 清除URL中的viewerId参数
     updateUrlWithViewerId(null);
 };
@@ -609,7 +609,7 @@ const handlePhotoUpdated = (updatedPhoto: any) => {
 
 .actions-container {
     display: flex;
-    flex-wrap: wrap; 
+    flex-wrap: wrap;
     justify-content: left;
     gap: 8px;
     width: 100%;
@@ -680,11 +680,11 @@ const handlePhotoUpdated = (updatedPhoto: any) => {
     .container-in {
         padding: 4px 0;
     }
-    
+
     .actions-container {
         gap: 4px;
     }
-    
+
     .action-icon {
         padding: 3px;
     }

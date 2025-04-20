@@ -25,11 +25,10 @@
         </div>
 
         <!-- 组图预览组件 -->
-        <group-film-preview
-            v-if="selectedGroupId !== null"
+        <GroupFilmPreview
+            v-model="groupFilmPreviewVisable"
             :group-id="selectedGroupId || ''"
             :initial-photo-id="selectedPhotoId || undefined"
-            :model-value="!!selectedGroupId"
             @close="closeGroupPhotoPreview"
         />
     </div>
@@ -56,6 +55,7 @@ const route = useRoute();
 // 添加新的状态保存选中的组图和照片
 const selectedGroupId = ref<string | null>(null);
 const selectedPhotoId = ref<string | null>(null);
+const groupFilmPreviewVisable = ref(false);
 
 // 更新URL中的组图ID和照片ID参数
 const updateUrlWithGroupId = (groupId: string | null, photoId: string | null = null) => {
@@ -94,6 +94,7 @@ const openGroupPhotoPreview = (item: WaterfallItem) => {
     if (groupId) {
         selectedGroupId.value = groupId;
         selectedPhotoId.value = item.id;
+        groupFilmPreviewVisable.value = true;
         // 更新URL
         updateUrlWithGroupId(groupId, item.id);
     } else {
@@ -106,6 +107,7 @@ const openGroupPhotoPreview = (item: WaterfallItem) => {
 const closeGroupPhotoPreview = () => {
     selectedGroupId.value = null;
     selectedPhotoId.value = null;
+    groupFilmPreviewVisable.value = false;
     // 清除URL参数
     updateUrlWithGroupId(null);
 };

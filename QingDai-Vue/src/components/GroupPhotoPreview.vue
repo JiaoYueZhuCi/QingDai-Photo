@@ -1,6 +1,6 @@
 <template>
     <el-dialog v-model="visible" width="80%" top="5vh" align-center class="preview-dialog" :close-on-click-modal="true"
-        :before-close="handleClose" @open="handleOpen" @close="handleClose">
+        :before-close="handleClose" @open="handleOpen" @close="handleClose" >
         <div class="dialog-content">
             <!-- 左侧图片区域 -->
             <div class="image-container">
@@ -110,8 +110,8 @@
                     </div>
                 </div>
             </div>
-        </div>
-        <PhotoViewer v-if="showFullScreen" :photo-id="fullScreenPhotoId" @close="closeFullScreen" />
+        </div> 
+        <PhotoViewer v-model="showFullScreen" :photo-id="fullScreenPhotoId" @close="closeFullScreen" />
     </el-dialog>
 </template>
 
@@ -125,16 +125,42 @@ import { getGroupPhoto } from '@/api/groupPhoto'
 import PhotoViewer from '@/components/PhotoViewer.vue'
 import { get1000KPhoto, getPhotoDetailInfo, type EnhancedWaterfallItem } from '@/utils/photo'
 
+const visible = ref(false);
+
 const props = defineProps<{
+    modelValue: boolean;
     groupId: string;
     initialPhotoId?: string;
     photos?: WaterfallItem[];
 }>()
 
-const emit = defineEmits(['close'])
+const emit = defineEmits(['close', 'update:modelValue'])
+
+// 监听 modelValue 变化
+watch(() => props.modelValue, (newVal) => {
+    visible.value = newVal;
+    if (newVal && photoIds.value.length === 0) {
+        handleOpen();
+    }
+});
+
+// 监听 visible 变化
+watch(() => visible.value, (newVal) => {
+    if (newVal !== props.modelValue) {
+        emit('update:modelValue', newVal);
+    }
+});
+
+// 组件挂载时设置初始值
+onMounted(() => {
+    visible.value = props.modelValue;
+    if (visible.value && photoIds.value.length === 0) {
+        handleOpen();
+    }
+    window.addEventListener('keydown', handleKeyDown);
+});
 
 // 对话框状态
-const visible = ref(true)
 const thumbnailUrl = ref('')
 const isLoading = ref(false)
 const activeTab = ref('group')
@@ -264,6 +290,7 @@ const handleClose = () => {
         URL.revokeObjectURL(thumbnailUrl.value)
         thumbnailUrl.value = ''
     }
+    visible.value = false;
     emit('close')
 }
 
@@ -283,36 +310,6 @@ const handleKeyDown = (e: KeyboardEvent) => {
     }
 }
 
-// 组件挂载时自动打开对话框和添加键盘监听
-onMounted(() => {
-    // 延迟设置visible为true，确保DOM完全挂载
-    setTimeout(() => {
-        visible.value = true;
-
-        // 延迟后立即调用打开处理函数，以防对话框未触发open事件
-        setTimeout(() => {
-            if (photoIds.value.length === 0) {
-                handleOpen();
-            }
-        }, 100);
-    }, 0);
-
-    window.addEventListener('keydown', handleKeyDown);
-})
-
-// 监听visible变化
-watch(visible, (newVal) => {
-    if (!newVal) {
-        // 当对话框关闭时，通知父组件
-        handleClose();
-    }
-})
-
-// 组件卸载时移除键盘监听
-onUnmounted(() => {
-    window.removeEventListener('keydown', handleKeyDown)
-})
-
 // 添加打开全屏预览的方法
 const openFullScreen = async () => {
     if (!photoIds.value[currentPhotoIndex.value]) return;
@@ -322,14 +319,17 @@ const openFullScreen = async () => {
 
 // 添加关闭全屏预览的方法
 const closeFullScreen = () => {
-    showFullScreen.value = false;
     fullScreenPhotoId.value = '';
 }
+
+// 组件卸载时移除键盘监听
+onUnmounted(() => {
+    window.removeEventListener('keydown', handleKeyDown)
+})
+
 </script>
 
 <style scoped>
-
-
 :deep(.el-tabs__item) {
     padding: 0 10px !important;
 }
@@ -417,7 +417,7 @@ const closeFullScreen = () => {
     flex: 0 0 320px;
     display: flex;
     flex-direction: column;
-    overflow:scroll;
+    overflow: scroll;
 }
 
 .description-content {

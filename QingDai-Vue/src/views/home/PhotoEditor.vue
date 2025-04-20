@@ -1,6 +1,6 @@
 <template>
   <el-dialog
-    v-model="dialogVisible"
+    v-model="visible"
     title="编辑照片信息"
     width="70%"
     :before-close="handleClose"
@@ -112,33 +112,35 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, reactive } from 'vue';
+import { ref, watch, reactive, onMounted } from 'vue';
 import { ElMessage, ElDialog, ElButton, ElForm, ElFormItem, ElInput, ElSelect, ElOption, ElImage, ElIcon } from 'element-plus';
 import { Star, StarFilled, Picture } from '@element-plus/icons-vue';
 import { getPhotoDetailInfo, processPhotoData, type EnhancedWaterfallItem, get100KPhoto } from '@/utils/photo';
 import { updatePhotoInfo } from '@/api/photo';
 
 const props = defineProps<{
-  photoId: string,
-  modelValue: boolean
+  modelValue: boolean;
+  photoId: string
 }>();
 
-const emit = defineEmits(['update:modelValue', 'updated']);
+const emit = defineEmits(['updated','update:modelValue']);
 
-// 对话框显示状态
-const dialogVisible = ref(props.modelValue);
+// 内部对话框可见性状态
+const visible = ref(false);
 
-// 监听props.modelValue变化
-watch(() => props.modelValue, (val) => {
-  dialogVisible.value = val;
-  if (val) {
+// 监听 modelValue 变化
+watch(() => props.modelValue, (newVal) => {
+  visible.value = newVal;
+  if (newVal && props.photoId) {
     loadPhotoData();
   }
 });
 
-// 监听dialogVisible变化
-watch(() => dialogVisible.value, (val) => {
-  emit('update:modelValue', val);
+// 监听对话框可见性状态变化
+watch(() => visible.value, (newVal) => {
+  if (newVal !== props.modelValue) {
+    emit('update:modelValue', newVal);
+  }
 });
 
 // 照片信息
@@ -148,7 +150,6 @@ const imageLoading = ref(false);
 
 // 表单数据
 const form = reactive({
-  id: '',
   title: '',
   introduce: '',
   start: 0,
@@ -156,62 +157,73 @@ const form = reactive({
   lens: '',
   aperture: '',
   shutter: '',
-  iso: '',
-  fileName: '',
-  author: '',
-  width: 0,
-  height: 0,
-  time: ''
+  iso: ''
 });
 
 // 加载照片数据
 const loadPhotoData = async () => {
+  if (!props.photoId) return;
+  
+  imageLoading.value = true;
   try {
-    console.log(props.photoId);
-    
-    // 加载照片基本信息
-    const data = await getPhotoDetailInfo(props.photoId);
-    if (data) {
-      photoInfo.value = processPhotoData(data);
+    const photoData = await getPhotoDetailInfo(props.photoId);
+    if (photoData) {
+      photoInfo.value = photoData;
       
-      // 填充表单
-      form.id = data.id;
-      form.title = data.title || '';
-      form.introduce = data.introduce || '';
-      form.start = data.start !== undefined ? data.start : 0;
-      form.camera = data.camera || '';
-      form.lens = data.lens || '';
-      form.aperture = data.aperture || '';
-      form.shutter = data.shutter || '';
-      form.iso = data.iso || '';
-      form.fileName = data.fileName || '';
-      form.author = data.author || '';
-      form.width = data.width || 0;
-      form.height = data.height || 0;
-      form.time = data.time || '';
+      // 填充表单数据
+      form.title = photoData.title || '';
+      form.introduce = photoData.introduce || '';
+      form.start = photoData.start || 0;
+      form.camera = photoData.camera || '';
+      form.lens = photoData.lens || '';
+      form.aperture = photoData.aperture || '';
+      form.shutter = photoData.shutter || '';
+      form.iso = photoData.iso || '';
       
-      // 加载照片缩略图
-      const photo = await get100KPhoto(data.id, (loading) => {
-        imageLoading.value = loading;
-      });
-      
-      if (photo) {
-        photoInfo.value.compressedSrc = photo.url;
+      // 加载缩略图
+      const thumbnailResult = await get100KPhoto(props.photoId);
+      if (thumbnailResult) {
+        photoInfo.value.compressedSrc = thumbnailResult.url;
       }
     }
   } catch (error) {
-    console.error('获取照片详情失败:', error);
-    ElMessage.error('获取照片详情失败');
-    handleClose();
+    console.error('加载照片数据失败:', error);
+    ElMessage.error('加载照片数据失败');
+  } finally {
+    imageLoading.value = false;
   }
+};
+
+// 监听photoId变化
+watch(() => props.photoId, (newVal, oldVal) => {
+  if (newVal !== oldVal && newVal && visible.value) {
+    loadPhotoData();
+  }
+});
+
+// 组件挂载时加载数据
+onMounted(() => {
+  visible.value = props.modelValue;
+  if (props.photoId && visible.value) {
+    loadPhotoData();
+  }
+});
+
+// 处理关闭
+const handleClose = () => {
+  emit('updated', photoInfo.value);
+  visible.value = false;
 };
 
 // 提交表单
 const submitForm = async () => {
+  if (!props.photoId) return;
+  
   submitting.value = true;
   try {
+    // 更新照片信息
     await updatePhotoInfo({
-      id: form.id,
+      id: props.photoId,
       title: form.title,
       introduce: form.introduce,
       start: form.start,
@@ -220,27 +232,34 @@ const submitForm = async () => {
       aperture: form.aperture,
       shutter: form.shutter,
       iso: form.iso,
-      fileName: form.fileName,
-      author: form.author,
-      width: form.width,
-      height: form.height,
-      time: form.time
+      fileName: photoInfo.value.fileName || '',
+      author: photoInfo.value.author || '',
+      width: photoInfo.value.width || 0,
+      height: photoInfo.value.height || 0,
+      time: photoInfo.value.time || ''
     });
     
-    ElMessage.success('更新照片信息成功');
-    emit('updated', form); // 发送更新成功事件
+    // 更新本地数据
+    photoInfo.value = {
+      ...photoInfo.value,
+      title: form.title,
+      introduce: form.introduce,
+      start: form.start,
+      camera: form.camera,
+      lens: form.lens,
+      aperture: form.aperture,
+      shutter: form.shutter,
+      iso: form.iso
+    };
+    
+    ElMessage.success('保存成功');
     handleClose();
   } catch (error) {
-    console.error('更新照片信息失败:', error);
-    ElMessage.error('更新照片信息失败');
+    console.error('保存失败:', error);
+    ElMessage.error('保存失败');
   } finally {
     submitting.value = false;
   }
-};
-
-// 关闭对话框
-const handleClose = () => {
-  dialogVisible.value = false;
 };
 </script>
 

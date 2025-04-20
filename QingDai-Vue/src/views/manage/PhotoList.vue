@@ -127,9 +127,9 @@
             </el-button>
         </div>
 
-        <PhotoUpdate v-model="photoUploadVisible" ref="photoUpdateRef" @photo-uploaded="fetchData" />
+        <PhotoUpdate v-model="photoUploadVisible" ref="photoUpdateRef" @photo-uploaded="fetchData"/>
 
-        <PhotoPreview v-model="previewVisible" :photo-id="currentPreviewId" @close="previewVisible = false"/>
+        <PhotoPreview v-model="previewVisible" :photo-id="currentPreviewId"/>
 
         <div class="pagination-wrapper">
             <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize"
@@ -259,8 +259,8 @@ const handleDelete = async (row: EnhancedWaterfallItem) => {
 
 // 打开预览
 const openPreview = (item: WaterfallItem) => {
-    currentPreviewId.value = item.id;
     previewVisible.value = true;
+    currentPreviewId.value = item.id;
 }
 
 // 初始加载
