@@ -1,4 +1,11 @@
-## 项目结构
+# QingDai青黛
+
+## 项目简介
+
+- QingDai青黛是一个基于Vue 3 + TypeScript + Spring Boot + MySQL + Redis的Web应用，主要用于展示和管理照片的个人主页。
+- 现已上线qingdai.art
+
+## 项目结构 
 
 本项目由三个主要模块组成：
 
@@ -15,17 +22,29 @@
 
 - **目录结构**：
   ```
-  src/
-  ├── api/        # 接口封装
-  ├── assets/     # 静态资源
-  ├── components/ # 通用组件 (根据类型使用扁平目录结构)
-  ├── data/       # 静态数据  
-  ├── router/     # 路由配置
-  ├── stores/     # Pinia状态管理
-  ├── types/      # TS类型定义
-  ├── utils/      # 工具函数
-  ├── views/      # 页面组件 (根据引用结构使用层级目录结构)
-  └── main.ts     # 入口文件
+  ├── pubic/
+        ├── img/                           
+            └── introduce     
+                ├── avatar.jpg             # 头像
+                └── background.jpg         # 背景图                    
+        └── favicon.ico                    # 图标        
+  ├── src/
+        ├── api/                           # 接口封装
+        ├── assets/                        # 静态资源
+            └── main.css                   # 全局css(包含主题色)
+        ├── components/                    # 通用组件(根据类型使用扁平目录结构)
+        ├── data/                          # 静态数据  
+        ├── router/                        # 路由配置
+        ├── stores/                        # Pinia状态管理
+        ├── types/                         # TS类型定义
+        ├── utils/                         # 工具函数
+        ├── views/                         # 页面组件(根据引用结构使用层级目录结构)
+        └── main.ts                        # 入口文件
+  ├── App.vue
+  ├── index.html
+  ├── package.json
+  ├── tsconfig.json
+  └── vite.config.ts
   ```
 
 
@@ -43,17 +62,27 @@
 
 - **包结构**：
   ```
-  src/main/java/
-  ├── config/                   # 配置类
-  ├── controller/               # REST API
-  ├── entity/                   # 数据库实体
-  │   └── dto/                  # 
-  ├── filter/                   #   
-  ├── mapper/                   # MyBatis接口
-  ├── service/                  # 业务逻辑
-  │   └── impl/                 # 服务实现
-  ├── utils/                    # 工具类
-  └── QingDaiSpApplication.java # 启动类
+  src
+    ├── main
+        ├── java/come/qingdai
+            ├── config/                   # 配置类
+            ├── controller/               # REST API
+            ├── entity/                   # 数据库实体
+            │   └── dto/                  # DTO 
+            ├── filter/                   # 过滤器   
+            ├── mapper/                   # MyBatis接口
+            ├── service/                  # 业务逻辑
+            │   └── impl/                 # 服务实现
+            ├── utils/                    # 工具类
+            └── QingDaiSpApplication.java # 启动类
+        └── resources
+            ├── mapper/                   # MyBatis映射文件   
+            ├── static/                   # 静态资源 
+            ├── application-dev.yml       # 开发环境配置
+            ├── application-prod.yml      # 生产环境配置
+            ├── application.yaml          # 默认配置
+            └── application.yml           # 默认配置    
+    └── test                              # 测试类
   ```
 
 
@@ -223,8 +252,4 @@ create table sys_user_role
     constraint sys_user_role_sys_user_id_fk
         foreign key (user_id) references sys_user (id)
 );
-
-
-
-
 ```
