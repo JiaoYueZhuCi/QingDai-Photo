@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.time.YearMonth;
 import java.time.Year;
 import java.util.List;
+import java.util.Map;
 
 public interface PhotoService extends IService<Photo> {
 
@@ -68,6 +69,36 @@ public interface PhotoService extends IService<Photo> {
      * @return 处理结果，包含更新和新增的图片列表
      */
     ProcessResult processPhotosFromFrontend(MultipartFile[] files, Integer start, boolean overwrite);
+
+    /**
+     * 验证数据库中的照片文件是否都存在于文件系统中
+     * @return 包含验证结果的Map，包括总照片数、缺失原图数、缺失100K压缩图数、缺失1000K压缩图数及详细信息
+     */
+    Map<String, Object> validatePhotoExistence();
+
+    /**
+     * 验证文件系统中的照片是否都存在于数据库中
+     * @param fullSizeUrl 原图目录路径
+     * @param thumbnail100KUrl 100K压缩图目录路径
+     * @param thumbnail1000KUrl 1000K压缩图目录路径
+     * @return 包含验证结果的Map，包括各目录文件数、数据库照片数及不在数据库中的文件列表
+     */
+    Map<String, Object> validateFileSystemPhotos(String fullSizeUrl, String thumbnail100KUrl, String thumbnail1000KUrl);
+
+    /**
+     * 删除文件系统中存在但数据库中没有记录的图片
+     * @param fullSizeUrl 原图目录路径
+     * @param thumbnail100KUrl 100K压缩图目录路径
+     * @param thumbnail1000KUrl 1000K压缩图目录路径
+     * @return 包含删除结果的Map，包括删除的文件数量及详情
+     */
+    Map<String, Object> deletePhotosNotInDatabase(String fullSizeUrl, String thumbnail100KUrl, String thumbnail1000KUrl);
+
+    /**
+     * 删除丢失了全部三种图片文件(原图、100K和1000K)的数据库记录
+     * @return 包含删除结果的Map，包括删除的记录数量及详情
+     */
+    Map<String, Object> deleteMissingPhotoRecords();
 
     /**
      * 处理结果类

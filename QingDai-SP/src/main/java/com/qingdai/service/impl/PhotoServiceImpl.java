@@ -41,6 +41,9 @@ import java.nio.file.Files;
 import java.util.List;
 import java.util.Collections;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Set;
 
 /**
  * <p>
@@ -394,9 +397,46 @@ public class PhotoServiceImpl extends ServiceImpl<PhotoMapper, Photo> implements
         // 使 photoDate 向前八个小时 矫正时区错误
         if (photoDate != null) {
             photoDate = new Date(photoDate.getTime() - 8 * 60 * 60 * 1000);
+            photo.setTime(DateUtils.formatDateTime(photoDate));
+            return;
         }
-        Optional.ofNullable(photoDate)
-                .ifPresent(date -> photo.setTime(DateUtils.formatDateTime(date)));
+
+        // 如果无法从EXIF获取时间，尝试从文件名解析
+        String fileName = photo.getFileName();
+        if (fileName != null) {
+            // 尝试匹配格式：20250318-095601-DSC_2046.jpg
+            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("^(\\d{8})-(\\d{6})");
+            java.util.regex.Matcher matcher = pattern.matcher(fileName);
+            if (matcher.find()) {
+                String dateStr = matcher.group(1);
+                String timeStr = matcher.group(2);
+                try {
+                    // 解析日期和时间
+                    java.text.SimpleDateFormat dateFormat = new java.text.SimpleDateFormat("yyyyMMddHHmmss");
+                    Date parsedDate = dateFormat.parse(dateStr + timeStr);
+                    photo.setTime(DateUtils.formatDateTime(parsedDate));
+                    return;
+                } catch (java.text.ParseException e) {
+                    // 解析失败，继续尝试其他格式
+                }
+            }
+
+            // 尝试匹配格式：20240505-DSC_4929.jpg
+            pattern = java.util.regex.Pattern.compile("^(\\d{8})");
+            matcher = pattern.matcher(fileName);
+            if (matcher.find()) {
+                String dateStr = matcher.group(1);
+                try {
+                    // 解析日期，时间设为00:00:00
+                    java.text.SimpleDateFormat dateFormat = new java.text.SimpleDateFormat("yyyyMMdd");
+                    Date parsedDate = dateFormat.parse(dateStr);
+                    photo.setTime(DateUtils.formatDateTime(parsedDate));
+                    return;
+                } catch (java.text.ParseException e) {
+                    // 解析失败，不设置时间
+                }
+            }
+        }
     }
 
     // 存储相机拍摄参数
@@ -559,5 +599,306 @@ public class PhotoServiceImpl extends ServiceImpl<PhotoMapper, Photo> implements
             log.error("处理图片时发生错误: {}", e.getMessage(), e);
             return new ProcessResult(Collections.emptyList(), Collections.emptyList(), false);
         }
+    }
+
+    @Override
+    public Map<String, Object> validatePhotoExistence() {
+        log.info("开始验证数据库照片在文件系统中的存在性");
+        List<Photo> allPhotos = list();
+        
+        Map<String, Object> result = new HashMap<>();
+        
+        if (allPhotos.isEmpty()) {
+            log.warn("数据库中没有照片记录");
+            result.put("message", "数据库中没有照片记录");
+            return result;
+        }
+        
+        int totalCount = allPhotos.size();
+        int missingFullSize = 0;
+        int missing100K = 0;
+        int missing1000K = 0;
+        List<String> missingDetails = new ArrayList<>();
+        
+        for (Photo photo : allPhotos) {
+            String fileName = photo.getFileName();
+            boolean fullSizeMissing = false;
+            boolean thumbnail100KMissing = false;
+            boolean thumbnail1000KMissing = false;
+            
+            // 检查原图
+            File fullSizeFile = new File(fullSizeUrl, fileName);
+            if (!fullSizeFile.exists()) {
+                missingFullSize++;
+                fullSizeMissing = true;
+                log.debug("照片ID:{}的原图文件缺失，文件名:{}", photo.getId(), fileName);
+            }
+            
+            // 检查100K压缩图
+            File thumbnail100KFile = new File(thumbnail100KUrl, fileName);
+            if (!thumbnail100KFile.exists()) {
+                missing100K++;
+                thumbnail100KMissing = true;
+                log.debug("照片ID:{}的100K压缩图文件缺失，文件名:{}", photo.getId(), fileName);
+            }
+            
+            // 检查1000K压缩图
+            File thumbnail1000KFile = new File(thumbnail1000KUrl, fileName);
+            if (!thumbnail1000KFile.exists()) {
+                missing1000K++;
+                thumbnail1000KMissing = true;
+                log.debug("照片ID:{}的1000K压缩图文件缺失，文件名:{}", photo.getId(), fileName);
+            }
+            
+            // 如果有任何一个文件缺失，添加到详情列表
+            if (fullSizeMissing || thumbnail100KMissing || thumbnail1000KMissing) {
+                missingDetails.add(String.format("ID:%s,文件名:%s,原图缺失:%b,100K缺失:%b,1000K缺失:%b", 
+                    photo.getId(), fileName, fullSizeMissing, thumbnail100KMissing, thumbnail1000KMissing));
+            }
+        }
+        
+        result.put("totalCount", totalCount);
+        result.put("missingFullSize", missingFullSize);
+        result.put("missing100K", missing100K);
+        result.put("missing1000K", missing1000K);
+        result.put("missingDetails", missingDetails);
+        
+        log.info("验证完成，总照片数:{}, 缺失原图:{}, 缺失100K压缩图:{}, 缺失1000K压缩图:{}", 
+            totalCount, missingFullSize, missing100K, missing1000K);
+        
+        return result;
+    }
+    
+    @Override
+    public Map<String, Object> validateFileSystemPhotos(String fullSizeUrl, String thumbnail100KUrl, String thumbnail1000KUrl) {
+        log.info("开始验证文件系统中照片在数据库中的存在性");
+        Map<String, Object> result = new HashMap<>();
+        
+        // 获取所有目录下的文件
+        File fullSizeDir = new File(fullSizeUrl);
+        File thumbnail100KDir = new File(thumbnail100KUrl);
+        File thumbnail1000KDir = new File(thumbnail1000KUrl);
+        
+        // 验证目录
+        if (!fullSizeDir.exists() || !fullSizeDir.isDirectory() ||
+            !thumbnail100KDir.exists() || !thumbnail100KDir.isDirectory() ||
+            !thumbnail1000KDir.exists() || !thumbnail1000KDir.isDirectory()) {
+            log.error("无法访问一个或多个照片目录");
+            result.put("error", "无法访问照片目录");
+            return result;
+        }
+        
+        File[] fullSizeFiles = fullSizeDir.listFiles();
+        File[] thumbnail100KFiles = thumbnail100KDir.listFiles();
+        File[] thumbnail1000KFiles = thumbnail1000KDir.listFiles();
+        
+        if (fullSizeFiles == null || thumbnail100KFiles == null || thumbnail1000KFiles == null) {
+            log.error("无法列出一个或多个照片目录中的文件");
+            result.put("error", "无法列出目录文件");
+            return result;
+        }
+        
+        // 获取数据库中所有照片文件名
+        List<Photo> allPhotos = list();
+        Set<String> dbPhotoNames = allPhotos.stream()
+                .map(Photo::getFileName)
+                .collect(Collectors.toSet());
+        
+        // 检查原图目录
+        List<String> fullSizeNotInDb = Arrays.stream(fullSizeFiles)
+                .filter(f -> !f.isDirectory() && fileIsSupportedPhoto(f))
+                .map(File::getName)
+                .filter(name -> !dbPhotoNames.contains(name))
+                .peek(name -> log.debug("原图文件:{}不在数据库中", name))
+                .collect(Collectors.toList());
+        
+        // 检查100K压缩图目录
+        List<String> thumbnail100KNotInDb = Arrays.stream(thumbnail100KFiles)
+                .filter(f -> !f.isDirectory() && fileIsSupportedPhoto(f))
+                .map(File::getName)
+                .filter(name -> !dbPhotoNames.contains(name))
+                .peek(name -> log.debug("100K压缩文件:{}不在数据库中", name))
+                .collect(Collectors.toList());
+        
+        // 检查1000K压缩图目录
+        List<String> thumbnail1000KNotInDb = Arrays.stream(thumbnail1000KFiles)
+                .filter(f -> !f.isDirectory() && fileIsSupportedPhoto(f))
+                .map(File::getName)
+                .filter(name -> !dbPhotoNames.contains(name))
+                .peek(name -> log.debug("1000K压缩文件:{}不在数据库中", name))
+                .collect(Collectors.toList());
+        
+        result.put("fullSizeCount", fullSizeFiles.length);
+        result.put("thumbnail100KCount", thumbnail100KFiles.length);
+        result.put("thumbnail1000KCount", thumbnail1000KFiles.length);
+        result.put("dbPhotoCount", dbPhotoNames.size());
+        result.put("fullSizeNotInDb", fullSizeNotInDb);
+        result.put("thumbnail100KNotInDb", thumbnail100KNotInDb);
+        result.put("thumbnail1000KNotInDb", thumbnail1000KNotInDb);
+        
+        log.info("验证完成，原图目录文件数:{}, 100K压缩图目录文件数:{}, 1000K压缩图目录文件数:{}, 数据库照片数:{}, " +
+                "原图不在数据库中:{}, 100K压缩图不在数据库中:{}, 1000K压缩图不在数据库中:{}",
+                fullSizeFiles.length, thumbnail100KFiles.length, thumbnail1000KFiles.length, dbPhotoNames.size(),
+                fullSizeNotInDb.size(), thumbnail100KNotInDb.size(), thumbnail1000KNotInDb.size());
+        
+        return result;
+    }
+
+    @Override
+    public Map<String, Object> deletePhotosNotInDatabase(String fullSizeUrl, String thumbnail100KUrl, String thumbnail1000KUrl) {
+        log.info("开始删除文件系统中数据库没有记录的照片");
+        Map<String, Object> result = new HashMap<>();
+        
+        // 先验证文件系统中的文件
+        Map<String, Object> validateResult = validateFileSystemPhotos(fullSizeUrl, thumbnail100KUrl, thumbnail1000KUrl);
+        
+        // 如果验证过程中出现错误，直接返回错误信息
+        if (validateResult.containsKey("error")) {
+            log.error("验证文件系统照片失败，无法执行删除操作");
+            result.put("error", "验证失败，无法执行删除操作");
+            return result;
+        }
+        
+        // 从验证结果中获取不在数据库中的文件列表
+        @SuppressWarnings("unchecked")
+        List<String> fullSizeNotInDb = (List<String>) validateResult.getOrDefault("fullSizeNotInDb", new ArrayList<String>());
+        
+        @SuppressWarnings("unchecked")
+        List<String> thumbnail100KNotInDb = (List<String>) validateResult.getOrDefault("thumbnail100KNotInDb", new ArrayList<String>());
+        
+        @SuppressWarnings("unchecked")
+        List<String> thumbnail1000KNotInDb = (List<String>) validateResult.getOrDefault("thumbnail1000KNotInDb", new ArrayList<String>());
+        
+        int deletedFullSize = 0;
+        int deleted100K = 0;
+        int deleted1000K = 0;
+        List<String> deletedFiles = new ArrayList<>();
+        List<String> errorFiles = new ArrayList<>();
+        
+        // 删除原图目录中的文件
+        for (String fileName : fullSizeNotInDb) {
+            try {
+                File file = new File(fullSizeUrl, fileName);
+                if (file.delete()) {
+                    deletedFullSize++;
+                    deletedFiles.add("原图: " + fileName);
+                    log.debug("已删除原图文件: {}", fileName);
+                } else {
+                    errorFiles.add("原图删除失败: " + fileName);
+                    log.warn("删除原图文件失败: {}", fileName);
+                }
+            } catch (Exception e) {
+                errorFiles.add("原图删除异常: " + fileName);
+                log.error("删除原图文件时发生异常: {}, 错误: {}", fileName, e.getMessage(), e);
+            }
+        }
+        
+        // 删除100K压缩图目录中的文件
+        for (String fileName : thumbnail100KNotInDb) {
+            try {
+                File file = new File(thumbnail100KUrl, fileName);
+                if (file.delete()) {
+                    deleted100K++;
+                    deletedFiles.add("100K压缩图: " + fileName);
+                    log.debug("已删除100K压缩图文件: {}", fileName);
+                } else {
+                    errorFiles.add("100K压缩图删除失败: " + fileName);
+                    log.warn("删除100K压缩图文件失败: {}", fileName);
+                }
+            } catch (Exception e) {
+                errorFiles.add("100K压缩图删除异常: " + fileName);
+                log.error("删除100K压缩图文件时发生异常: {}, 错误: {}", fileName, e.getMessage(), e);
+            }
+        }
+        
+        // 删除1000K压缩图目录中的文件
+        for (String fileName : thumbnail1000KNotInDb) {
+            try {
+                File file = new File(thumbnail1000KUrl, fileName);
+                if (file.delete()) {
+                    deleted1000K++;
+                    deletedFiles.add("1000K压缩图: " + fileName);
+                    log.debug("已删除1000K压缩图文件: {}", fileName);
+                } else {
+                    errorFiles.add("1000K压缩图删除失败: " + fileName);
+                    log.warn("删除1000K压缩图文件失败: {}", fileName);
+                }
+            } catch (Exception e) {
+                errorFiles.add("1000K压缩图删除异常: " + fileName);
+                log.error("删除1000K压缩图文件时发生异常: {}, 错误: {}", fileName, e.getMessage(), e);
+            }
+        }
+        
+        // 整理删除结果
+        result.put("deletedFullSize", deletedFullSize);
+        result.put("deleted100K", deleted100K);
+        result.put("deleted1000K", deleted1000K);
+        result.put("totalDeleted", deletedFullSize + deleted100K + deleted1000K);
+        result.put("deletedFiles", deletedFiles);
+        result.put("errorFiles", errorFiles);
+        
+        log.info("删除完成，删除原图: {}, 删除100K压缩图: {}, 删除1000K压缩图: {}, 总删除文件: {}, 错误文件: {}", 
+            deletedFullSize, deleted100K, deleted1000K, 
+            deletedFullSize + deleted100K + deleted1000K, errorFiles.size());
+        
+        return result;
+    }
+
+    @Override
+    public Map<String, Object> deleteMissingPhotoRecords() {
+        log.info("开始删除丢失了全部三种图片的数据库记录");
+        Map<String, Object> result = new HashMap<>();
+        
+        // 先验证数据库照片在文件系统中的存在性
+        Map<String, Object> validateResult = validatePhotoExistence();
+        
+        if (!validateResult.containsKey("missingDetails")) {
+            log.error("验证数据库照片失败，无法执行删除操作");
+            result.put("error", "验证失败，无法执行删除操作");
+            return result;
+        }
+        
+        @SuppressWarnings("unchecked")
+        List<String> missingDetails = (List<String>) validateResult.get("missingDetails");
+        
+        List<String> deletedRecords = new ArrayList<>();
+        List<String> errorRecords = new ArrayList<>();
+        int totalDeleted = 0;
+        
+        // 遍历所有缺失记录
+        for (String detail : missingDetails) {
+            // 解析缺失记录详情
+            // 格式是: "ID:123,文件名:xxx.jpg,原图缺失:true,100K缺失:true,1000K缺失:true"
+            try {
+                String idStr = detail.substring(detail.indexOf("ID:") + 3, detail.indexOf(","));
+                boolean fullSizeMissing = detail.contains("原图缺失:true");
+                boolean thumbnail100KMissing = detail.contains("100K缺失:true");
+                boolean thumbnail1000KMissing = detail.contains("1000K缺失:true");
+                
+                // 只有当三种图片都缺失时才删除记录
+                if (fullSizeMissing && thumbnail100KMissing && thumbnail1000KMissing) {
+                    long id = Long.parseLong(idStr);
+                    if (removeById(id)) {
+                        deletedRecords.add(detail);
+                        totalDeleted++;
+                        log.info("已删除缺失全部三种图片的数据库记录，ID: {}", id);
+                    } else {
+                        errorRecords.add(detail + " - 删除失败");
+                        log.error("删除数据库记录失败，ID: {}", id);
+                    }
+                }
+            } catch (Exception e) {
+                errorRecords.add(detail + " - 异常: " + e.getMessage());
+                log.error("处理缺失记录时发生异常: {}, 详情: {}", e.getMessage(), detail, e);
+            }
+        }
+        
+        result.put("totalDeleted", totalDeleted);
+        result.put("deletedRecords", deletedRecords);
+        result.put("errorRecords", errorRecords);
+        
+        log.info("删除操作完成，总共删除{}条记录", totalDeleted);
+        
+        return result;
     }
 }

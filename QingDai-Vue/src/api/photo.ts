@@ -145,3 +145,40 @@ export const getPhotosByIds = async (ids: string[]): Promise<WaterfallItem[]> =>
     params: { ids: ids.join(',') }
   });
 };
+
+// 开发者方法----------------------------------------------------------------------
+export const fullSizePhotoToMysql = async (): Promise<any> => {
+  return await request.post(`${BASE_URL}/fullSizePhotoToMysql`);
+};
+
+export const thumbnailImages = async (maxSizeKB: number = 1024, overwrite: boolean = false): Promise<any> => {
+  return await request.get(`${BASE_URL}/thumbnailImages`, {
+    params: { maxSizeKB, overwrite }
+  });
+};
+
+export const processPendingPhotos = async (overwrite: boolean = false): Promise<any> => {
+  return await request.get(`${BASE_URL}/processPendingPhotos`, {
+    params: { overwrite }
+  });
+};
+
+// 验证数据库照片在文件系统中的存在性
+export const validatePhotoExistence = async (): Promise<any> => {
+  return await request.get(`${BASE_URL}/validatePhotoExistence`);
+};
+
+// 验证文件系统照片在数据库中的存在性
+export const validateFileSystemPhotos = async (): Promise<any> => {
+  return await request.get(`${BASE_URL}/validateFileSystemPhotos`);
+};
+
+// 删除数据库中没有记录的照片
+export const deletePhotosNotInDatabase = async (): Promise<any> => {
+  return await request.delete(`${BASE_URL}/deletePhotosNotInDatabase`);
+};
+
+// 删除丢失了全部三种图片的数据库记录
+export const deleteMissingPhotoRecords = async (): Promise<any> => {
+  return await request.delete(`${BASE_URL}/deleteMissingPhotoRecords`);
+};

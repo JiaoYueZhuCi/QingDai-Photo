@@ -145,7 +145,8 @@ import PhotoPreview from '@/components/photo/PhotoPreview.vue'
 import { ref, watchEffect } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Upload } from '@element-plus/icons-vue'
-import { getPhotosByPage, updatePhotoInfo, deletePhotoById, updatePhotoStartStatus } from '@/api/photo'
+import { getPhotosByPage, updatePhotoInfo, deletePhotoById, getVisiblePhotosByPage } from '@/api/photo'
+import { getRolesPermissions } from '@/api/user'
 import type { PhotoResponse } from '@/api/photo'
 import { get100KPhotos, processPhotoData, type EnhancedWaterfallItem } from '@/utils/photo'
 import type { WaterfallItem } from '@/types'
@@ -159,23 +160,48 @@ const editOriginData = ref<Record<string, EnhancedWaterfallItem>>({})
 const currentPage = ref(1)
 const pageSize = ref(50)
 const total = ref(0)
+const userRole = ref('')
 
 // 预览相关
 const previewVisible = ref(false)
 const currentPreviewId = ref('')
 
-// 打开照片上传对话框
-const showPhotoUpload = () => {
-    photoUploadVisible.value = true
-}
+// 获取用户角色
+const fetchUserRole = async () => {
+    try {
+        const response = await getRolesPermissions();
+        // 优先判断是否有ADMIN角色
+        if (response.roles.includes('ADMIN')) {
+            userRole.value = 'ADMIN';
+        } else if (response.roles.includes('VIEWER')) {
+            userRole.value = 'VIEWER';
+        } else {
+            userRole.value = response.roles[0]; // 如果没有，则使用第一个角色
+        }
+    } catch (error) {
+        console.error('获取用户角色失败:', error);
+        ElMessage.error('获取用户角色失败');
+    }
+};
 
 // 获取照片列表数据
 const fetchData = async () => {
     try {
-        const response: PhotoResponse = await getPhotosByPage({
-            page: currentPage.value,
-            pageSize: pageSize.value
-        });
+        let response: PhotoResponse;
+        
+        if (userRole.value === 'ADMIN') {
+            response = await getPhotosByPage({
+                page: currentPage.value,
+                pageSize: pageSize.value
+            });
+            ElMessage.success('显示所有照片');
+        } else {
+            response = await getVisiblePhotosByPage({
+                page: currentPage.value,
+                pageSize: pageSize.value
+            });
+            ElMessage.info('仅显示可见照片');
+        }
 
         // 使用工具函数处理数据
         const processedData = response.records.map(item => 
@@ -263,9 +289,15 @@ const openPreview = (item: WaterfallItem) => {
     currentPreviewId.value = item.id;
 }
 
+// 打开照片上传对话框
+const showPhotoUpload = () => {
+    photoUploadVisible.value = true
+}
+
 // 初始加载
-watchEffect(() => {
-    fetchData();
+watchEffect(async () => {
+    await fetchUserRole();
+    await fetchData();
 });
 </script>
 

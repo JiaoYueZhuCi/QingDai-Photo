@@ -50,7 +50,7 @@ public class UserController {
     private PasswordEncoder passwordEncoder;
     @Autowired
     private JwtTokenUtil jwtTokenUtil;
- // 雪花算法生成器
+    // 雪花算法生成器
     private final SnowflakeIdGenerator idGenerator = new SnowflakeIdGenerator(1, 1);
 
     // 用户列表查询
@@ -100,7 +100,8 @@ public class UserController {
             userDTO.setPassword(encode);
 
             LocalDateTime nowWithZone = DateUtils.getLocalDateTime();
-            User user = new User(idGenerator.nextId(), userDTO.getUsername(), userDTO.getPassword(), (byte) 1, nowWithZone, nowWithZone);
+            User user = new User(idGenerator.nextId(), userDTO.getUsername(), userDTO.getPassword(), (byte) 1,
+                    nowWithZone, nowWithZone);
             boolean isSaved = userService.save(user);
             if (isSaved) {
                 log.info("用户注册成功，用户名: {}", user.getUsername());
@@ -173,19 +174,23 @@ public class UserController {
     // 开发环境方法 只用于校验token信息
     @Operation(summary = "获取当前用户信息", description = "通过JWT令牌获取用户详情")
     @GetMapping("/info")
-    // @PreAuthorize("permitAll()")
-    @PreAuthorize("denyAll()")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserInfoDTO> getUserInfo(
-            @RequestHeader(value = "Authorization", required = false) String authorization) {
+            @RequestParam(value = "testToken", required = false) String tokenParam) {
         try {
-            if (authorization == null || !authorization.startsWith("Bearer ")) {
-                log.warn("无效的Authorization头");
+
+            if (tokenParam != null) {
+                // 处理token，如果包含Bearer前缀，则去除
+                log.info("接收到的token: {}", tokenParam);
+            }
+
+            if (tokenParam == null) {
+                log.warn("未提供有效的token");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
             }
 
-            String token = authorization.replace("Bearer ", "");
             try {
-                Jws<Claims> claims = jwtTokenUtil.parseToken(token);
+                Jws<Claims> claims = jwtTokenUtil.parseToken(tokenParam);
                 String username = claims.getBody().getSubject();
                 User user = userService.getByUsername(username);
 
@@ -212,8 +217,8 @@ public class UserController {
         }
     }
 
-    // 根据token获取用户角色及权限
-    @Operation(summary = "根据token获取用户角色及权限", description = "通过JWT令牌获取用户角色及权限信息")
+    // 根据header获取用户角色及权限
+    @Operation(summary = "根据header获取用户角色及权限", description = "通过JWT令牌获取用户角色及权限信息")
     @GetMapping("/roles-permissions")
     @PreAuthorize("permitAll()")
     public ResponseEntity<Map<String, Object>> getRolesAndPermissions(
@@ -250,48 +255,35 @@ public class UserController {
     }
 
     // 用户更新
-    @Operation(summary = "更新用户信息", description = "更新当前登录用户的基本信息")
-    @PutMapping("/info")
-    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "更新用户信息", description = "根据用户ID更新用户信息")
+    @PutMapping("/info/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<User> updateUserInfo(
-            @Parameter(description = "用户更新信息", required = true) @RequestBody UserUpdateDTO userDTO,
-            @RequestHeader(value = "Authorization", required = false) String authorization) {
+            @Parameter(description = "用户ID", required = true) @PathVariable String id,
+            @Parameter(description = "用户更新信息", required = true) @RequestBody UserUpdateDTO userDTO) {
         try {
-            if (authorization == null || !authorization.startsWith("Bearer ")) {
-                log.warn("无效的Authorization头");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            User existingUser = userService.getById(id);
+
+            if (existingUser == null) {
+                log.warn("未找到ID为{}的用户", id);
+                return ResponseEntity.notFound().build();
             }
 
-            String token = authorization.replace("Bearer ", "");
-            try {
-                Jws<Claims> claims = jwtTokenUtil.parseToken(token);
-                String username = claims.getBody().getSubject();
-                User existingUser = userService.getByUsername(username);
+            // 更新用户信息
+            if (userDTO.getUsername() != null) {
+                existingUser.setUsername(userDTO.getUsername());
+            }
+            if (userDTO.getPassword() != null) {
+                existingUser.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+            }
 
-                if (existingUser == null) {
-                    log.warn("未找到用户名为{}的用户", username);
-                    return ResponseEntity.notFound().build();
-                }
-
-                // 更新用户信息
-                if (userDTO.getUsername() != null) {
-                    existingUser.setUsername(userDTO.getUsername());
-                }
-                if (userDTO.getPassword() != null) {
-                    existingUser.setPassword(passwordEncoder.encode(userDTO.getPassword()));
-                }
-
-                boolean isUpdated = userService.updateById(existingUser);
-                if (isUpdated) {
-                    log.info("成功更新用户信息，用户名: {}", username);
-                    return ResponseEntity.ok(existingUser);
-                } else {
-                    log.error("更新用户信息失败，用户名: {}", username);
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-                }
-            } catch (io.jsonwebtoken.JwtException e) {
-                log.error("JWT Token解析失败: {}", e.getMessage());
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            boolean isUpdated = userService.updateById(existingUser);
+            if (isUpdated) {
+                log.info("成功更新用户信息，用户ID: {}", id);
+                return ResponseEntity.ok(existingUser);
+            } else {
+                log.error("更新用户信息失败，用户ID: {}", id);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
             }
         } catch (Exception e) {
             log.error("更新用户信息时发生错误: {}", e.getMessage(), e);
@@ -299,4 +291,3 @@ public class UserController {
         }
     }
 }
-

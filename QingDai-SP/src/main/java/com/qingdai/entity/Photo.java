@@ -8,6 +8,9 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import com.baomidou.mybatisplus.annotation.FieldFill;
+
+import java.time.LocalDateTime;
 
 @Data
 @TableName("photo")
@@ -56,4 +59,10 @@ public class Photo {
     @TableField(value = "start")
     @Schema(description = "星标")
     private Integer start;
+    @TableField(value = "created_time", fill = FieldFill.INSERT)
+    @Schema(description = "创建时间")
+    private LocalDateTime createdTime;
+    @TableField(value = "updated_time", fill = FieldFill.INSERT_UPDATE)
+    @Schema(description = "更新时间")
+    private LocalDateTime updatedTime;
 }

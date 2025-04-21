@@ -226,3 +226,37 @@ body {
 .el-loading-mask {
     background-color: rgba(0, 0, 0, 0.8) !important;
 }
+
+/* switch样式 */
+.el-switch{
+    --el-switch-on-color: var(--qd-color-primary);
+    --el-switch-off-color: var(--qd-color-primary-light-9);
+}
+
+.el-switch__label.is-active{
+    color: var(--qd-color-primary) !important;
+}
+
+.el-switch__label{
+    color: var(--qd-color-primary-light-3) !important;
+}
+
+/* input-number样式 */
+:deep(.el-input-number__decrease:hover),
+:deep(.el-input-number__increase:hover) {
+  background-color: var(--qd-color-primary-light-8);
+  color: var(--qd-color-primary);
+}
+
+:deep(.el-input-number__decrease:hover:not(.is-disabled) i),
+:deep(.el-input-number__increase:hover:not(.is-disabled) i) {
+  color: var(--qd-color-primary);
+}
+
+:deep(.el-input-number:hover .el-input__wrapper) {
+  box-shadow: 0 0 0 1px var(--qd-color-primary) !important;
+}
+
+:deep(.el-input-number .el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 1px var(--qd-color-primary) !important;
+}

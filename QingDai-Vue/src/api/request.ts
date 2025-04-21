@@ -48,8 +48,7 @@ service.interceptors.response.use(
       return response;
     }
     
-    // 对于其他响应，直接返回数据部分
-    return response.data as T;
+    return response.data;
   },
   (error) => {
     let message = '';
@@ -63,10 +62,16 @@ service.interceptors.response.use(
           message = '请求错误';
           break;
         case 401:
-          message = '未授权，请重新登录';
-          // 清除token并跳转到登录页
-          localStorage.removeItem('token');
-          // window.location.href = '/login';
+          // 检查是否是测试token的请求
+          if (error.config.headers?.['X-Is-Testing-Token']) {
+            // 对于测试token的请求，不显示全局错误消息，也不清除token
+            return Promise.reject(error);
+          } else {
+            message = '未授权，请重新登录';
+            // 清除token并跳转到登录页
+            localStorage.removeItem('token');
+            window.location.href = '/login';
+          }
           break;
         case 403:
           message = '拒绝访问,请重新登录';
@@ -85,7 +90,9 @@ service.interceptors.response.use(
     }
     
     // 显示错误消息
-    ElMessage.error(message);
+    if (message) {
+      ElMessage.error(message);
+    }
     
     return Promise.reject(error);
   }

@@ -231,11 +231,6 @@ const fetchPhotos = async () => {
 
 // 搜索照片
 const searchPhotos = async (query: string) => {
-    if (query === '') {
-        await fetchPhotos();
-        return;
-    }
-
     loading.value = true;
     try {
         const response = await getPhotosByPage({ page: 1, pageSize: 50 });
@@ -364,7 +359,7 @@ const handleClose = () => {
 // 组件挂载时设置初始值
 onMounted(() => {
     visible.value = props.modelValue;
-    fetchPhotos();
+    // 移除自动加载照片的逻辑
 });
 
 </script>

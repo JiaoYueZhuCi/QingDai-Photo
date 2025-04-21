@@ -108,6 +108,10 @@ const router = createRouter({
             {
               path: 'userInfo',
               component: () => import('@/views/manage/user-manage/UserManage.vue').catch(() => errorPage)
+            },
+            {
+              path: 'developer',
+              component: () => import('@/views/manage/develop-manage/DevelopManage.vue').catch(() => errorPage)
             }
           ]
         },
@@ -128,11 +132,13 @@ router.beforeEach(async (to, from, next) => {
       const userRoleResponse = await getRolesPermissions();
       const userRoles = userRoleResponse?.roles || '';
       if (userRoles.includes('ADMIN')) {
-        ElMessage.success("授权访问");
+        ElMessage.success("授权访问管理");
         return next(); // 如果是 ADMIN，继续处理路由
       }
-      // 如果不是ADMIN
-      ElMessage.error("非管理员登陆");
+      if (userRoles.includes('VIEWER')) {
+        ElMessage.success("仅授权查看");
+        return next(); // 如果是 VIEWER，继续处理路由
+      }
       return next('/');
     } catch (error: any) {
       // 检查是否为401错误

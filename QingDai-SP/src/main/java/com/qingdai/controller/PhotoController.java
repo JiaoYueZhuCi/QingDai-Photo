@@ -35,7 +35,10 @@ import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -117,8 +120,7 @@ public class PhotoController {
 
     @GetMapping("/toMysql")
     @Operation(summary = "所有图片信息自动入数据库", description = "所有图片信息自动入数据库")
-    // @PreAuthorize("hasRole('ADMIN')")
-    @PreAuthorize("permitAll()")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> FullSizePhototoMysql() {
         File folder = FileUtils.validateFolder(fullSizeUrl);
         if (folder == null) {
@@ -760,6 +762,82 @@ public class PhotoController {
         } catch (Exception e) {
             log.error("获取气象照片分页信息时发生错误，页码: {}, 每页大小: {}, 错误: {}", page, pageSize, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @GetMapping("/validatePhotoExistence")
+    @Operation(summary = "验证数据库照片文件是否存在", description = "验证数据库记录中的照片是否在原图、100K压缩图和1000K压缩图目录中存在")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Object> validatePhotoExistence() {
+        try {
+            log.info("控制器调用: 验证数据库照片在文件系统中的存在性");
+            Map<String, Object> result = photoService.validatePhotoExistence();
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("验证照片文件存在性时发生错误: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Collections.singletonMap("error", "验证过程中发生错误: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/validateFileSystemPhotos")
+    @Operation(summary = "验证文件系统照片是否存在于数据库", description = "验证文件系统中的照片是否在数据库中有记录")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Object> validateFileSystemPhotos() {
+        try {
+            log.info("控制器调用: 验证文件系统中照片在数据库中的存在性");
+            Map<String, Object> result = photoService.validateFileSystemPhotos(fullSizeUrl, thumbnail100KUrl, thumbnail1000KUrl);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("验证文件系统照片时发生错误: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Collections.singletonMap("error", "验证过程中发生错误: " + e.getMessage()));
+        }
+    }
+    
+    @DeleteMapping("/deletePhotosNotInDatabase")
+    @Operation(summary = "删除数据库中没有记录的照片", description = "删除文件系统中存在但数据库中没有记录的照片文件")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Object> deletePhotosNotInDatabase() {
+        try {
+            log.info("控制器调用: 删除文件系统中数据库没有记录的照片");
+            Map<String, Object> result = photoService.deletePhotosNotInDatabase(fullSizeUrl, thumbnail100KUrl, thumbnail1000KUrl);
+            
+            if (result.containsKey("error")) {
+                log.error("删除操作失败: {}", result.get("error"));
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(result);
+            }
+            
+            log.info("成功删除数据库中没有记录的照片");
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("删除数据库中没有记录的照片时发生错误: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Collections.singletonMap("error", "删除过程中发生错误: " + e.getMessage()));
+        }
+    }
+    
+    @DeleteMapping("/deleteMissingPhotoRecords")
+    @Operation(summary = "删除丢失了全部三种图片的数据库记录", description = "删除数据库中丢失了原图、100K和1000K全部三种图片文件的记录")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Object> deleteMissingPhotoRecords() {
+        try {
+            log.info("控制器调用: 删除丢失了全部三种图片的数据库记录");
+            Map<String, Object> result = photoService.deleteMissingPhotoRecords();
+            
+            if (result.containsKey("error")) {
+                log.error("删除操作失败: {}", result.get("error"));
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(result);
+            }
+            
+            log.info("成功删除丢失了全部三种图片的数据库记录");
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("删除丢失照片记录时发生错误: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Collections.singletonMap("error", "删除过程中发生错误: " + e.getMessage()));
         }
     }
 }

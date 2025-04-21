@@ -68,9 +68,7 @@ public class GroupPhotoPhotoServiceImpl extends ServiceImpl<GroupPhotoPhotoMappe
                 .anyMatch(r -> r.getPhotoId().equals(photoId));
                 
             if (!exists) {
-                GroupPhotoPhoto newRelation = new GroupPhotoPhoto();
-                newRelation.setGroupPhotoId(groupPhotoId);
-                newRelation.setPhotoId(photoId);
+                GroupPhotoPhoto newRelation = new GroupPhotoPhoto(groupPhotoId, photoId);
                 this.save(newRelation);
             }
         }

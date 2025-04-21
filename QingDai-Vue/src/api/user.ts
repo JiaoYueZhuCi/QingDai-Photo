@@ -1,3 +1,4 @@
+import { ElMessage } from 'element-plus';
 import request from './request';
 
 // 基础路径
@@ -40,11 +41,10 @@ export const login = async (data: LoginParams): Promise<LoginResponse> => {
         'Content-Type': 'application/json'
       }
     });
-    
-    console.log('登陆成功:', response);
     return response;
   } catch (error) {
     console.error('登陆失败', error);
+    ElMessage.error('登陆失败');
     throw error;
   }
 };
@@ -76,16 +76,29 @@ export interface UpdateUserInfoParams {
   password: string;
 }
 
-export const updateUserInfo = async (data: UpdateUserInfoParams): Promise<any> => {
+export const updateUserInfo = async (id: string, data: UpdateUserInfoParams): Promise<any> => {
   try {
-    const response = await request.put<any>(`${BASE_URL}/info`, data, {
+    const response = await request.put<any>(`${BASE_URL}/info/${id}`, data);
+    return response;
+  } catch (error) {
+    console.error('更新用户信息失败:', error);
+    throw error;
+  }
+};
+
+export const getUserInfo = async (token: string): Promise<any> => {
+  try {
+    const response = await request.get<any>(`${BASE_URL}/info`, {
+      params: {
+        testToken: token
+      },
       headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`
+        'X-Is-Testing-Token': 'true'
       }
     });
     return response;
   } catch (error) {
-    console.error('更新用户信息失败:', error);
+    console.error('获取用户信息失败:', error);
     throw error;
   }
 };

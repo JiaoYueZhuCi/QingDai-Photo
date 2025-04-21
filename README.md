@@ -3,7 +3,14 @@
 ## 项目简介
 
 - QingDai青黛是一个基于Vue 3 + TypeScript + Spring Boot + MySQL + Redis的Web应用，主要用于展示和管理照片的个人主页
-- 现已上线[qingdai.art](https://qingdai.art)
+- 现已上线: [qingdai.art](https://qingdai.art)
+
+## 使用指南
+- 操作指南
+  - 点击头像进入管理页
+- 注意事项
+  - 请勿随意更改照片文件名与数据库文件名字段
+  - 上传图片首先从元数据读取拍摄时间,读取不到时从文件名读取,要求文件名遵循命名示范：20250318-095601-DSC_2046.jpg
 
 ## 项目结构 
 
@@ -138,63 +145,71 @@ jwt:
   # 密钥
   secret: ?
 ```
+### 推荐图片路径
+```
+  ├── QingDaiPhotos/
+        ├── FullSize/                           
+        ├── Pending/                           
+        ├── Thumbnail/                           
+        ├── Thumbnail-100K/                           
+        └── Thumbnail-1000K/                           
+```
+
 ## 数据库
 
 ### Mysql
+
+#### 表结构
 ```sql
 create table photo
 (
-    id        char(18)     not null comment 'id'
+    id           char(18)                           not null comment 'id'
         primary key,
-    title     varchar(255) null comment '标题',
-    file_name varchar(255) null comment '原图地址',
-    author    varchar(255) null comment '作者',
-    width     int          null comment '原图宽度',
-    height    int          null comment '原图高度',
-    time      varchar(255) null comment '拍摄时间',
-    aperture  varchar(255) null comment '光圈',
-    shutter   varchar(255) null comment '快门',
-    ISO       varchar(255) null comment 'iso',
-    camera    varchar(255) null comment '相机',
-    lens      varchar(255) null comment '镜头',
-    introduce varchar(255) null comment '照片介绍',
-    start     int          null comment '星标'
+    title        varchar(255)                       null comment '标题',
+    file_name    varchar(255)                       null comment '原图地址',
+    author       varchar(255)                       null comment '作者',
+    width        int                                null comment '原图宽度',
+    height       int                                null comment '原图高度',
+    time         varchar(255)                       null comment '拍摄时间',
+    aperture     varchar(255)                       null comment '光圈',
+    shutter      varchar(255)                       null comment '快门',
+    ISO          varchar(255)                       null comment 'iso',
+    camera       varchar(255)                       null comment '相机',
+    lens         varchar(255)                       null comment '镜头',
+    introduce    varchar(255)                       null comment '照片介绍',
+    start        int                                null comment '星标',
+    created_time datetime default CURRENT_TIMESTAMP null comment '创建时间',
+    updated_time datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间'
 );
-create index photo_time_index
-    on photo (time desc);
-    
+
 create table group_photo
 (
-    id           char(18)     not null comment 'id'
+    id           char(18)                           not null comment 'id'
         primary key,
-    title        varchar(255) null comment '标题',
-    introduce    varchar(255) null comment '介绍',
-    coverPhotoId char(18)     null comment '封面图id',
+    title        varchar(255)                       null comment '标题',
+    introduce    varchar(255)                       null comment '介绍',
+    coverPhotoId char(18)                           null comment '封面图id',
+    created_time datetime default CURRENT_TIMESTAMP null comment '创建时间',
+    updated_time datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间',
     constraint group_photo_photo_id_fk
         foreign key (coverPhotoId) references photo (id)
 );
 
 create table group_photo_photo
 (
-    groupPhotoId char(18) null comment '组图id',
-    photoId      char(18) null comment '照片id',
+    groupPhotoId char(18)                           null comment '组图id',
+    photoId      char(18)                           null comment '照片id',
+    created_time datetime default CURRENT_TIMESTAMP null comment '创建时间',
+    updated_time datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间',
     constraint group_photo_photo_group_photo_id_fk
         foreign key (groupPhotoId) references group_photo (id),
     constraint group_photo_photo_photo_id_fk
         foreign key (photoId) references photo (id)
 );
 
-create table timeline
-(
-    id    char(18)     not null comment 'id'
-        primary key,
-    time  varchar(255) null comment '时间',
-    title varchar(255) null comment '标题',
-    text  varchar(255) null comment '正文'
-);
-create index timeline_time_index
-    on timeline (time desc);
-    
+create index photo_time_index
+    on photo (time desc);
+
 create table sys_permission
 (
     id           char(18)                           not null
@@ -202,8 +217,8 @@ create table sys_permission
     code         varchar(100)                       not null,
     name         varchar(50)                        not null,
     description  varchar(200)                       null,
-    created_time datetime default CURRENT_TIMESTAMP null,
-    updated_time datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP,
+    created_time datetime default CURRENT_TIMESTAMP null comment '创建时间',
+    updated_time datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间',
     constraint code
         unique (code)
 );
@@ -214,16 +229,18 @@ create table sys_role
         primary key,
     name         varchar(50)                        not null,
     description  varchar(200)                       null,
-    created_time datetime default CURRENT_TIMESTAMP null,
-    updated_time datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP,
+    created_time datetime default CURRENT_TIMESTAMP null comment '创建时间',
+    updated_time datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间',
     constraint name
         unique (name)
 );
 
 create table sys_role_permission
 (
-    role_id       char(18) not null,
-    permission_id char(18) not null,
+    role_id       char(18)                           not null,
+    permission_id char(18)                           not null,
+    created_time  datetime default CURRENT_TIMESTAMP null comment '创建时间',
+    updated_time  datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间',
     constraint sys_role_permission_sys_permission_id_fk
         foreign key (permission_id) references sys_permission (id),
     constraint sys_role_permission_sys_role_id_fk
@@ -237,19 +254,70 @@ create table sys_user
     username     varchar(50)                        not null,
     password     varchar(100)                       not null,
     status       tinyint  default 1                 null comment '0-禁用, 1-启用',
-    created_time datetime default CURRENT_TIMESTAMP null,
-    updated_time datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP,
+    created_time datetime default CURRENT_TIMESTAMP null comment '创建时间',
+    updated_time datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间',
     constraint username
         unique (username)
 );
 
 create table sys_user_role
 (
-    user_id char(18) not null,
-    role_id char(18) not null,
+    user_id      char(18)                           not null,
+    role_id      char(18)                           not null,
+    created_time datetime default CURRENT_TIMESTAMP null comment '创建时间',
+    updated_time datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间',
     constraint sys_user_role_sys_role_id_fk
         foreign key (role_id) references sys_role (id),
     constraint sys_user_role_sys_user_id_fk
         foreign key (user_id) references sys_user (id)
 );
+
+create table timeline
+(
+    id           char(18)                           not null comment 'id'
+        primary key,
+    time         varchar(255)                       null comment '时间',
+    title        varchar(255)                       null comment '标题',
+    text         varchar(255)                       null comment '正文',
+    created_time datetime default CURRENT_TIMESTAMP null comment '创建时间',
+    updated_time datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间'
+);
+
+create index timeline_time_index
+    on timeline (time desc);
+```
+#### 用户数据
+1. 角色与权限
+   - ADMIN（id=1）拥有权限「照片管理」
+   - VIEWER（id=2）拥有权限「原图浏览」
+   - 通过 sys_role_permission 关联
+
+2. 用户与角色
+   - root用户（id=1）同时拥有 ADMIN 和 VIEWER 角色
+   - viewer用户（id=2）拥有  VIEWER 角色
+   - 通过 sys_user_role 关联
+
+3. 密码说明：
+   - 所有用户密码均为明文 "123456" 的BCrypt加密结果:$2a$10$jndgC.sZFv0volqxQeXdk.NGN.K7Smrko/5UtP33pPVUcQdP0604a（根据配置文件jwt:secret:QingDai）
+
+```sql
+# 权限
+INSERT INTO `qingdai-photo`.sys_permission (id, code, name, description, created_time, updated_time) VALUES ('1', '1', '照片管理', '照片管理', NOW(), NOW());
+INSERT INTO `qingdai-photo`.sys_permission (id, code, name, description, created_time, updated_time) VALUES ('2', '2', '原图浏览', '原图浏览', NOW(), NOW());
+
+# 角色
+INSERT INTO `qingdai-photo`.sys_role (id, name, description, created_time, updated_time) VALUES ('1', 'ADMIN', '管理员', NOW(), NOW());
+INSERT INTO `qingdai-photo`.sys_role (id, name, description, created_time, updated_time) VALUES ('2', 'VIEWER', '访客', NOW(), NOW());
+
+# 角色-权限
+INSERT INTO `qingdai-photo`.sys_role_permission (role_id, permission_id) VALUES ('1', '1');
+INSERT INTO `qingdai-photo`.sys_role_permission (role_id, permission_id) VALUES ('2', '2');
+
+# 用户
+INSERT INTO `qingdai-photo`.sys_user (id, username, password, status, created_time, updated_time) VALUES ('1', 'root', '$2a$10$jndgC.sZFv0volqxQeXdk.NGN.K7Smrko/5UtP33pPVUcQdP0604a', 1, NOW(), NOW());
+INSERT INTO `qingdai-photo`.sys_user (id, username, password, status, created_time, updated_time) VALUES ('2', 'viewer', '$2a$10$jndgC.sZFv0volqxQeXdk.NGN.K7Smrko/5UtP33pPVUcQdP0604a', 1, NOW(), NOW());
+
+# 用户-角色
+INSERT INTO `qingdai-photo`.sys_user_role (user_id, role_id) VALUES ('1', '1');
+INSERT INTO `qingdai-photo`.sys_user_role (user_id, role_id) VALUES ('2', '2');
 ```

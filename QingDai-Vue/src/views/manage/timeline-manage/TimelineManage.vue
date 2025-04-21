@@ -178,7 +178,6 @@ const handleDelete = async (row: any) => {
 
 <style scoped>
 .timeline-list-container {
-    padding: 20px;
     background: #fff;
 }
 
