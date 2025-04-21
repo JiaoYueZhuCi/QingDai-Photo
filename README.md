@@ -2,8 +2,8 @@
 
 ## 项目简介
 
-- QingDai青黛是一个基于Vue 3 + TypeScript + Spring Boot + MySQL + Redis的Web应用，主要用于展示和管理照片的个人主页。
-- 现已上线qingdai.art
+- QingDai青黛是一个基于Vue 3 + TypeScript + Spring Boot + MySQL + Redis的Web应用，主要用于展示和管理照片的个人主页
+- 现已上线[qingdai.art](https://qingdai.art)
 
 ## 项目结构 
 
@@ -60,9 +60,9 @@
   - JWT 认证
   - Swagger/OpenAPI 文档
 
-- **包结构**：
+- **目录结构**：
   ```
-  src
+   src
     ├── main
         ├── java/come/qingdai
             ├── config/                   # 配置类
