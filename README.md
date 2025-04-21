@@ -145,7 +145,7 @@ jwt:
   # 密钥
   secret: ?
 ```
-### 推荐图片路径
+### 推荐图片目录
 ```
   ├── QingDaiPhotos/
         ├── FullSize/                           
@@ -298,7 +298,7 @@ create index timeline_time_index
    - 通过 sys_user_role 关联
 
 3. 密码说明：
-   - 所有用户密码均为明文 "123456" 的BCrypt加密结果:$2a$10$jndgC.sZFv0volqxQeXdk.NGN.K7Smrko/5UtP33pPVUcQdP0604a（根据配置文件jwt:secret:QingDai）
+   - 所有用户密码均为明文 "123456" 的BCrypt加密结果:$2a$10$jndgC.sZFv0volqxQeXdk.NGN.K7Smrko/5UtP33pPVUcQdP0604a（根据配置文件jwt.secret:QingDai）
 
 ```sql
 # 权限
