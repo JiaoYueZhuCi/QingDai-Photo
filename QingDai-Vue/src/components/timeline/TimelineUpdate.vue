@@ -58,7 +58,7 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'timeline-added']);
 
 // 本地的对话框可见性控制
-const visible = ref(false);
+const visible = ref(props.modelValue);
 
 // 同步内外部的状态
 watch(() => props.modelValue, (val) => {

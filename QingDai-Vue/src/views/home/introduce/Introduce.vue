@@ -132,7 +132,7 @@
             </el-descriptions>
         </ScrollReveal>
 
-        <PhotoViewer v-if="previewVisible" :urlList="[previewImageUrl]" @close="previewVisible = false" />
+        <PhotoViewer v-model="previewVisible" :urlList="[previewImageUrl]" @close="previewVisible = false" />
     </div>
 </template>
 
@@ -149,8 +149,8 @@ import {
     Message,
     CopyDocument
 } from '@element-plus/icons-vue'
-import PhotoViewer from '@/components/PhotoViewer.vue'
-import ScrollReveal from '@/components/ScrollReveal.vue'
+import PhotoViewer from '@/components/photo/PhotoViewer.vue'
+import ScrollReveal from '@/components/util/ScrollReveal.vue'
 import { userInfo } from '@/data/userInfo'
 import gsap from 'gsap';
 import { useIntersectionObserver } from '@vueuse/core'

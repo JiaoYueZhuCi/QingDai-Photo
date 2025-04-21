@@ -1,6 +1,5 @@
 <template>
-    <el-dialog v-model="visible" :title="editMode ? '编辑组图' : '创建组图'" top="5vh" width="87%"
-        :before-close="handleClose">
+    <el-dialog v-model="visible" :title="editMode ? '编辑组图' : '创建组图'" top="5vh" width="87%" :before-close="handleClose">
         <el-form :model="form" :rules="rules" ref="formRef" label-width="120px">
             <el-form-item label="标题" prop="groupPhoto.title">
                 <el-input v-model="form.groupPhoto.title" placeholder="请输入组图标题"></el-input>
@@ -102,10 +101,10 @@ const props = defineProps({
     }
 });
 
-const emit = defineEmits(['group-photo-added', 'group-photo-updated','update:modelValue']);
+const emit = defineEmits(['group-photo-added', 'group-photo-updated', 'update:modelValue', 'close']);
 
 // 本地的对话框可见性控制
-const visible = ref(false);
+const visible = ref(props.modelValue);
 
 // 监听 modelValue 变化
 watch(() => props.modelValue, (newVal) => {
@@ -114,9 +113,10 @@ watch(() => props.modelValue, (newVal) => {
 
 // 监听对话框可见性状态变化
 watch(() => visible.value, (newVal) => {
-  if (newVal !== props.modelValue) {
     emit('update:modelValue', newVal);
-  }
+    if (newVal == false) {
+        emit('close')
+    }
 });
 
 const formRef = ref<FormInstance>();
@@ -209,10 +209,10 @@ const fetchPhotos = async () => {
                 ...processPhotoData(item),
                 thumbnailSrc: ''
             }));
-            
+
             // 获取缩略图
             const updatedOptions = await get100KPhotos(photoOptions.value as any, 'thumbnailSrc');
-            
+
             // 更新缓存
             updatedOptions.forEach(photo => {
                 photoCache.value.set(photo.id, photo as PhotoOptionItem);
@@ -250,11 +250,11 @@ const searchPhotos = async (query: string) => {
                 ...processPhotoData(item),
                 thumbnailSrc: thumbnailUrlCache.value.get(item.id) || ''
             }));
-            
+
             // 获取缩略图
             if (filteredRecords.length > 0) {
                 const updatedOptions = await get100KPhotos(photoOptions.value as any, 'thumbnailSrc');
-                
+
                 // 更新缓存
                 updatedOptions.forEach(photo => {
                     photoCache.value.set(photo.id, photo as PhotoOptionItem);
@@ -315,16 +315,14 @@ const submitForm = async () => {
                     await updateGroupPhoto(formData);
                     ElMessage.success('更新组图成功');
                     emit('group-photo-updated');
-                    emit('update:modelValue', false);
                 } else {
                     // 新建模式
                     await addGroupPhoto(formData);
                     ElMessage.success('创建组图成功');
                     emit('group-photo-added');
-                    emit('update:modelValue', false);
                 }
 
-                
+
                 resetForm();
             } catch (error) {
                 console.error(props.editMode ? '更新组图失败:' : '创建组图失败:', error);
@@ -351,7 +349,7 @@ const resetForm = () => {
         form.groupPhoto = {
             id: '',
             title: '',
-            introduce: '', 
+            introduce: '',
             coverPhotoId: '',
         }
         form.photoIds = [];
@@ -366,7 +364,7 @@ const handleClose = () => {
 // 组件挂载时设置初始值
 onMounted(() => {
     visible.value = props.modelValue;
-  fetchPhotos();
+    fetchPhotos();
 });
 
 </script>

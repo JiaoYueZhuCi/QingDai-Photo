@@ -32,16 +32,23 @@ const props = defineProps<{
     urlList?: string[];
 }>()
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue', 'close'])
 const urlList = ref<string[]>([])
 const imageViewerRef = ref<any>(null)
-const visible = ref(false)
+const visible = ref(props.modelValue)
 
 // 监听 modelValue 变化
 watch(() => props.modelValue, (newVal) => {
     visible.value = newVal
     if (newVal) {
         loadImages()
+    }
+})
+
+watch(() => visible.value, (newVal) => {
+    emit('update:modelValue', newVal)
+    if(newVal==false){
+        emit('close')
     }
 })
 
@@ -126,7 +133,6 @@ const loadImages = async () => {
 // 处理关闭
 const handleClose = () => {
     visible.value = false
-    emit('update:modelValue', false)
 }
 </script>
 

@@ -42,9 +42,8 @@ import { Picture as IconPicture, FullScreen, Star, StarFilled } from '@element-p
 import { getVisiblePhotosByPage, getPhotosByIds } from '@/api/photo';
 import { getAllGroupPhotos } from '@/api/groupPhoto';
 import { debounce } from 'lodash';
-import JSZip from 'jszip';
 import type { GroupPhotoDTO } from '@/types/groupPhoto';
-import GroupFilmPreview from '@/components/GroupFilmPreview.vue';
+import GroupFilmPreview from '@/components/group-photos/GroupFilmPreview.vue';
 import { get100KPhotos, processPhotoData } from '@/utils/photo';
 import { useRouter, useRoute } from 'vue-router';
 

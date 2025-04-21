@@ -30,8 +30,8 @@
 <script setup lang="ts">
 import { watch, ref } from 'vue';
 import type { TabsPaneContext } from 'element-plus';
-import Introduce from '@/views/home/Introduce.vue';
-import ScrollReveal from '@/components/ScrollReveal.vue';
+import Introduce from '@/views/home/introduce/Introduce.vue';
+import ScrollReveal from '@/components/util/ScrollReveal.vue';
 import { useRouter, useRoute } from 'vue-router'
 
 const router = useRouter()

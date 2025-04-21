@@ -1,5 +1,5 @@
 <template>
-    <div v-if="visible" class="film-preview" @click="handleBackgroundClick" @touchstart="handleTouchStart"
+    <div class="film-preview" v-if="visible" @click="handleBackgroundClick" @touchstart="handleTouchStart"
         @touchmove="handleTouchMove" @touchend="handleTouchEnd">
         <!-- 水平胶片条 -->
         <div class="film-strip" ref="filmStripRef">
@@ -183,7 +183,7 @@
 <script setup lang="ts">
 import { ref, watch, onUnmounted, computed, onMounted } from 'vue'
 import { ElImage, ElTag, ElTooltip, ElMessage } from 'element-plus'
-import { get1000KPhoto, getPhotoDetailInfo, type EnhancedWaterfallItem, get100KPhoto } from '@/utils/photo'
+import { get1000KPhoto, getPhotoDetailInfo, type EnhancedWaterfallItem } from '@/utils/photo'
 import gsap from 'gsap'
 
 const props = defineProps<{
@@ -192,18 +192,9 @@ const props = defineProps<{
     photoIds: string[] // 所有照片ID的数组
 }>()
 
-const emit = defineEmits(['update:modelValue', 'image-click', 'navigate'])
+const emit = defineEmits(['close', 'image-click', 'update:modelValue', 'navigate'])
 
-const visible = ref(false)
-
-// 监听 modelValue 变化
-watch(() => props.modelValue, (newVal) => {
-    visible.value = newVal
-    if (newVal) {
-        // 每次打开时加载数据
-        handleOpen()
-    }
-})
+const visible = ref(props.modelValue)
 
 // 对象映射存储预加载的图片，key为photoId
 const preloadedImages = ref<Record<string, string>>({})
@@ -286,33 +277,51 @@ const isInfoLoading = ref(false)  // 新增：专门用于控制信息加载状�
 // 图片和照片信息缓存系统
 const photoInfoCache = ref<Map<string, EnhancedWaterfallItem>>(new Map())
 
+// 监听 modelValue 变化
+watch(() => props.modelValue, (newVal) => {
+    visible.value = newVal
+    if (newVal) {
+        handleOpen()
+    }
+})
+
+// 监听 visible 变化
+watch(visible, (newVal) => {
+    emit('update:modelValue', newVal)
+    if (!newVal) {
+        handleClose()
+    } else {
+        // 锁定滚动
+        document.body.style.overflow = 'hidden'
+    }
+    if(newVal==false){
+        emit('close')
+    }
+})
+
+// 监听 photoId 变化
+watch(() => props.photoId, (newVal, oldVal) => {
+    if (newVal !== oldVal && visible.value) {
+        handleOpen()
+    }
+})
+
 // 预加载图片，并添加到预加载对象中
 const preloadImage = async (photoId: string | null): Promise<void> => {
-    if (!photoId) return Promise.reject("无效的照片ID");
+    if (!photoId) return
+
+    // 如果已经预加载过，就跳过
+    if (preloadedImages.value[photoId]) return
 
     try {
-        let imageResult;
-        
-        // 判断是否是当前中间图片，只有中间图片使用高清版本
-        if (photoId === props.photoId) {
-            // 中间图片使用get1000KPhoto
-            imageResult = await get1000KPhoto(photoId);
-        } else {
-            // 其他四张图片使用get100KPhoto
-            imageResult = await get100KPhoto(photoId);
-        }
-        
+        const imageResult = await get1000KPhoto(photoId)
         if (imageResult) {
             // Vue的响应式系统不会自动检测到对象属性的添加
             // 使用这种方式确保响应式更新
-            preloadedImages.value = { ...preloadedImages.value, [photoId]: imageResult.url };
-            return Promise.resolve();
-        } else {
-            return Promise.reject("图片加载失败");
+            preloadedImages.value = { ...preloadedImages.value, [photoId]: imageResult.url }
         }
     } catch (error) {
-        console.error(`预加载图片 ${photoId} 失败:`, error);
-        return Promise.reject(error);
+        console.error(`预加载图片 ${photoId} 失败:`, error)
     }
 }
 
@@ -341,9 +350,6 @@ const getPhotoInfo = async (photoId: string | null): Promise<EnhancedWaterfallIt
 
 // 打开对话框时获取数据
 const handleOpen = async () => {
-    // 如果已经在加载中，则跳过重复请求
-    if (isLoading.value) return
-
     isLoading.value = true
     isInfoLoading.value = true
 
@@ -450,6 +456,7 @@ const handleClose = () => {
     // 解除滚动锁定
     document.body.style.overflow = ''
 
+    visible.value = false
     previewData.value = {
         id: "",
         fileName: "",
@@ -466,8 +473,6 @@ const handleClose = () => {
         introduce: "",
         start: 0,
     }
-    visible.value = false
-    emit('update:modelValue', false)
 }
 
 // 处理触摸开始
@@ -551,65 +556,25 @@ const animateToNext = () => {
                 // 确保下一张照片的信息已加载
                 getPhotoInfo(nextPhotoId.value).then(info => {
                     if (info) {
-                        previewData.value = info;  // 更新预览数据
-                        const nextId = nextPhotoId.value;
-                        
-                        // 在发送导航事件前先预加载高清图片，确保图片能正常显示
-                        preloadImage(nextId).then(() => {
-                            // 使用导航事件通知父组件更新当前照片ID
-                            if (nextId) {
-                                emit('navigate', nextId);
-                            }
-                            
-                            // 重置位置
-                            gsap.set(filmStripRef.value, { x: 0 });
-                            
-                            // 添加新照片的动画效果
-                            if (currentFilmRef.value) {
-                                gsap.fromTo(currentFilmRef.value, 
-                                    {
-                                        scale: 0.9,
-                                        opacity: 0.7
-                                    },
-                                    {
-                                        scale: 1,
-                                        opacity: 1,
-                                        duration: 0.3,
-                                        ease: "back.out(1.5)",
-                                        onComplete: () => {
-                                            isAnimating.value = false;
-                                            isInfoLoading.value = false;  // 重置信息加载状态
-                                        }
-                                    }
-                                );
-                            } else {
-                                isAnimating.value = false;
-                                isInfoLoading.value = false;
-                            }
-                        }).catch(() => {
-                            // 加载失败时也要重置状态
-                            gsap.set(filmStripRef.value, { x: 0 });
-                            isAnimating.value = false;
-                            isInfoLoading.value = false;
-                        });
-                    } else {
-                        // 没有信息时重置状态
-                        gsap.set(filmStripRef.value, { x: 0 });
-                        isAnimating.value = false;
-                        isInfoLoading.value = false;
+                        // 使用导航事件通知父组件更新当前照片ID
+                        emit('navigate', nextPhotoId.value)
                     }
+                    // 重置位置
+                    gsap.set(filmStripRef.value, { x: 0 })
+                    isAnimating.value = false
+                    isInfoLoading.value = false  // 重置信息加载状态
                 }).catch(() => {
-                    gsap.set(filmStripRef.value, { x: 0 });
-                    isAnimating.value = false;
-                    isInfoLoading.value = false;
-                });
+                    gsap.set(filmStripRef.value, { x: 0 })
+                    isAnimating.value = false
+                    isInfoLoading.value = false  // 重置信息加载状态
+                })
             } else {
-                gsap.set(filmStripRef.value, { x: 0 });
-                isAnimating.value = false;
-                isInfoLoading.value = false;
+                gsap.set(filmStripRef.value, { x: 0 })
+                isAnimating.value = false
+                isInfoLoading.value = false  // 重置信息加载状态
             }
         }
-    });
+    })
 }
 
 // 动画切换到上一张照片
@@ -640,65 +605,25 @@ const animateToPrev = () => {
                 // 确保上一张照片的信息已加载
                 getPhotoInfo(prevPhotoId.value).then(info => {
                     if (info) {
-                        previewData.value = info;  // 更新预览数据
-                        const prevId = prevPhotoId.value;
-                        
-                        // 在发送导航事件前先预加载高清图片，确保图片能正常显示
-                        preloadImage(prevId).then(() => {
-                            // 使用导航事件通知父组件更新当前照片ID
-                            if (prevId) {
-                                emit('navigate', prevId);
-                            }
-                            
-                            // 重置位置
-                            gsap.set(filmStripRef.value, { x: 0 });
-                            
-                            // 添加新照片的动画效果
-                            if (currentFilmRef.value) {
-                                gsap.fromTo(currentFilmRef.value, 
-                                    {
-                                        scale: 0.9,
-                                        opacity: 0.7
-                                    },
-                                    {
-                                        scale: 1,
-                                        opacity: 1,
-                                        duration: 0.3,
-                                        ease: "back.out(1.5)",
-                                        onComplete: () => {
-                                            isAnimating.value = false;
-                                            isInfoLoading.value = false;  // 重置信息加载状态
-                                        }
-                                    }
-                                );
-                            } else {
-                                isAnimating.value = false;
-                                isInfoLoading.value = false;
-                            }
-                        }).catch(() => {
-                            // 加载失败时也要重置状态
-                            gsap.set(filmStripRef.value, { x: 0 });
-                            isAnimating.value = false;
-                            isInfoLoading.value = false;
-                        });
-                    } else {
-                        // 没有信息时重置状态
-                        gsap.set(filmStripRef.value, { x: 0 });
-                        isAnimating.value = false;
-                        isInfoLoading.value = false;
+                        // 使用导航事件通知父组件更新当前照片ID
+                        emit('navigate', prevPhotoId.value)
                     }
+                    // 重置位置
+                    gsap.set(filmStripRef.value, { x: 0 })
+                    isAnimating.value = false
+                    isInfoLoading.value = false  // 重置信息加载状态
                 }).catch(() => {
-                    gsap.set(filmStripRef.value, { x: 0 });
-                    isAnimating.value = false;
-                    isInfoLoading.value = false;
-                });
+                    gsap.set(filmStripRef.value, { x: 0 })
+                    isAnimating.value = false
+                    isInfoLoading.value = false  // 重置信息加载状态
+                })
             } else {
-                gsap.set(filmStripRef.value, { x: 0 });
-                isAnimating.value = false;
-                isInfoLoading.value = false;
+                gsap.set(filmStripRef.value, { x: 0 })
+                isAnimating.value = false
+                isInfoLoading.value = false  // 重置信息加载状态
             }
         }
-    });
+    })
 }
 
 // 导航到上一张
@@ -753,7 +678,7 @@ onUnmounted(() => {
 
 // 组件挂载后初始化
 onMounted(() => {
-    if (props.photoId && !isLoading.value) {
+    if (visible.value && props.photoId) {
         handleOpen()
     }
 })

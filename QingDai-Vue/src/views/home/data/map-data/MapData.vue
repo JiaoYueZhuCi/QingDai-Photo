@@ -15,7 +15,7 @@
 import { ref, onMounted, onBeforeUnmount, nextTick, watch } from 'vue';
 import * as echarts from 'echarts';
 import chinaJson from '@/data/china.json';
-import Timeline from '@/views/home/Timeline.vue';
+import Timeline from '@/views/home/timeline/Timeline.vue';
 
 const activatedProvinces = ref([
   110000, // 北京市

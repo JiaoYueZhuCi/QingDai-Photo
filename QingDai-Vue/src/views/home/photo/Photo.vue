@@ -123,9 +123,9 @@ import { Picture as IconPicture, FullScreen, Star, StarFilled, Collection, Check
 import { getVisiblePhotosByPage, getStartPhotosByPage, updatePhotoStartStatus as updatePhotoStart, getHiddenPhotosByPage, getWeatherPhotosByPage } from '@/api/photo';
 import { getAllGroupPhotos, updateGroupPhoto } from '@/api/groupPhoto';
 import { debounce } from 'lodash';
-import FilmPreview from "@/components/FilmPreview.vue";
-import PhotoViewer from "@/components/PhotoViewer.vue";
-import PhotoEditor from "@/views/home/PhotoEditor.vue";
+import FilmPreview from "@/components/photo/FilmPreview.vue";
+import PhotoViewer from "@/components/photo/PhotoViewer.vue";
+import PhotoEditor from "@/components/photo/PhotoEditor.vue";
 import { get100KPhotos, processPhotoData, type EnhancedWaterfallItem } from '@/utils/photo';
 import type { GroupPhotoDTO } from '@/types/groupPhoto';
 import { useRouter, useRoute } from 'vue-router';

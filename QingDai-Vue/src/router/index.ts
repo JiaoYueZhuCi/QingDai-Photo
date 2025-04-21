@@ -1,8 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import errorPage from '@/components/Error.vue' 
-import { getRolesPermissions } from '@/api/user.ts'; 
+import errorPage from '@/components/common/Error.vue'
+import { getRolesPermissions } from '@/api/user.ts';
 import { ElMessage } from 'element-plus';
-import UserInfo from '@/views/manage/UserInfo.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -17,7 +16,7 @@ const router = createRouter({
         },
         {
           path: '/login',
-          component: () => import('@/components/Login.vue').catch(() => errorPage),
+          component: () => import('@/components/common/Login.vue').catch(() => errorPage),
         },
         {
           path: '/test',
@@ -34,53 +33,53 @@ const router = createRouter({
             },
             {
               path: 'featured',
-              component: () => import('@/views/home/Waterfall.vue').catch(() => errorPage),
+              component: () => import('@/views/home/photo/Photo.vue').catch(() => errorPage),
               props: { photoType: 1 }
             },
             {
               path: 'photos',
-              component: () => import('@/views/home/Waterfall.vue').catch(() => errorPage),
+              component: () => import('@/views/home/photo/Photo.vue').catch(() => errorPage),
               props: { photoType: 0 }
             },
             {
               path: 'timeline',
-              component: () => import('@/views/home/Timeline.vue').catch(() => errorPage)
+              component: () => import('@/views/home/timeline/Timeline.vue').catch(() => errorPage)
             },
             {
               path: 'data',
-              component: () => import('@/views/home/Data.vue').catch(() => errorPage)
+              component: () => import('@/views/home/data/Data.vue').catch(() => errorPage)
             },
             {
               path: 'groupPhotos',
-              component: () => import('@/views/home/GroupPhotos.vue').catch(() => errorPage)
+              component: () => import('@/views/home/group-photos/GroupPhotos.vue').catch(() => errorPage)
             },
             {
               path: 'hidden',
-              component: () => import('@/views/home/Waterfall.vue').catch(() => errorPage),
+              component: () => import('@/views/home/photo/Photo.vue').catch(() => errorPage),
               props: { photoType: 2 }
             },
             {
               path: 'weather',
-              component: () => import('@/views/home/Waterfall.vue').catch(() => errorPage),
+              component: () => import('@/views/home/photo/Photo.vue').catch(() => errorPage),
               props: { photoType: 3 }
             },
             {
               path: 'sunriseGlow',
-              component: () => import('@/views/home/MeteorologyTimeLine.vue').catch(() => errorPage),
+              component: () => import('@/views/home/meteorology/MeteorologyTimeLine.vue').catch(() => errorPage),
               props: { meteorologyType: '1' }
             },
             {
               path: 'sunsetGlow',
-              component: () => import('@/views/home/MeteorologyTimeLine.vue').catch(() => errorPage),
+              component: () => import('@/views/home/meteorology/MeteorologyTimeLine.vue').catch(() => errorPage),
               props: { meteorologyType: '2' }
             },
             {
               path: 'sunrise',
-              component: () => import('@/views/home/MeteorologyTimeLine.vue').catch(() => errorPage),
+              component: () => import('@/views/home/meteorology/MeteorologyTimeLine.vue').catch(() => errorPage),
               props: { meteorologyType: '3' }
-            },{
+            }, {
               path: 'sunset',
-              component: () => import('@/views/home/MeteorologyTimeLine.vue').catch(() => errorPage),
+              component: () => import('@/views/home/meteorology/MeteorologyTimeLine.vue').catch(() => errorPage),
               props: { meteorologyType: '4' }
             }
           ]
@@ -96,20 +95,19 @@ const router = createRouter({
             },
             {
               path: 'photoList',
-              component: () => import('@/views/manage/PhotoList.vue').catch(() => errorPage)
+              component: () => import('@/views/manage/photo-manage/PhotoManage.vue').catch(() => errorPage)
             },
             {
               path: 'timelineList',
-              component: () => import('@/views/manage/TimelineList.vue').catch(() => errorPage)
+              component: () => import('@/views/manage/timeline-manage/TimelineManage.vue').catch(() => errorPage)
             },
             {
               path: 'groupPhotosList',
-              component: () => import('@/views/manage/GroupPhotosList.vue').catch(() => errorPage)
+              component: () => import('@/views/manage/group-photos-manage/GroupPhotosManage.vue').catch(() => errorPage)
             },
             {
               path: 'userInfo',
-              name: 'UserInfo',
-              component: UserInfo
+              component: () => import('@/views/manage/user-manage/UserManage.vue').catch(() => errorPage)
             }
           ]
         },
@@ -135,7 +133,7 @@ router.beforeEach(async (to, from, next) => {
       }
       // 如果不是ADMIN
       ElMessage.error("非管理员登陆");
-      return next('/'); 
+      return next('/');
     } catch (error: any) {
       // 检查是否为401错误
       if (error.response && error.response.status === 401) {

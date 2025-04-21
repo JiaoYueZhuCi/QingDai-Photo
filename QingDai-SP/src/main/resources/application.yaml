@@ -1,7 +1,8 @@
-spring.application.name: QingDai-SP
-
 qingdai:
   defaultAuthor: 皎月祝辞
+
+jwt:
+  expiration: 3600
 
 server:
   servlet:
@@ -18,6 +19,8 @@ springdoc:
       enabled: true         # 启用分组功能
 
 spring:
+  application:
+    name: QingDai-SP
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     type: com.alibaba.druid.pool.DruidDataSource
@@ -43,9 +46,23 @@ spring:
   output:
     ansi:
       enabled: always
-#  data:
-#    redis: localhost
-#    host: 6379
+  data:
+    redis:
+      timeout: 10000
+      lettuce:
+        pool:
+          max-active: 8
+          max-wait: -1
+          max-idle: 8
+          min-idle: 0
+
+  cache:
+    type: redis
+    redis:
+      time-to-live: 43200000  # 12小时，单位毫秒
+      cache-null-values: false  # 不缓存null值
+      use-key-prefix: true  # 使用key前缀
+      key-prefix: CACHE_  # key前缀
 
 mybatis-plus:
   configuration:

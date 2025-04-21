@@ -140,8 +140,8 @@
 </template>
 
 <script setup lang="ts">
-import PhotoUpdate from '@/views/manage/PhotoUpdate.vue'
-import PhotoPreview from '@/components/PhotoPreview.vue'
+import PhotoUpdate from '@/components/photo/PhotoUpdate.vue'
+import PhotoPreview from '@/components/photo/PhotoPreview.vue'
 import { ref, watchEffect } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Upload } from '@element-plus/icons-vue'

@@ -50,7 +50,7 @@ import { getGroupPhoto } from '@/api/groupPhoto'
 import { getPhotosByIds } from '@/api/photo'
 import type { GroupPhotoDTO } from '@/types/groupPhoto'
 import { ElMessage } from 'element-plus'
-import GroupFilmPreview from '@/components/GroupFilmPreview.vue'
+import GroupFilmPreview from '@/components/group-photos/GroupFilmPreview.vue'
 import { get100KPhotos, processPhotoData, type EnhancedWaterfallItem } from '@/utils/photo'
 
 const loading = ref(true)

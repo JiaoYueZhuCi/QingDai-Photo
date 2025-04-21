@@ -49,10 +49,9 @@
 import { ref, watch, onMounted } from 'vue'
 import { ElIcon } from 'element-plus'
 import { ArrowDown, ArrowUp } from '@element-plus/icons-vue'
-import FilmPreview from './FilmPreview.vue'
-import PhotoViewer from '@/components/PhotoViewer.vue'
+import FilmPreview from '@/components/photo/FilmPreview.vue'
+import PhotoViewer from '@/components/photo/PhotoViewer.vue'
 import { getGroupPhoto } from '@/api/groupPhoto'
-import type { GroupPhotoDTO } from '@/types/groupPhoto'
 import { useRouter, useRoute } from 'vue-router'
 
 const props = defineProps<{
@@ -64,7 +63,7 @@ const props = defineProps<{
 const emit = defineEmits(['close', 'update:modelValue', 'navigate'])
 
 // 内部可见性状态
-const visible = ref(false)
+const visible = ref(props.modelValue)
 
 // 监听 modelValue 变化
 watch(() => props.modelValue, (newVal) => {
@@ -81,8 +80,12 @@ watch(() => props.modelValue, (newVal) => {
 
 // 监听内部状态变化
 watch(() => visible.value, (newVal) => {
-    if (newVal !== props.modelValue) {
-        emit('update:modelValue', newVal)
+    emit('update:modelValue', newVal)
+    if (!newVal) {
+        updateUrlWithGroupParams(false)
+    }
+    if(newVal==false){
+        emit('close')
     }
 })
 
@@ -181,7 +184,6 @@ const loadGroupData = async () => {
 const handleClose = () => {
     visible.value = false
     updateUrlWithGroupParams(false)
-    emit('close')
 }
 
 // 处理导航事件

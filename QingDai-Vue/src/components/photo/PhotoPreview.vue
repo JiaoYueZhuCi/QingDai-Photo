@@ -53,14 +53,14 @@
 import { ref, watch, onUnmounted, onMounted } from 'vue'
 import { ElDialog, ElImage, ElDescriptions, ElDescriptionsItem, ElTag } from 'element-plus'
 import { get1000KPhoto, getPhotoDetailInfo, type EnhancedWaterfallItem } from '@/utils/photo'
-import PhotoViewer from '@/components/PhotoViewer.vue'
+import PhotoViewer from '@/components/photo/PhotoViewer.vue'
 
 const props = defineProps<{
     photoId: string,
     modelValue: boolean
 }>()
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue', 'close'])
 
 // 添加打开全屏预览的方法
 const showFullScreen = ref(false)
@@ -90,7 +90,7 @@ const previewData = ref<EnhancedWaterfallItem>({
 })
 
 const isLoading = ref(false)
-const visible = ref(false)
+const visible = ref(props.modelValue)
 
 // 监听 modelValue 的变化
 watch(() => props.modelValue, (newVal) => {
@@ -103,8 +103,9 @@ watch(() => props.modelValue, (newVal) => {
 
 // 监听 dialogVisible 的变化
 watch(() => visible.value, (newVal) => {
-    if (newVal !== props.modelValue) {
-        emit('update:modelValue', newVal)
+    emit('update:modelValue', newVal)
+    if (newVal == false) {
+        emit('close')
     }
 })
 
@@ -132,13 +133,6 @@ const loadData = async () => {
     }
 }
 
-// 不再需要这个监听，因为我们在modelValue变化时已经处理了加载
-// watch(() => props.photoId, (newVal) => {
-//     if (newVal) {
-//         loadData()
-//     }
-// }, { immediate: true })
-
 const handleClose = () => {
     if (thumbnailUrl.value) {
         URL.revokeObjectURL(thumbnailUrl.value)
@@ -161,7 +155,6 @@ const handleClose = () => {
         introduce: "",
         start: 0,
     }
-    emit('update:modelValue', false)
 }
 
 // 组件卸载时确保清理资源

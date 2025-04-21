@@ -1,28 +1,15 @@
 <template>
-  <el-dialog
-    v-model="visible"
-    title="编辑照片信息"
-    width="70%"
-    :before-close="handleClose"
-    class="photo-editor-dialog"
-    :append-to-body="true"
-    center
-    align-center
-  >
+  <el-dialog v-model="visible" title="编辑照片信息" width="70%" :before-close="handleClose" class="photo-editor-dialog"
+    :append-to-body="true" center align-center>
     <div class="editor-container">
       <div class="preview-image">
-        <el-image
-          :src="photoInfo.compressedSrc"
-          fit="contain"
-          :style="{ maxHeight: '70vh' }"
-          :preview-src-list="[]"
-          v-loading="imageLoading"
-          element-loading-text="正在加载图片..."
-          element-loading-background="rgba(69, 70, 94, 0.7)"
-        >
+        <el-image :src="photoInfo.compressedSrc" fit="contain" :style="{ maxHeight: '70vh' }" :preview-src-list="[]"
+          v-loading="imageLoading" element-loading-text="正在加载图片..." element-loading-background="rgba(69, 70, 94, 0.7)">
           <template #error>
             <div class="image-error">
-              <el-icon><Picture /></el-icon>
+              <el-icon>
+                <Picture />
+              </el-icon>
               <div>图片加载失败</div>
             </div>
           </template>
@@ -30,17 +17,12 @@
       </div>
       <div class="editor-form-container">
         <el-form :model="form" label-width="80px" class="editor-form">
-            <div class="form-section-title">照片参数</div>
+          <div class="form-section-title">照片参数</div>
           <el-form-item label="标题">
             <el-input v-model="form.title" placeholder="请输入照片标题" />
           </el-form-item>
           <el-form-item label="介绍">
-            <el-input
-              v-model="form.introduce"
-              type="textarea"
-              :rows="3"
-              placeholder="请输入照片介绍"
-            />
+            <el-input v-model="form.introduce" type="textarea" :rows="3" placeholder="请输入照片介绍" />
           </el-form-item>
           <el-form-item label="状态">
             <el-select v-model="form.start" placeholder="请选择照片状态">
@@ -78,9 +60,9 @@
               </el-option>
             </el-select>
           </el-form-item>
-          
+
           <div class="divider"></div>
-          
+
           <div class="form-section-title">相机参数</div>
           <el-form-item label="相机">
             <el-input v-model="form.camera" placeholder="相机型号" />
@@ -123,10 +105,10 @@ const props = defineProps<{
   photoId: string
 }>();
 
-const emit = defineEmits(['updated','update:modelValue']);
+const emit = defineEmits(['updated', 'update:modelValue', 'close']);
 
 // 内部对话框可见性状态
-const visible = ref(false);
+const visible = ref(props.modelValue);
 
 // 监听 modelValue 变化
 watch(() => props.modelValue, (newVal) => {
@@ -134,12 +116,14 @@ watch(() => props.modelValue, (newVal) => {
   if (newVal && props.photoId) {
     loadPhotoData();
   }
+
 });
 
 // 监听对话框可见性状态变化
 watch(() => visible.value, (newVal) => {
-  if (newVal !== props.modelValue) {
-    emit('update:modelValue', newVal);
+  emit('update:modelValue', newVal);
+  if (newVal == false) {
+    emit('close')
   }
 });
 
@@ -163,13 +147,13 @@ const form = reactive({
 // 加载照片数据
 const loadPhotoData = async () => {
   if (!props.photoId) return;
-  
+
   imageLoading.value = true;
   try {
     const photoData = await getPhotoDetailInfo(props.photoId);
     if (photoData) {
       photoInfo.value = photoData;
-      
+
       // 填充表单数据
       form.title = photoData.title || '';
       form.introduce = photoData.introduce || '';
@@ -179,7 +163,7 @@ const loadPhotoData = async () => {
       form.aperture = photoData.aperture || '';
       form.shutter = photoData.shutter || '';
       form.iso = photoData.iso || '';
-      
+
       // 加载缩略图
       const thumbnailResult = await get100KPhoto(props.photoId);
       if (thumbnailResult) {
@@ -211,14 +195,13 @@ onMounted(() => {
 
 // 处理关闭
 const handleClose = () => {
-  emit('updated', photoInfo.value);
   visible.value = false;
 };
 
 // 提交表单
 const submitForm = async () => {
   if (!props.photoId) return;
-  
+
   submitting.value = true;
   try {
     // 更新照片信息
@@ -238,7 +221,7 @@ const submitForm = async () => {
       height: photoInfo.value.height || 0,
       time: photoInfo.value.time || ''
     });
-    
+
     // 更新本地数据
     photoInfo.value = {
       ...photoInfo.value,
@@ -251,7 +234,7 @@ const submitForm = async () => {
       shutter: form.shutter,
       iso: form.iso
     };
-    
+
     ElMessage.success('保存成功');
     handleClose();
   } catch (error) {
@@ -412,12 +395,12 @@ const submitForm = async () => {
   .editor-container {
     flex-direction: row;
   }
-  
+
   .preview-image {
     flex: 0 0 40%;
     height: auto;
   }
-  
+
   .editor-form-container {
     flex: 1;
     overflow-y: auto;
@@ -443,4 +426,4 @@ const submitForm = async () => {
 :deep(.el-dialog__headerbtn:hover .el-dialog__close) {
   color: var(--qd-color-primary);
 }
-</style> 
+</style>

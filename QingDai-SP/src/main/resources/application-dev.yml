@@ -4,6 +4,7 @@ spring:
     username: root
     password: 123456
 
+
 qingdai:
   url: D:/QingDai Photos/
   fullSizeUrl: D:/QingDai Photos/Photos/FullSize/

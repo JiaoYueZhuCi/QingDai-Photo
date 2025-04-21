@@ -63,12 +63,12 @@ import { ref, defineProps, defineEmits, watch, defineExpose, onMounted } from 'v
 import { processPhotosFromFrontend } from '@/api/photo';
 import { clearPhotoDB } from '@/utils/indexedDB';
 
-const visible = ref(false)
 const props = defineProps<{
     modelValue: boolean
 }>()
 
-const emit = defineEmits(['photo-uploaded','update:modelValue'])
+const visible = ref(props.modelValue)
+const emit = defineEmits(['photo-uploaded','update:modelValue','close'])
 
 // 监听 modelValue 变化
 watch(() => props.modelValue, (newVal) => {
@@ -77,8 +77,9 @@ watch(() => props.modelValue, (newVal) => {
 
 // 监听对话框可见性状态变化
 watch(() => visible.value, (newVal) => {
-  if (newVal !== props.modelValue) {
-    emit('update:modelValue', newVal);
+  emit('update:modelValue', newVal);
+  if(newVal==false){
+    emit('close')
   }
 });
 

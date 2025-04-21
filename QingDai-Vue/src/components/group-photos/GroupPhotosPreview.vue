@@ -1,6 +1,6 @@
 <template>
     <el-dialog v-model="visible" width="80%" top="5vh" align-center class="preview-dialog" :close-on-click-modal="true"
-        :before-close="handleClose" @open="handleOpen" @close="handleClose" >
+        :before-close="handleClose" @open="handleOpen" @close="handleClose">
         <div class="dialog-content">
             <!-- 左侧图片区域 -->
             <div class="image-container">
@@ -110,7 +110,7 @@
                     </div>
                 </div>
             </div>
-        </div> 
+        </div>
         <PhotoViewer v-model="showFullScreen" :photo-id="fullScreenPhotoId" @close="closeFullScreen" />
     </el-dialog>
 </template>
@@ -122,10 +122,8 @@ import { ArrowLeft, ArrowRight, PictureFilled } from '@element-plus/icons-vue'
 import type { WaterfallItem } from '@/types'
 import type { GroupPhotoDTO } from '@/types/groupPhoto'
 import { getGroupPhoto } from '@/api/groupPhoto'
-import PhotoViewer from '@/components/PhotoViewer.vue'
+import PhotoViewer from '@/components/photo/PhotoViewer.vue'
 import { get1000KPhoto, getPhotoDetailInfo, type EnhancedWaterfallItem } from '@/utils/photo'
-
-const visible = ref(false);
 
 const props = defineProps<{
     modelValue: boolean;
@@ -135,6 +133,10 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits(['close', 'update:modelValue'])
+
+// 内部可见性状态和全屏预览状态
+const visible = ref(props.modelValue)
+const showFullScreen = ref(false)
 
 // 监听 modelValue 变化
 watch(() => props.modelValue, (newVal) => {
@@ -146,8 +148,9 @@ watch(() => props.modelValue, (newVal) => {
 
 // 监听 visible 变化
 watch(() => visible.value, (newVal) => {
-    if (newVal !== props.modelValue) {
-        emit('update:modelValue', newVal);
+    emit('update:modelValue', newVal);
+    if (newVal == false) {
+        emit('close')
     }
 });
 
@@ -197,7 +200,6 @@ const currentPhotoData = ref<EnhancedWaterfallItem>({
 })
 
 // 添加全屏预览相关的状态
-const showFullScreen = ref(false)
 const fullScreenPhotoId = ref('')
 
 // 打开对话框时获取数据
@@ -291,7 +293,6 @@ const handleClose = () => {
         thumbnailUrl.value = ''
     }
     visible.value = false;
-    emit('close')
 }
 
 // 监听当前照片索引变化
