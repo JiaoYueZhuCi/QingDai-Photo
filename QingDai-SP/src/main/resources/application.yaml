@@ -61,8 +61,6 @@ spring:
     redis:
       time-to-live: 43200000  # 12小时，单位毫秒
       cache-null-values: false  # 不缓存null值
-      use-key-prefix: true  # 使用key前缀
-      key-prefix: CACHE_  # key前缀
 
 mybatis-plus:
   configuration:

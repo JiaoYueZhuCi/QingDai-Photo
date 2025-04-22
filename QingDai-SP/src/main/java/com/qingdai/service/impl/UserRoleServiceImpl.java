@@ -3,7 +3,8 @@ package com.qingdai.service.impl;
 import com.qingdai.entity.UserRole;
 import com.qingdai.mapper.UserRoleMapper;
 import com.qingdai.service.UserRoleService;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.qingdai.service.base.BaseCachedServiceImpl;
+import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.stereotype.Service;
 
 /**
@@ -15,6 +16,6 @@ import org.springframework.stereotype.Service;
  * @since 2025-03-08
  */
 @Service
-public class UserRoleServiceImpl extends ServiceImpl<UserRoleMapper, UserRole> implements UserRoleService {
-
+@CacheConfig(cacheNames = "userRole")
+public class UserRoleServiceImpl extends BaseCachedServiceImpl<UserRoleMapper, UserRole> implements UserRoleService {
 }

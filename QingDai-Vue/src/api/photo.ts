@@ -61,7 +61,8 @@ export const processPhotosFromFrontend = async (formData: FormData) => {
   return await request.post(`${BASE_URL}/processPhotosFromFrontend`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data'
-    }
+    },
+    timeout: 300000 // 设置5分钟超时时间
   });
 };
 // 获取照片分页数据
@@ -146,17 +147,20 @@ export const getPhotosByIds = async (ids: string[]): Promise<WaterfallItem[]> =>
   });
 };
 
-// 开发者方法----------------------------------------------------------------------
+// 开发者方法-----------------------------------------------------------------------------------------
+// 原图导入数据库
 export const fullSizePhotoToMysql = async (): Promise<any> => {
   return await request.post(`${BASE_URL}/fullSizePhotoToMysql`);
 };
 
+// 生成缩略图
 export const thumbnailImages = async (maxSizeKB: number = 1024, overwrite: boolean = false): Promise<any> => {
   return await request.get(`${BASE_URL}/thumbnailImages`, {
     params: { maxSizeKB, overwrite }
   });
 };
 
+// 处理待处理照片
 export const processPendingPhotos = async (overwrite: boolean = false): Promise<any> => {
   return await request.get(`${BASE_URL}/processPendingPhotos`, {
     params: { overwrite }

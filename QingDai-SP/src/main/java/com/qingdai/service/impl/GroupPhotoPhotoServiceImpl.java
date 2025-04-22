@@ -5,7 +5,10 @@ import com.qingdai.entity.dto.GroupPhotoDTO;
 import com.qingdai.entity.GroupPhotoPhoto;
 import com.qingdai.mapper.GroupPhotoPhotoMapper;
 import com.qingdai.service.GroupPhotoPhotoService;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.qingdai.service.base.BaseCachedServiceImpl;
+import org.springframework.cache.annotation.CacheConfig;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -20,14 +23,17 @@ import java.util.stream.Collectors;
  * @since 2025-03-29
  */
 @Service
-public class GroupPhotoPhotoServiceImpl extends ServiceImpl<GroupPhotoPhotoMapper, GroupPhotoPhoto> implements GroupPhotoPhotoService {
+@CacheConfig(cacheNames = "groupPhotoPhoto")
+public class GroupPhotoPhotoServiceImpl extends BaseCachedServiceImpl<GroupPhotoPhotoMapper, GroupPhotoPhoto> implements GroupPhotoPhotoService {
 
     @Override
+    @Cacheable(key = "'count_' + #groupPhotoId")
     public int countByGroupPhotoId(String groupPhotoId) {
         return Math.toIntExact(lambdaQuery().eq(GroupPhotoPhoto::getGroupPhotoId, groupPhotoId).count());
     }
 
     @Override
+    @Cacheable(key = "'photoIds_' + #groupPhotoId")
     public List<String> getPhotoIdsByGroupPhotoId(String groupPhotoId) {
         LambdaQueryWrapper<GroupPhotoPhoto> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(GroupPhotoPhoto::getGroupPhotoId, groupPhotoId)
@@ -39,15 +45,15 @@ public class GroupPhotoPhotoServiceImpl extends ServiceImpl<GroupPhotoPhotoMappe
     }
     
     @Override
+    @CacheEvict(value = {"groupPhotoPhoto", "groupPhoto"}, allEntries = true)
     public void deleteByGroupPhotoId(String groupPhotoId) {
         LambdaQueryWrapper<GroupPhotoPhoto> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(GroupPhotoPhoto::getGroupPhotoId, groupPhotoId);
         this.remove(queryWrapper);
     }
 
-
-
     @Override
+    @CacheEvict(value = {"groupPhotoPhoto", "groupPhoto"}, allEntries = true)
     public void updateGroupPhotoPhoto(GroupPhotoDTO groupPhotoDTO) {
         String groupPhotoId = groupPhotoDTO.getGroupPhoto().getId();
         

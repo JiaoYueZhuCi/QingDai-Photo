@@ -3,7 +3,8 @@ package com.qingdai.service.impl;
 import com.qingdai.entity.Timeline;
 import com.qingdai.mapper.TimelineMapper;
 import com.qingdai.service.TimelineService;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.qingdai.service.base.BaseCachedServiceImpl;
+import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.stereotype.Service;
 
 /**
@@ -12,9 +13,9 @@ import org.springframework.stereotype.Service;
  * </p>
  *
  * @author LiuZiMing
- * @since 2025-03-01
+ * @since 2025-04-12
  */
 @Service
-public class TimelineServiceImpl extends ServiceImpl<TimelineMapper, Timeline> implements TimelineService {
-
+@CacheConfig(cacheNames = "timeline")
+public class TimelineServiceImpl extends BaseCachedServiceImpl<TimelineMapper, Timeline> implements TimelineService {
 }

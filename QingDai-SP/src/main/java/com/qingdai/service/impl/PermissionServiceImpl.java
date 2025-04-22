@@ -3,7 +3,8 @@ package com.qingdai.service.impl;
 import com.qingdai.entity.Permission;
 import com.qingdai.mapper.PermissionMapper;
 import com.qingdai.service.PermissionService;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.qingdai.service.base.BaseCachedServiceImpl;
+import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.stereotype.Service;
 
 /**
@@ -15,6 +16,6 @@ import org.springframework.stereotype.Service;
  * @since 2025-03-08
  */
 @Service
-public class PermissionServiceImpl extends ServiceImpl<PermissionMapper, Permission> implements PermissionService {
-
+@CacheConfig(cacheNames = "permission")
+public class PermissionServiceImpl extends BaseCachedServiceImpl<PermissionMapper, Permission> implements PermissionService {
 }

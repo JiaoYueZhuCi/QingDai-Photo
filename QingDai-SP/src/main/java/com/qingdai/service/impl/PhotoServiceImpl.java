@@ -3,7 +3,7 @@ package com.qingdai.service.impl;
 import com.qingdai.entity.Photo;
 import com.qingdai.mapper.PhotoMapper;
 import com.qingdai.service.PhotoService;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.qingdai.service.base.BaseCachedServiceImpl;
 import org.springframework.stereotype.Service;
 import lombok.extern.slf4j.Slf4j;
 
@@ -25,14 +25,18 @@ import com.qingdai.utils.FileUtils;
 import com.qingdai.utils.SnowflakeIdGenerator;
 import net.coobird.thumbnailator.Thumbnails;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheConfig;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.Objects;
 import java.util.Optional;
@@ -55,7 +59,8 @@ import java.util.Set;
  */
 @Service
 @Slf4j
-public class PhotoServiceImpl extends ServiceImpl<PhotoMapper, Photo> implements PhotoService {
+@CacheConfig(cacheNames = "photo")
+public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> implements PhotoService {
 
     @Value("${qingdai.defaultAuthor}")
     private String defaultAuthor;
@@ -73,6 +78,7 @@ public class PhotoServiceImpl extends ServiceImpl<PhotoMapper, Photo> implements
     private final SnowflakeIdGenerator idGenerator = new SnowflakeIdGenerator(1, 1);
 
     @Override
+    @Cacheable(key = "'countByMonth_' + #yearMonth")
     public long countByMonth(YearMonth yearMonth) {
         LocalDate startDate = yearMonth.atDay(1);
         LocalDate endDate = yearMonth.atEndOfMonth();
@@ -82,6 +88,7 @@ public class PhotoServiceImpl extends ServiceImpl<PhotoMapper, Photo> implements
     }
 
     @Override
+    @Cacheable(key = "'countByYear_' + #year")
     public long countByYear(Year year) {
         LocalDate startDate = year.atDay(1);
         LocalDate endDate = year.atDay(year.length());
@@ -91,6 +98,7 @@ public class PhotoServiceImpl extends ServiceImpl<PhotoMapper, Photo> implements
     }
 
     @Override
+    @Cacheable(key = "'countByMonthAndStart_' + #yearMonth + '_' + #start")
     public long countByMonthAndStart(YearMonth yearMonth, int start) {
         LocalDate startDate = yearMonth.atDay(1);
         LocalDate endDate = yearMonth.atEndOfMonth();
@@ -101,6 +109,7 @@ public class PhotoServiceImpl extends ServiceImpl<PhotoMapper, Photo> implements
     }
 
     @Override
+    @Cacheable(key = "'countByYearAndStart_' + #year + '_' + #start")
     public long countByYearAndStart(Year year, int start) {
         LocalDate startDate = year.atDay(1);
         LocalDate endDate = year.atDay(year.length());
@@ -112,12 +121,24 @@ public class PhotoServiceImpl extends ServiceImpl<PhotoMapper, Photo> implements
 
     // 处理指定文件夹中的图片文件，返回一个包含处理后照片信息的 Photo 对象列表
     @Override
+    @Cacheable(key = "'photosByFolder_' + #folder.getName()")
     public List<Photo> getPhotosByFolder(File folder) {
         return Arrays.stream(FileUtils.getImageFiles(folder)) // 返回 Stream<File>
                 .parallel() // 并行处理
                 .map(this::getPhotoObjectByFile)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
+    }
+
+    // 根据照片ID获取文件名
+    @Override
+    @Cacheable(key = "'fileName_' + #photoId")
+    public String getFileNameById(String photoId) {
+        Photo photo = getById(photoId);
+        if (photo == null) {
+            return null;
+        }
+        return photo.getFileName();
     }
 
     // 处理上传的文件并返回Photo对象列表
@@ -137,43 +158,6 @@ public class PhotoServiceImpl extends ServiceImpl<PhotoMapper, Photo> implements
                 .parallel()
                 .filter(this::fileIsSupportedPhoto)
                 .forEach(file -> compressPhoto(file, thumbnailDir, maxSizeKB, overwrite));
-    }
-
-    // @Override
-    // public void thumbnailPhotoFromMultipartFileToFolder(MultipartFile photo,
-    //         File pendingDir,
-    //         File thumbnailDir,
-    //         int maxSizeKB,
-    //         boolean overwrite) throws IOException {
-    //     // 创建随机名称的临时目录
-    //     File tempDir = FileUtils.createTempDir(pendingDir);
-    //     if (!tempDir.exists() && !tempDir.mkdirs()) {
-    //         throw new IOException("无法创建临时目录: " + tempDir.getAbsolutePath());
-    //     }
-
-    //     // 保存所有图片到临时目录
-    //     File thumbnailUrl = new File(tempDir, photo.getOriginalFilename());
-    //     try {
-    //         FileUtils.saveFile(photo, tempDir);
-    //     } catch (IOException e) {
-    //         throw new RuntimeException(e);
-    //     }
-
-    //     // 调用压缩方法处理临时目录中的文件
-    //     compressPhoto(thumbnailUrl, thumbnailDir, maxSizeKB, overwrite);
-
-    //     // 删除临时目录及其内容
-    //     FileUtils.deleteFolder(tempDir);
-    // }
-
-    // 根据照片ID获取文件名
-    @Override
-    public String getFileNameById(String photoId) {
-        Photo photo = getById(photoId);
-        if (photo == null) {
-            return null;
-        }
-        return photo.getFileName();
     }
 
     // 判断是否为支持的图片格式

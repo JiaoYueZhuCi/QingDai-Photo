@@ -1,12 +1,14 @@
 package com.qingdai.service.impl;
 
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.qingdai.entity.dto.GroupPhotoDTO;
 import com.qingdai.entity.GroupPhoto;
 import com.qingdai.mapper.GroupPhotoMapper;
 import com.qingdai.service.GroupPhotoService;
 import com.qingdai.service.PhotoService;
+import com.qingdai.service.base.BaseCachedServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheConfig;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -22,13 +24,15 @@ import java.util.stream.Collectors;
  * @since 2025-03-19
  */
 @Service
-public class GroupPhotoServiceImpl extends ServiceImpl<GroupPhotoMapper, GroupPhoto> implements GroupPhotoService {
+@CacheConfig(cacheNames = "groupPhoto")
+public class GroupPhotoServiceImpl extends BaseCachedServiceImpl<GroupPhotoMapper, GroupPhoto> implements GroupPhotoService {
     @Autowired
     private GroupPhotoPhotoService groupPhotoPhotoService;
     @Autowired
     private PhotoService photoService;
 
     @Override
+    @Cacheable(key = "'dto_' + #id")
     public GroupPhotoDTO getGroupPhotoDTOById(String id) {
         GroupPhoto groupPhoto = getById(id);
         if (groupPhoto == null) {
@@ -46,6 +50,7 @@ public class GroupPhotoServiceImpl extends ServiceImpl<GroupPhotoMapper, GroupPh
     }
 
     @Override
+    @Cacheable(key = "'allDTOs'")
     public List<GroupPhotoDTO> getAllGroupPhotoDTOs() {
         List<GroupPhoto> groupPhotos = list();
         return groupPhotos.stream()

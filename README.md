@@ -46,7 +46,8 @@
         ├── types/                         # TS类型定义
         ├── utils/                         # 工具函数
         ├── views/                         # 页面组件(根据引用结构使用层级目录结构)
-        └── main.ts                        # 入口文件
+        ├── main.ts                        # 入口文件
+        └── shims-vue.d.ts                 # vue类型声明
   ├── App.vue
   ├── index.html
   ├── package.json

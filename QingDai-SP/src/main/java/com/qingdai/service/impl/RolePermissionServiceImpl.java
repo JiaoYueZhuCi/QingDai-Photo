@@ -3,7 +3,8 @@ package com.qingdai.service.impl;
 import com.qingdai.entity.RolePermission;
 import com.qingdai.mapper.RolePermissionMapper;
 import com.qingdai.service.RolePermissionService;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.qingdai.service.base.BaseCachedServiceImpl;
+import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.stereotype.Service;
 
 /**
@@ -15,6 +16,6 @@ import org.springframework.stereotype.Service;
  * @since 2025-03-08
  */
 @Service
-public class RolePermissionServiceImpl extends ServiceImpl<RolePermissionMapper, RolePermission> implements RolePermissionService {
-
+@CacheConfig(cacheNames = "rolePermission")
+public class RolePermissionServiceImpl extends BaseCachedServiceImpl<RolePermissionMapper, RolePermission> implements RolePermissionService {
 }
