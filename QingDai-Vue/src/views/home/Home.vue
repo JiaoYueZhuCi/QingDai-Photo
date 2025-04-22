@@ -1,5 +1,5 @@
 <template>
-    <el-backtop :right="50" :bottom="50" />
+    <el-backtop :right="20" :bottom="70" />
 
     <Introduce />
 

@@ -1,7 +1,68 @@
 <template>
     <div class="container" ref="containerRef">
+        <!-- 选择模式按钮 -->
+        <div class="action-button select-mode" v-if="!isShareMode" @click="toggleShareMode">
+            <el-icon><Select /></el-icon>
+            <span class="button-text">分享照片</span>
+        </div>
+
+        <!-- 分享模式下的按钮组 -->
+        <div class="share-buttons-container" v-else>
+            <!-- 取消按钮 -->
+            <div class="action-button cancel-button" @click="cancelShareMode">
+                <el-icon><Close /></el-icon>
+                <span class="button-text">取消</span>
+            </div>
+            
+            <!-- 确认分享按钮 -->
+            <div class="action-button share-button" @click="openShareDialog">
+                <el-icon><Share /></el-icon>
+                <span class="button-text">确认分享({{ selectedPhotos.length }})</span>
+            </div>
+        </div>
+
+        <!-- 添加分享对话框 -->
+        <el-dialog v-model="shareDialogVisible" title="分享照片" width="400px" :close-on-click-modal="false">
+            <div class="share-dialog-content">
+                <div class="share-options">
+                    <el-radio-group v-model="shareExpireDays">
+                        <el-radio :label="1">1天</el-radio>
+                        <el-radio :label="3">3天</el-radio>
+                        <el-radio :label="7">7天</el-radio>
+                    </el-radio-group>
+                </div>
+                <div class="selected-photos">
+                    <div class="selected-count">已选择 {{ selectedPhotos.length }} 张照片</div>
+                    <div class="photo-grid">
+                        <div v-for="photo in selectedPhotos" :key="photo.id" class="selected-photo-item">
+                            <el-image :src="photo.compressedSrc" fit="cover" />
+                            <el-icon class="remove-icon" @click="removeSelectedPhoto(photo.id)">
+                                <Close />
+                            </el-icon>
+                        </div>
+                    </div>
+                </div>
+                <div class="share-link" v-if="shareLink">
+                    <el-input v-model="shareLink" readonly>
+                        <template #append>
+                            <el-button @click="copyShareLink">复制</el-button>
+                        </template>
+                    </el-input>
+                </div>
+            </div>
+            <template #footer>
+                <span class="dialog-footer">
+                    <el-button @click="closeShareDialog">取消</el-button>
+                    <el-button type="primary" @click="generateShareLink"
+                        :disabled="selectedPhotos.length === 0 || isGenerating">
+                        {{ isGenerating ? '生成中...' : '生成链接' }}
+                    </el-button>
+                </span>
+            </template>
+        </el-dialog>
+
         <FilmPreview v-model="previewVisible" :photo-id="currentPreviewId" :photo-ids="extractedPhotoIds"
-            @close="handlePreviewClose" @image-click="openFullImg" @navigate="handleNavigate" />
+            @close="handlePreviewClose" @image-click="handleImageClick" @navigate="handleNavigate" />
 
         <PhotoViewer v-model="viewerVisible" :photo-id="currentPreviewId" :initial-index="currentIndex"
             :use-direct-render="true" @close="handleViewerClose" />
@@ -14,7 +75,8 @@
             <div class="image-row" v-for="(row, rowIndex) in rows" :key="rowIndex"
                 :style="{ height: `${row.height}px`, width: `${rowWidth}px`, flex: '0 0 auto', margin: `0 ${sideMarginStyle} ${sideMarginStyle} ${sideMarginStyle}` }">
                 <div class="image-item" v-for="(item, index) in row.items" :key="item.id"
-                    @click="handleImageClick(item)">
+                    @click="handleImageClick(item, $event)"
+                    :class="{ 'selected': isShareMode && selectedPhotos.includes(item) }">
                     <div class="image-actions">
                         <div class="actions-container">
                             <el-popover placement="top" :width="200" trigger="click" title="设置星标状态"
@@ -22,8 +84,8 @@
                                 <template #reference>
                                     <div class="action-icon" @click.stop>
                                         <el-icon :color="getStarColor(item.start)">
-                                            <StarFilled v-if="item.start === 1" />
-                                            <Star v-else :class="{ 'star-disabled': item.start === -1 }" />
+                                            <Star v-if="item.start === -1" />
+                                            <StarFilled v-else/>
                                         </el-icon>
                                     </div>
                                 </template>
@@ -98,6 +160,11 @@
                             </div>
                         </div>
                     </div>
+                    <!-- 添加选择框 -->
+                    <div class="selection-checkbox" v-if="isShareMode">
+                        <el-checkbox :model-value="selectedPhotos.includes(item)" @click.stop
+                            @change="(val: boolean) => togglePhotoSelection(item, val)" />
+                    </div>
                     <el-image :src="item.compressedSrc" :key="item.id" lazy
                         :style="{ width: item.calcWidth + 'px', height: item.calcHeight + 'px' }">
                         <template #error>
@@ -119,7 +186,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, computed, toRaw } from 'vue';
 import { ElImage, ElIcon, ElMessage, ElPopover, ElEmpty } from 'element-plus';
-import { Picture as IconPicture, FullScreen, Star, StarFilled, Collection, Check, Edit } from '@element-plus/icons-vue';
+import { Picture as IconPicture, FullScreen, Star, StarFilled, Collection, Check, Edit, Share, Close, Select } from '@element-plus/icons-vue';
 import { getVisiblePhotosByPage, getStartPhotosByPage, updatePhotoStartStatus as updatePhotoStart, getHiddenPhotosByPage, getWeatherPhotosByPage } from '@/api/photo';
 import { getAllGroupPhotos, updateGroupPhoto } from '@/api/groupPhoto';
 import { debounce } from 'lodash';
@@ -129,6 +196,8 @@ import PhotoEditor from "@/components/photo/PhotoEditor.vue";
 import { get100KPhotos, processPhotoData, type EnhancedWaterfallItem } from '@/utils/photo';
 import type { GroupPhotoDTO } from '@/types/groupPhoto';
 import { useRouter, useRoute } from 'vue-router';
+import { createShareLink } from '@/api/share';
+import type { WaterfallItem } from '@/types/waterfall';
 
 // 添加路由
 const router = useRouter();
@@ -308,11 +377,15 @@ watch(() => props.photoType, (newVal, oldVal) => {
 const previewVisible = ref(false);
 const editorVisible = ref(false);
 const currentPreviewId = ref('');
-const handleImageClick = (item: EnhancedWaterfallItem) => {
-    currentPreviewId.value = item.id;
-    previewVisible.value = true;
-    // 更新URL，添加照片ID参数
-    updateUrlWithPhotoId(item.id);
+const handleImageClick = (item: EnhancedWaterfallItem, event: MouseEvent) => {
+    if (isShareMode.value) {
+        event.stopPropagation();
+        togglePhotoSelection(item, !selectedPhotos.value.includes(item));
+    } else {
+        currentPreviewId.value = item.id;
+        previewVisible.value = true;
+        updateUrlWithPhotoId(item.id);
+    }
 };
 
 // 处理预览关闭
@@ -455,10 +528,10 @@ const handleViewerClose = () => {
 // 获取星星颜色
 const getStarColor = (startVal: number) => {
     if (startVal === 1) return 'gold'; // 星标
-    if (startVal === -1) return 'var(--qd-color-primary-light-8)'; // 隐藏
-    if (startVal === 0) return 'var(--qd-color-primary)'; // 普通
+    if (startVal === -1) return 'var(--qd-color-primary-light-7)'; // 隐藏
+    if (startVal === 0) return 'var(--qd-color-primary-light-7)'; // 普通
     if (startVal === 2) return 'darkturquoise'; // 气象
-    return 'var(--qd-color-primary-light-6)'; // 默认
+    return 'var(--qd-color-primary-light-7)'; // 默认
 };
 
 // 更新星标状态
@@ -552,6 +625,102 @@ const handlePhotoUpdated = (updatedPhoto: any) => {
         images.value[index].iso = updatedPhoto.iso;
     }
 };
+
+// 分享相关状态
+const isShareMode = ref(false);
+const shareDialogVisible = ref(false);
+const selectedPhotos = ref<EnhancedWaterfallItem[]>([]);
+const shareExpireDays = ref(7);
+const shareLink = ref('');
+const isGenerating = ref(false);
+
+// 根据ID获取照片对象
+const getPhotoById = (id: string) => {
+    const photo = images.value.find(img => img.id === id);
+    console.log('查找照片:', { id, found: !!photo });
+    return photo;
+};
+
+// 切换分享模式
+const toggleShareMode = () => {
+    isShareMode.value = !isShareMode.value;
+    if (!isShareMode.value) {
+        selectedPhotos.value = [];
+    }
+};
+
+// 打开分享对话框
+const openShareDialog = () => {
+    shareDialogVisible.value = true;
+};
+
+// 关闭分享对话框
+const closeShareDialog = () => {
+    shareDialogVisible.value = false;
+    isShareMode.value = false;
+    selectedPhotos.value = [];
+    shareLink.value = '';
+};
+
+// 生成分享链接
+const generateShareLink = async () => {
+    if (selectedPhotos.value.length === 0) return;
+
+    isGenerating.value = true;
+    try {
+        const response = await createShareLink({
+            photoIds: selectedPhotos.value.map(photo => photo.id),
+            expireDays: shareExpireDays.value
+        });
+        console.log('response:', response);
+        // 获取当前域名
+        const baseUrl = window.location.origin;
+        shareLink.value = `${baseUrl}/share?id=${response}`;
+        ElMessage.success('分享链接生成成功');
+    } catch (error) {
+        console.error('生成分享链接失败:', error);
+        ElMessage.error('生成分享链接失败');
+        shareLink.value = '';
+    } finally {
+        isGenerating.value = false;
+    }
+};
+
+// 复制分享链接
+const copyShareLink = () => {
+    if (!shareLink.value) return;
+    navigator.clipboard.writeText(shareLink.value).then(() => {
+        ElMessage.success('链接已复制到剪贴板');
+        closeShareDialog();
+    }).catch(() => {
+        ElMessage.error('复制失败');
+    });
+};
+
+// 移除已选择的照片
+const removeSelectedPhoto = (photoId: string) => {
+    const index = selectedPhotos.value.findIndex(photo => photo.id === photoId);
+    if (index !== -1) {
+        selectedPhotos.value.splice(index, 1);
+    }
+};
+
+// 切换照片选择状态
+const togglePhotoSelection = (photo: EnhancedWaterfallItem, selected: boolean) => {
+    if (selected) {
+        if (!selectedPhotos.value.includes(photo)) {
+            selectedPhotos.value = [...selectedPhotos.value, photo];
+        }
+    } else {
+        selectedPhotos.value = selectedPhotos.value.filter(p => p.id !== photo.id);
+    }
+};
+
+// 取消分享模式
+const cancelShareMode = () => {
+    isShareMode.value = false;
+    selectedPhotos.value = [];
+};
 </script>
 
 <style>
@@ -566,7 +735,7 @@ const handlePhotoUpdated = (updatedPhoto: any) => {
 
 <style scoped>
 .icon-color {
-    color: var(--qd-color-primary-light-6);
+    color: var(--qd-color-primary-light-7);
 }
 
 .container {
@@ -690,10 +859,6 @@ const handlePhotoUpdated = (updatedPhoto: any) => {
     }
 }
 
-.star-disabled {
-    opacity: 0.5;
-}
-
 .star-selection {
     padding: 0;
 }
@@ -774,5 +939,187 @@ const handlePhotoUpdated = (updatedPhoto: any) => {
 .edit-icon:hover {
     background: rgba(0, 0, 0, 0.7);
     transform: scale(1.1);
+}
+
+.action-button {
+    position: fixed;
+    right: 15px;
+    width: 120px;
+    height: 40px;
+    bottom: 20px;
+    background-color: var(--qd-color-primary);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s;
+    z-index: 1000;
+    color: white;
+    gap: 8px;
+}
+
+.action-button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.action-button .el-icon {
+    font-size: 20px;
+}
+
+.button-text {
+    font-size: 14px;
+}
+
+.select-mode.active {
+    background-color: var(--el-color-success);
+}
+
+.share-button {
+    bottom: 20px;
+    background-color:#67c23a;
+}
+
+.share-dialog-content {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.share-options {
+    display: flex;
+    justify-content: center;
+}
+
+.selected-photos {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.selected-count {
+    margin-bottom: 10px;
+    color: var(--el-text-color-regular);
+}
+
+.photo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 10px;
+}
+
+.selected-photo-item {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.selected-photo-item .el-image {
+    width: 100%;
+    height: 100%;
+}
+
+.remove-icon {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    color: white;
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 50%;
+    padding: 4px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.remove-icon:hover {
+    background-color: rgba(0, 0, 0, 0.8);
+    transform: scale(1.1);
+}
+
+.share-link {
+    margin-top: 10px;
+}
+
+.selection-checkbox {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    z-index: 3;
+    border-radius: 4px;
+    padding: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.selection-checkbox:hover {
+    background-color: rgba(0, 0, 0, 0.7);
+    transform: scale(1.1);
+}
+
+.selection-checkbox :deep(.el-checkbox) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+}
+
+.selection-checkbox :deep(.el-checkbox__input) {
+    width: 24px;
+    height: 24px;
+}
+
+.selection-checkbox :deep(.el-checkbox__inner) {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    background-color: transparent;
+    border-color: white;
+}
+
+.selection-checkbox :deep(.el-checkbox__inner::after) {
+    height: 12px;
+    left: 7px;
+    top: 3px;
+    width: 6px;
+    border-color: var(--qd-color-primary);
+}
+
+.selection-checkbox :deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
+    background-color: var(--qd-color-primary-light-7);
+    border-color: var(--qd-color-primary-light-7);
+}
+
+.image-item.selected {
+    position: relative;
+    border: 3px solid var(--qd-color-primary-light-7);
+    border-radius: 10px;
+}
+
+.image-item.selected::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    opacity: 0.2;
+    pointer-events: none;
+}
+
+.share-buttons-container {
+    position: fixed;
+    right: 15px;
+    bottom: 20px;
+    display: flex;
+    gap: 10px;
+    z-index: 1000;
+}
+
+.cancel-button {
+    background-color: var(--el-color-danger);
+    right: 150px;
 }
 </style>

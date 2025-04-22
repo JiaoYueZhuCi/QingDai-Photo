@@ -1,16 +1,18 @@
 <template>
     <div class="photo-list-container">
-        <el-table :data="tableData" style="width: 100%" border stripe>
-            <el-table-column label="缩略图" width="220" fixed>
+        <el-button class="refresh-button" type="primary" @click="fetchData">刷新照片列表</el-button>
+        
+        <el-table :data="tableData" style="width: 100%" border stripe :max-height="tableHeight">
+            <el-table-column label="缩略图" width="180" fixed>
                 <template #default="scope">
-                    <el-image :src="scope.row.compressedSrc" style="height: 150px" fit="contain"
+                    <el-image :src="scope.row.compressedSrc" style="height: 120px" fit="contain"
                         @click="openPreview(scope.row)" />
                 </template>
             </el-table-column>
 
-            <el-table-column prop="start" label="精选标记" width="110">
+            <el-table-column prop="start" label="标记" width="95">
                 <template #default="scope">
-                    <el-select v-model="scope.row.start" :disabled="!scope.row.isEditing" placeholder="选择状态"
+                    <el-select v-model="scope.row.start" :disabled="!scope.row.isEditing" placeholder="状态"
                         style="width: 80px">
                         <el-option label="精选" :value="1">
                             <el-tag :type="'warning'">
@@ -36,62 +38,74 @@
                 </template>
             </el-table-column>
             
-            <el-table-column prop="fileName" label="文件名" width="95">
+            <el-table-column prop="fileName" label="文件名" width="90">
                 <template #default="scope">
                     <span>{{ scope.row.fileName }}</span>
                 </template>
             </el-table-column>
-            <el-table-column prop="author" label="作者">
+            
+            <el-table-column label="拍摄信息" width="350">
+                <el-table-column prop="camera" label="相机" width="100">
+                    <template #default="scope">
+                        <el-input v-if="scope.row.isEditing" v-model="scope.row.camera" />
+                        <span v-else>{{ scope.row.camera }}</span>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="lens" label="镜头" width="100">
+                    <template #default="scope">
+                        <el-input v-if="scope.row.isEditing" v-model="scope.row.lens" />
+                        <span v-else>{{ scope.row.lens }}</span>
+                    </template>
+                </el-table-column>
+                <el-table-column label="参数" width="100">
+                    <template #default="scope">
+                        <div v-if="scope.row.isEditing">
+                            <div class="param-row">
+                                <span class="param-label">ISO:</span>
+                                <el-input v-model="scope.row.iso" size="small" class="param-input" />
+                            </div>
+                            <div class="param-row">
+                                <span class="param-label">快门:</span>
+                                <el-input v-model="scope.row.shutter" size="small" class="param-input" />
+                            </div>
+                            <div class="param-row">
+                                <span class="param-label">光圈:</span>
+                                <el-input v-model="scope.row.aperture" size="small" class="param-input" />
+                            </div>
+                        </div>
+                        <div v-else>
+                            <div class="params">
+                                <span v-if="scope.row.iso">ISO: {{scope.row.iso}}</span>
+                                <span v-if="scope.row.shutter">快门: {{scope.row.shutter}}</span>
+                                <span v-if="scope.row.aperture">光圈: {{scope.row.aperture}}</span>
+                            </div>
+                        </div>
+                    </template>
+                </el-table-column>
+            </el-table-column>
+            
+            <el-table-column prop="author" label="作者" width="100">
                 <template #default="scope">
                     <el-input v-if="scope.row.isEditing" v-model="scope.row.author" />
                     <span v-else>{{ scope.row.author }}</span>
                 </template>
             </el-table-column>
-            <el-table-column prop="camera" label="相机型号">
-                <template #default="scope">
-                    <el-input v-if="scope.row.isEditing" v-model="scope.row.camera" />
-                    <span v-else>{{ scope.row.camera }}</span>
-                </template>
-            </el-table-column>
-            <el-table-column prop="lens" label="镜头型号">
-                <template #default="scope">
-                    <el-input v-if="scope.row.isEditing" v-model="scope.row.lens" />
-                    <span v-else>{{ scope.row.lens }}</span>
-                </template>
-            </el-table-column>
-            <el-table-column prop="iso" label="ISO">
-                <template #default="scope">
-                    <el-input v-if="scope.row.isEditing" v-model="scope.row.iso" />
-                    <span v-else>{{ scope.row.iso }}</span>
-                </template>
-            </el-table-column>
-            <el-table-column prop="shutter" label="快门">
-                <template #default="scope">
-                    <el-input v-if="scope.row.isEditing" v-model="scope.row.shutter" />
-                    <span v-else>{{ scope.row.shutter }}</span>
-                </template>
-            </el-table-column>
-            <el-table-column prop="aperture" label="光圈">
-                <template #default="scope">
-                    <el-input v-if="scope.row.isEditing" v-model="scope.row.aperture" />
-                    <span v-else>{{ scope.row.aperture }}</span>
-                </template>
-            </el-table-column>
-            <el-table-column prop="time" label="拍摄时间" width="105">
+            
+            <el-table-column prop="time" label="拍摄时间" width="100">
                 <template #default="scope">
                     <el-input v-if="scope.row.isEditing" v-model="scope.row.time" />
                     <span v-else>{{ scope.row.time }}</span>
                 </template>
             </el-table-column>
 
-            <el-table-column prop="title" label="标题">
+            <el-table-column prop="title" label="标题" min-width="120">
                 <template #default="scope">
                     <el-input v-if="scope.row.isEditing" v-model="scope.row.title" />
                     <span v-else>{{ scope.row.title || '无标题' }}</span>
                 </template>
             </el-table-column>
 
-            <el-table-column prop="introduce" label="介绍">
+            <el-table-column prop="introduce" label="介绍" min-width="170">
                 <template #default="scope">
                     <el-input v-if="scope.row.isEditing" v-model="scope.row.introduce" type="textarea"
                         :autosize="{ minRows: 1, maxRows: 3 }" />
@@ -99,7 +113,7 @@
                 </template>
             </el-table-column>
 
-            <el-table-column label="原始尺寸" width="120">
+            <el-table-column label="尺寸" width="90">
                 <template #default="scope">
                     {{ scope.row.width }}×{{ scope.row.height }}
                 </template>
@@ -142,8 +156,8 @@
 <script setup lang="ts">
 import PhotoUpdate from '@/components/photo/PhotoUpdate.vue'
 import PhotoPreview from '@/components/photo/PhotoPreview.vue'
-import { ref, watchEffect } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ref, watchEffect, onMounted, onUnmounted } from 'vue'
+import { ElMessage, ElMessageBox, ElLoading } from 'element-plus'
 import { Upload } from '@element-plus/icons-vue'
 import { getPhotosByPage, updatePhotoInfo, deletePhotoById, getVisiblePhotosByPage } from '@/api/photo'
 import { getRolesPermissions } from '@/api/user'
@@ -161,6 +175,8 @@ const currentPage = ref(1)
 const pageSize = ref(50)
 const total = ref(0)
 const userRole = ref('')
+const loading = ref(false)
+const tableHeight = ref(window.innerHeight - 65)
 
 // 预览相关
 const previewVisible = ref(false)
@@ -186,6 +202,12 @@ const fetchUserRole = async () => {
 
 // 获取照片列表数据
 const fetchData = async () => {
+    const loadingInstance = ElLoading.service({
+        lock: true,
+        text: '加载照片中...',
+        background: 'rgba(0, 0, 0, 0.7)'
+    });
+    
     try {
         let response: PhotoResponse;
         
@@ -219,6 +241,8 @@ const fetchData = async () => {
     } catch (error) {
         console.error('获取照片数据失败:', error);
         ElMessage.error('照片数据加载失败');
+    } finally {
+        loadingInstance.close();
     }
 };
 
@@ -299,11 +323,25 @@ watchEffect(async () => {
     await fetchUserRole();
     await fetchData();
 });
+
+// 监听窗口大小变化调整表格高度
+onMounted(() => {
+    window.addEventListener('resize', adjustTableHeight)
+})
+
+onUnmounted(() => {
+    window.removeEventListener('resize', adjustTableHeight)
+})
+
+const adjustTableHeight = () => {
+    tableHeight.value = window.innerHeight - 130
+}
 </script>
 
 <style scoped>
 .photo-list-container {
     background: #fff;
+    height: 100%;
 }
 
 .floating-action {
@@ -325,5 +363,45 @@ watchEffect(async () => {
 
 .el-button {
     margin: 0 2px;
+}
+
+.refresh-button {
+    position: fixed;
+    right: 20px;
+    top: 15px;
+}
+
+.params {
+    display: flex;
+    flex-direction: column;
+    font-size: 12px;
+}
+
+.params span {
+    margin-bottom: 3px;
+}
+
+.param-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.param-label {
+    width: 40px;
+    font-size: 12px;
+}
+
+.param-input {
+    width: 85px;
+}
+
+:deep(.el-table .cell) {
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+:deep(.el-table--border .el-table__cell) {
+    padding: 6px 0;
 }
 </style>

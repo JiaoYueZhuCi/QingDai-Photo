@@ -21,6 +21,10 @@ springdoc:
 spring:
   application:
     name: QingDai-SP
+  security:
+    user:
+      name: disabled
+      password: disabled
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     type: com.alibaba.druid.pool.DruidDataSource
@@ -61,6 +65,20 @@ spring:
     redis:
       time-to-live: 43200000  # 12小时，单位毫秒
       cache-null-values: false  # 不缓存null值
+
+# JMX 配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+  jmx:
+    enabled: true
+    exposure:
+      include: "*"
 
 mybatis-plus:
   configuration:

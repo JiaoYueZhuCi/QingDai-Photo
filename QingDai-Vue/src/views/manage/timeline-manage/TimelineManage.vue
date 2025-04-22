@@ -1,6 +1,8 @@
 <template>
     <div class="timeline-list-container">
-        <el-table :data="tableData" style="width: 100%" border stripe>
+        <el-button class="refresh-button" type="primary" @click="fetchData">刷新时间线列表</el-button>
+        
+        <el-table v-loading="loading" :data="tableData" style="width: 100%" border stripe :max-height="tableHeight">
             <el-table-column prop="time" label="时间" width="180">
                 <template #default="scope">
                     <el-input v-if="scope.row.isEditing" v-model="scope.row.time" />
@@ -74,12 +76,13 @@ import { getAllTimelines, updateTimeline, deleteTimeline } from '@/api/timeline'
 
 const timelineUpdateRef = ref()
 const timelineAddVisible = ref(false)
-
 const tableData = ref<TimelineItem[]>([])
 const editOriginData = ref<any>({})
 const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
+const loading = ref(false)
+const tableHeight = ref(window.innerHeight - 65)
 
 const showTimelineAdd = () => {
     timelineAddVisible.value = true
@@ -87,6 +90,7 @@ const showTimelineAdd = () => {
 
 const fetchData = async () => {
     try {
+        loading.value = true
         const response = await getAllTimelines()
 
         // 处理响应数据
@@ -107,6 +111,8 @@ const fetchData = async () => {
     } catch (error) {
         console.error('获取时间轴数据失败:', error)
         ElMessage.error('时间轴数据加载失败')
+    } finally {
+        loading.value = false
     }
 }
 
@@ -213,5 +219,10 @@ const handleDelete = async (row: any) => {
     margin: 0;
 }
 
+.refresh-button {
+    position: fixed;
+    right: 20px;
+    top: 15px;
+}
 
 </style>

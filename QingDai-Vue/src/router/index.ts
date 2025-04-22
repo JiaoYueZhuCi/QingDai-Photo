@@ -20,7 +20,7 @@ const router = createRouter({
         },
         {
           path: '/test',
-          component: () => import('@/views/photo/Photo.vue').catch(() => errorPage),
+          component: () => import('@/views/photo/Test.vue').catch(() => errorPage),
         },
         {
           path: '/home',
@@ -106,6 +106,10 @@ const router = createRouter({
               component: () => import('@/views/manage/group-photos-manage/GroupPhotosManage.vue').catch(() => errorPage)
             },
             {
+              path: 'shareList',
+              component: () => import('@/views/manage/share-manage/ShareManage.vue').catch(() => errorPage)
+            },
+            {
               path: 'userInfo',
               component: () => import('@/views/manage/user-manage/UserManage.vue').catch(() => errorPage)
             },
@@ -115,6 +119,16 @@ const router = createRouter({
             }
           ]
         },
+
+        {
+          path: '/share',
+          name: 'Share',
+          component: () => import('@/views/share/Share.vue')
+        },
+        {
+          path: '/:pathMatch(.*)*',
+          component: () => import('@/components/common/Error.vue')
+        }
       ]
     },
   ]

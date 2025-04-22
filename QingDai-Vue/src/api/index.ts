@@ -5,3 +5,4 @@ export { default as request } from './request';
 export * from './photo';
 export * from './timeline';
 export * from './user'; 
+export * from './share';

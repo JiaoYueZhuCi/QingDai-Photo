@@ -1,6 +1,8 @@
 <template>
     <div class="group-photos-list-container">
-        <el-table :data="tableData" style="width: 100%" border stripe>
+        <el-button class="refresh-button" type="primary" @click="fetchData">刷新组图列表</el-button>
+        
+        <el-table :data="tableData" style="width: 100%" border stripe :max-height="tableHeight">
             <el-table-column label="封面图" width="220" fixed>
                 <template #default="scope">
                     <el-image :src="scope.row.coverImage" style="height: 150px" fit="contain"
@@ -68,7 +70,7 @@
 
 <script setup lang="ts">
 import { ref, watchEffect } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox, ElLoading } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { getAllGroupPhotos, deleteGroupPhoto } from '@/api/groupPhoto'
 import type { GroupPhotoDTO } from '@/types/groupPhoto'
@@ -84,12 +86,13 @@ const tableData = ref<any[]>([])
 const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
+const loading = ref(false)
 
 // 组图预览相关
 const selectedGroupId = ref<string | null>(null)
 const selectedPhotoId = ref<string | null>(null)
 const previewVisible = ref(false)
-
+const tableHeight = ref(window.innerHeight - 65)
 // 打开组图预览
 const openPreview = (item: GroupPhotoDTO) => {
     selectedGroupId.value = item.groupPhoto.id;
@@ -125,6 +128,12 @@ const closeGroupPhotoUpdate = () => {
 
 // 获取组图数据
 const fetchData = async () => {
+  const loadingInstance = ElLoading.service({
+    lock: true,
+    text: '加载组图中...',
+    background: 'rgba(0, 0, 0, 0.7)'
+  });
+  
   try {
     const response = await getAllGroupPhotos();
     
@@ -175,6 +184,8 @@ const fetchData = async () => {
   } catch (error) {
     console.error('获取组图数据失败:', error);
     ElMessage.error('组图数据加载失败');
+  } finally {
+    loadingInstance.close();
   }
 };
 
@@ -243,5 +254,11 @@ const handleDelete = async (row: any) => {
 
 .el-button {
     margin: 0 2px;
+}
+
+.refresh-button {
+    position: fixed;
+    right: 20px;
+    top: 15px;
 }
 </style>

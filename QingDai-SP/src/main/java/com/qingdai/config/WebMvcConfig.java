@@ -15,17 +15,12 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                .allowedOriginPatterns(
-                        "http://localhost:*",
-                        "http://127.0.0.1:*",
-                        "http://[::1]:*",
-                        "http://*.qingdai.art",
-                        "https://*.qingdai.art")
-                .allowedMethods("*")
-                .allowCredentials(true)
-                .allowedHeaders("*")
-                .exposedHeaders("Content-Type", "Content-Length", "Content-Disposition", "Vary", "Authorization")
-                .maxAge(3600);
+                .allowedOriginPatterns("*")  // 允许所有域名
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")  // 允许的 HTTP 方法
+                .allowedHeaders("*")  // 允许所有请求头
+                .exposedHeaders("Authorization", "Content-Type", "Content-Length", "Content-Disposition", "Vary")  // 允许暴露的响应头
+                .allowCredentials(true)  // 允许发送凭证（cookies）
+                .maxAge(3600);  // 预检请求的缓存时间
     }
 
     /**

@@ -15,6 +15,9 @@
           <el-menu-item index="/manage/timelineList" style="width: 100px;">
             时间线管理
           </el-menu-item>
+          <el-menu-item index="/manage/shareList" style="width: 100px;">
+            分享管理
+          </el-menu-item>
           <el-menu-item index="/manage/userInfo" style="width: 100px;">
             用户信息设置
           </el-menu-item>
