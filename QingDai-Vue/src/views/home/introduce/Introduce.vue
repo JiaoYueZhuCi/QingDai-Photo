@@ -152,11 +152,10 @@ import {
 import PhotoViewer from '@/components/photo/PhotoViewer.vue'
 import ScrollReveal from '@/components/util/ScrollReveal.vue'
 import { userInfo } from '@/data/userInfo'
+import { homeImages } from '@/data/imageUrls'
 import gsap from 'gsap';
-import { useIntersectionObserver } from '@vueuse/core'
 
-const backgroundImageUrl = '/img/introduce/background.jpg'
-const avatarImageUrl = '/img/introduce/avatar.jpg'
+const { backgroundImageUrl, avatarImageUrl } = homeImages;
 
 const iconStyle = computed(() => {
     const marginMap = {

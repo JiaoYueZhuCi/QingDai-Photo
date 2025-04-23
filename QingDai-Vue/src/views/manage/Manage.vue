@@ -34,6 +34,9 @@
       </el-main>
     </el-container>
   </div>
+  
+  <!-- 添加Footer组件 -->
+  <Footer />
 </template>
 
 <style scoped>
@@ -49,6 +52,8 @@
 </style>
 
 <script setup>
+import Footer from '@/components/common/Footer.vue';
+
 const handleLogout = () => {
   localStorage.clear('token');
   window.location.href = '/';

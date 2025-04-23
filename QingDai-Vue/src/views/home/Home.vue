@@ -25,6 +25,7 @@
         <component :is="Component" />
     </router-view>
 
+    <Footer />
 </template>
 
 <script setup lang="ts">
@@ -32,6 +33,7 @@ import { watch, ref } from 'vue';
 import type { TabsPaneContext } from 'element-plus';
 import Introduce from '@/views/home/introduce/Introduce.vue';
 import ScrollReveal from '@/components/util/ScrollReveal.vue';
+import Footer from '@/components/common/Footer.vue';
 import { useRouter, useRoute } from 'vue-router'
 
 const router = useRouter()

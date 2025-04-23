@@ -48,6 +48,9 @@
         <PhotoViewer v-model="viewerVisible" :photo-id="currentPhotoId" :initial-index="currentIndex"
             :use-direct-render="true" @close="handleViewerClose" />
     </div>
+
+    <!-- 添加Footer组件 -->
+    <Footer />
 </template>
 
 <script setup lang="ts">
@@ -60,6 +63,7 @@ import { getPhotosByIdsWithThumbnail, processPhotoData } from '@/utils/photo';
 import type { EnhancedWaterfallItem } from '@/utils/photo';
 import FilmPreview from '@/components/photo/FilmPreview.vue';
 import PhotoViewer from '@/components/photo/PhotoViewer.vue';
+import Footer from '@/components/common/Footer.vue';
 
 const route = useRoute();
 const shareId = route.query.id as string;

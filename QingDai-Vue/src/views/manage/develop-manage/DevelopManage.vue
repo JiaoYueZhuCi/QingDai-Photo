@@ -4,7 +4,7 @@
       <el-card class="develop-card">
         <template #header>
           <div class="card-header">
-            <span>原图导入数据库</span>
+            <span>待处理图片导入数据库</span>
           </div>
         </template>
         <div class="card-content">
@@ -12,7 +12,7 @@
             执行导入
           </el-button>
           <div class="description">
-            将原图目录中的所有图片信息导入到数据库
+            将Pending目录中的所有图片信息导入到数据库
           </div>
         </div>
       </el-card>
@@ -20,7 +20,7 @@
       <el-card class="develop-card">
         <template #header>
           <div class="card-header">
-            <span>手动压缩照片到指定大小</span>
+            <span>压缩待处理图片到指定大小</span>
           </div>
         </template>
         <div class="card-content">
@@ -41,7 +41,7 @@
             </div>
           </div>
           <div class="description">
-            将Pending目录中的图片压缩到Thumbnail目录
+            将Pending目录中的图片按指定大小压缩到Thumbnail目录
           </div>
         </div>
       </el-card>
@@ -49,7 +49,7 @@
       <el-card class="develop-card">
         <template #header>
           <div class="card-header">
-            <span>手动本地上传照片</span>
+            <span>待处理图片上传数据库并压缩</span>
           </div>
         </template>
         <div class="card-content">

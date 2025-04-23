@@ -119,12 +119,12 @@ public class PhotoController {
     }
 
     @GetMapping("/toMysql")
-    @Operation(summary = "所有图片信息自动入数据库", description = "所有图片信息自动入数据库")
+    @Operation(summary = "pending目录所有图片信息自动入数据库", description = "pending目录所有图片信息自动入数据库")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> FullSizePhototoMysql() {
-        File folder = FileUtils.validateFolder(fullSizeUrl);
+        File folder = FileUtils.validateFolder(pendingUrl);
         if (folder == null) {
-            log.error("照片文件夹路径无效: {}", fullSizeUrl);
+            log.error("照片文件夹路径无效: {}", pendingUrl);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("照片文件夹路径无效");
         }

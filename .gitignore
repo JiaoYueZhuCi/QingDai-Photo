@@ -1,4 +1,5 @@
-# Logs
+# ---------- 通用忽略规则 ----------
+# 日志文件
 logs
 *.log
 npm-debug.log*
@@ -7,24 +8,64 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
+# 临时文件
+*.tsbuildinfo
 .DS_Store
-dist
-dist-ssr
-coverage
 *.local
 
-/cypress/videos/
-/cypress/screenshots/
-
-# Editor directories and files
+# IDE和编辑器文件
+.idea
 .vscode/*
 !.vscode/extensions.json
-.idea
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+*.iws
+*.iml
+*.ipr
 
-*.tsbuildinfo
+# ---------- 前端项目忽略规则 ----------
+# 构建和依赖
+/QingDai-Vue/node_modules
+/QingDai-Vue/dist
+/QingDai-Vue/dist-ssr
+/QingDai-Vue/coverage
+
+# 测试文件
+/cypress/videos/
+/cypress/screenshots/
+
+# 前端敏感信息文件
+/QingDai-Vue/src/data/beian.ts
+
+# ---------- 后端项目忽略规则 ----------
+# Maven构建文件
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# Spring相关文件
+HELP.md
+.springBeans
+.sts4-cache
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+
+# 构建目录
+/nbproject/private/
+/nbbuild/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# 后端敏感配置文件
+/QingDai-SP/src/main/resources/application.yml
+/QingDai-SP/src/main/resources/application-prod.yml

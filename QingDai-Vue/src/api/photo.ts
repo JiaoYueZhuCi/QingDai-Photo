@@ -150,12 +150,12 @@ export const getPhotosByIds = async (ids: string[]): Promise<WaterfallItem[]> =>
 // 开发者方法-----------------------------------------------------------------------------------------
 // 原图导入数据库
 export const fullSizePhotoToMysql = async (): Promise<any> => {
-  return await request.post(`${BASE_URL}/fullSizePhotoToMysql`);
+  return await request.post(`${BASE_URL}/toMysql`);
 };
 
 // 生成缩略图
 export const thumbnailImages = async (maxSizeKB: number = 1024, overwrite: boolean = false): Promise<any> => {
-  return await request.get(`${BASE_URL}/thumbnailImages`, {
+  return await request.get(`${BASE_URL}/thumbnail`, {
     params: { maxSizeKB, overwrite }
   });
 };

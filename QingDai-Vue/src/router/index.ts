@@ -12,7 +12,11 @@ const router = createRouter({
       children: [
         {
           path: '',
-          redirect: '/home'
+          redirect: '/show'
+        },
+        {
+          path: '/show',
+          component: () => import('@/views/show/Show.vue').catch(() => errorPage),
         },
         {
           path: '/login',
