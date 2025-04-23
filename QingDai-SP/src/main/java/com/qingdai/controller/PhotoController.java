@@ -53,7 +53,7 @@ import java.util.stream.Collectors;
 @RestController
 @Tag(name = "图片管理", description = "图片相关操作接口")
 @SecurityRequirement(name = "BearerAuth")
-@RequestMapping("/photo")
+@RequestMapping("/photos")
 public class PhotoController {
 
     @Autowired
@@ -70,7 +70,7 @@ public class PhotoController {
     private String thumbnail100KUrl;
 
 
-    @GetMapping("/getAllPhotos")
+    @GetMapping
     @Operation(summary = "获取全部照片信息(时间倒叙)", description = "从数据库获取所有照片的详细信息(时间倒叙)")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<Photo>> getAllPhotos() {
@@ -94,7 +94,7 @@ public class PhotoController {
         }
     }
 
-    @GetMapping("/getStartPhotos")
+    @GetMapping("/starred")
     @Operation(summary = "获取代表作照片信息(时间倒叙)", description = "从数据库获取所有代表作的详细信息(时间倒叙)")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<Photo>> getStartPhotos() {
@@ -118,7 +118,7 @@ public class PhotoController {
         }
     }
 
-    @GetMapping("/toMysql")
+    @PostMapping("/import")
     @Operation(summary = "pending目录所有图片信息自动入数据库", description = "pending目录所有图片信息自动入数据库")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> FullSizePhototoMysql() {
@@ -158,7 +158,7 @@ public class PhotoController {
             @Parameter(name = "maxSizeKB", in = ParameterIn.QUERY, description = "最大文件大小(KB)", schema = @Schema(type = "integer", minimum = "10", maximum = "10240", example = "1024")),
             @Parameter(name = "overwrite", in = ParameterIn.QUERY, description = "覆盖已存在文件", schema = @Schema(type = "boolean"))
     })
-    @GetMapping("/thumbnail")
+    @PostMapping("/thumbnail")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> thumbnailImages(
             @RequestParam(defaultValue = "1024") int maxSizeKB,
@@ -189,10 +189,10 @@ public class PhotoController {
         }
     }
 
-    @GetMapping("/getThumbnail100KPhoto")
+    @GetMapping("/{id}/thumbnail/small")
     @Operation(summary = "获取指定100K压缩照片文件", description = "根据接收到的的照片ID获取100K压缩照片文件并返回")
     @PreAuthorize("permitAll()")
-    public ResponseEntity<Resource> getThumbnail100KPhotoById(@RequestParam String id) {
+    public ResponseEntity<Resource> getThumbnail100KPhotoById(@PathVariable String id) {
         try {
             String fileName = photoService.getFileNameById(id);
             if (fileName == null) {
@@ -207,10 +207,10 @@ public class PhotoController {
         }
     }
 
-    @GetMapping("/getThumbnail1000KPhoto")
+    @GetMapping("/{id}/thumbnail/medium")
     @Operation(summary = "获取指定1000K压缩照片文件", description = "根据接收到的的照片ID获取1000K压缩照片文件并返回")
     @PreAuthorize("permitAll()")
-    public ResponseEntity<Resource> getThumbnail1000KPhotoById(@RequestParam String id) {
+    public ResponseEntity<Resource> getThumbnail1000KPhotoById(@PathVariable String id) {
         try {
             String fileName = photoService.getFileNameById(id);
             if (fileName == null) {
@@ -225,7 +225,7 @@ public class PhotoController {
         }
     }
 
-    @GetMapping("/getThumbnail100KPhotos")
+    @GetMapping("/thumbnails/small")
     @PreAuthorize("permitAll()")
     @Operation(summary = "批量获取压缩照片文件", description = "根据ID列表获取多个压缩照片文件")
     public ResponseEntity<Resource> getThumbnail100KPhotosByIds(@RequestParam List<String> ids) {
@@ -264,10 +264,10 @@ public class PhotoController {
         }
     }
 
-    @GetMapping("/getFullSizePhoto")
+    @GetMapping("/{id}/original")
     @PreAuthorize("hasRole('VIEWER')")
     @Operation(summary = "获取指定原图照片文件", description = "根据接收到的照片ID获取原图照片文件并返回")
-    public ResponseEntity<Resource> getFullSizePhotoById(@RequestParam String id) {
+    public ResponseEntity<Resource> getFullSizePhotoById(@PathVariable String id) {
         try {
             String fileName = photoService.getFileNameById(id);
             if (fileName == null) {
@@ -282,10 +282,10 @@ public class PhotoController {
         }
     }
 
-    @GetMapping("/getPhotoInfo")
+    @GetMapping("/{id}")
     @PreAuthorize("permitAll()")
     @Operation(summary = "获取照片元数据", description = "根据ID获取照片的完整元数据信息")
-    public ResponseEntity<Photo> getPhotoById(@RequestParam String id) {
+    public ResponseEntity<Photo> getPhotoById(@PathVariable String id) {
         try {
             Photo photo = photoService.getById(Long.valueOf(id));
             if (photo == null) {
@@ -300,7 +300,7 @@ public class PhotoController {
         }
     }
 
-    @GetMapping("/getPhotoCount")
+    @GetMapping("/count")
     @PreAuthorize("permitAll()")
     @Operation(summary = "获取照片总数", description = "从数据库获取所有照片的总数")
     public ResponseEntity<Long> getPhotoCount() {
@@ -314,7 +314,7 @@ public class PhotoController {
         }
     }
 
-    @GetMapping("/getStartPhotoCount")
+    @GetMapping("/count/starred")
     @PreAuthorize("permitAll()")
     @Operation(summary = "获取代表作照片总数", description = "从数据库获取start字段为1的照片总数")
     public ResponseEntity<Long> getStartPhotoCount() {
@@ -328,7 +328,7 @@ public class PhotoController {
         }
     }
 
-    @GetMapping("/getMonthlyPhotoCountChange")
+    @GetMapping("/count/monthly-change")
     @PreAuthorize("permitAll()")
     @Operation(summary = "获取本月照片数量相比上个月照片数量的变化", description = "根据time字段计算本月照片数量相比上个月照片数量的变化")
     public ResponseEntity<Long> getMonthlyPhotoCountChange() {
@@ -344,7 +344,7 @@ public class PhotoController {
         }
     }
 
-    @GetMapping("/getYearlyPhotoCountChange")
+    @GetMapping("/count/yearly-change")
     @PreAuthorize("permitAll()")
     @Operation(summary = "获取今年照片数量相比去年照片数量的变化", description = "根据time字段计算今年照片数量相比去年照片数量的变化")
     public ResponseEntity<Long> getYearlyPhotoCountChange() {
@@ -360,7 +360,7 @@ public class PhotoController {
         }
     }
 
-    @GetMapping("/getMonthlyStartPhotoCountChange")
+    @GetMapping("/count/starred/monthly-change")
     @Operation(summary = "获取本月精选照片数量相比上个月照片数量的变化", description = "根据time字段计算本月代表作照片数量相比上个月照片数量的变化")
     @PreAuthorize("permitAll()")
     public ResponseEntity<Long> getMonthlyStartPhotoCountChange() {
@@ -376,7 +376,7 @@ public class PhotoController {
         }
     }
 
-    @GetMapping("/getYearlyStartPhotoCountChange")
+    @GetMapping("/count/starred/yearly-change")
     @Operation(summary = "获取今年精选照片数量相比去年照片数量的变化", description = "根据time字段计算今年代表作照片数量相比去年照片数量的变化")
     public ResponseEntity<Long> getYearlyStartPhotoCountChange() {
         try {
@@ -391,7 +391,7 @@ public class PhotoController {
         }
     }
 
-    @GetMapping("/getVisiblePhotosByPage")
+    @GetMapping("/visible")
     @Operation(summary = "获取可见图片分页信息", description = "从数据库获取start=0或1的分页照片信息(时间倒叙)")
     @PreAuthorize("permitAll()")
     public ResponseEntity<Page<Photo>> getVisiblePhotosByPage(
@@ -414,7 +414,7 @@ public class PhotoController {
         }
     }
 
-    @GetMapping("/getPhotosByPage")
+    @GetMapping("/page")
     @Operation(summary = "获取分页照片信息(时间倒叙)", description = "从数据库获取分页照片的信息(时间倒叙)")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Page<Photo>> getPhotosByPage(
@@ -436,7 +436,7 @@ public class PhotoController {
         }
     }
 
-    @GetMapping("/getStartPhotosByPage")
+    @GetMapping("/starred/page")
     @Operation(summary = "获取分页代表作照片信息(时间倒叙)", description = "从数据库获取分页代表作的详细信息(时间倒叙)")
     @PreAuthorize("permitAll()")
     public ResponseEntity<Page<Photo>> getStartPhotosByPage(
@@ -458,7 +458,7 @@ public class PhotoController {
     @Transactional
     @Operation(summary = "处理待处理图片", description = "将pendingUrl内的图片添加到数据库，压缩到thumbnailSizeUrl，复制到fullSizeUrl，删除pendingUrl图片")
     @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping("/processPendingPhotos")
+    @PostMapping("/process-pending")
     public ResponseEntity<String> processPendingPhotos(
             @RequestParam(defaultValue = "false") boolean overwrite) {
         try {
@@ -511,7 +511,7 @@ public class PhotoController {
 
     @Transactional
     @Operation(summary = "上传图片", description = "将前端传入的图片添加到数据库，压缩到thumbnailSizeUrl，复制到fullSizeUrl")
-    @PostMapping("/processPhotosFromFrontend")
+    @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> processPhotosFromFrontend(
             @RequestParam(defaultValue = "true") boolean overwrite,
@@ -591,10 +591,10 @@ public class PhotoController {
         }
     }
 
-    @PutMapping("/updatePhotoInfo")
+    @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "更新照片信息", description = "根据ID更新照片元数据信息")
-    public ResponseEntity<String> updatePhotoInfo(@RequestBody Photo photo) {
+    public ResponseEntity<String> updatePhotoInfo(@RequestBody Photo photo, @PathVariable String id) {
         try {
             if (photo.getId() == null) {
                 log.error("更新照片信息失败:ID为空");
@@ -615,10 +615,10 @@ public class PhotoController {
         }
     }
 
-    @DeleteMapping("/deletePhotoById")
+    @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "根据ID删除照片", description = "根据ID删除数据库记录及对应的原图和压缩图文件")
-    public ResponseEntity<String> deletePhotoById(@RequestParam String id) {
+    public ResponseEntity<String> deletePhotoById(@PathVariable String id) {
         try {
             Long photoId = Long.valueOf(id);
             Photo photo = photoService.getById(photoId);
@@ -643,19 +643,14 @@ public class PhotoController {
         }
     }
 
-    @PutMapping("/updatePhotoStartStatus")
+    @PutMapping("/{id}/starred")
     @Operation(summary = "更新照片星标状态", description = "根据ID更新照片的星标状态")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> updatePhotoStartStatus(
-            @RequestBody PhotoStartStatusDTO photoStartStatusDTO) {
+            @RequestBody PhotoStartStatusDTO photoStartStatusDTO, @PathVariable String id) {
         try {
-            String id = photoStartStatusDTO.getId();
             Integer start = photoStartStatusDTO.getStart();
 
-            if (id == null) {
-                log.error("更新星标状态失败：ID为空");
-                return ResponseEntity.badRequest().body("ID不能为空");
-            }
             if (start == null || (start != 0 && start != 1 && start != -1)) {
                 log.error("更新星标状态失败：无效的start值: {}", start);
                 return ResponseEntity.badRequest().body("start参数必须为0或1");
@@ -679,7 +674,7 @@ public class PhotoController {
         }
     }
 
-    @GetMapping("/getPhotosByIds")
+    @GetMapping("/batch")
     @PreAuthorize("permitAll()")
     @Operation(summary = "根据ID列表获取多个照片对象", description = "从数据库获取对应ID列表的多个照片信息")
     public ResponseEntity<List<Photo>> getPhotosByIds(@RequestParam List<String> ids) {
@@ -719,7 +714,7 @@ public class PhotoController {
         }
     }
 
-    @GetMapping("/getHiddenPhotosByPage")
+    @GetMapping("/hidden/page")
     @Operation(summary = "获取分页隐藏照片信息(时间倒叙)", description = "从数据库获取分页隐藏照片的详细信息(start=-1)(时间倒叙)")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Page<Photo>> getHiddenPhotosByPage(
@@ -742,10 +737,10 @@ public class PhotoController {
         }
     }
 
-    @GetMapping("/getWeatherPhotosByPage")
+    @GetMapping("/meteorology/page")
     @Operation(summary = "获取分页气象照片信息(时间倒叙)", description = "从数据库获取分页气象照片的详细信息(start=2)(时间倒叙)")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Page<Photo>> getWeatherPhotosByPage(
+    public ResponseEntity<Page<Photo>> getMeteorologyPhotosByPage(
             @RequestParam int page,
             @RequestParam int pageSize) {
         try {
@@ -765,7 +760,7 @@ public class PhotoController {
         }
     }
 
-    @GetMapping("/validatePhotoExistence")
+    @GetMapping("/validate-existence")
     @Operation(summary = "验证数据库照片文件是否存在", description = "验证数据库记录中的照片是否在原图、100K压缩图和1000K压缩图目录中存在")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Object> validatePhotoExistence() {
@@ -780,7 +775,7 @@ public class PhotoController {
         }
     }
 
-    @GetMapping("/validateFileSystemPhotos")
+    @GetMapping("/validate-filesystem")
     @Operation(summary = "验证文件系统照片是否存在于数据库", description = "验证文件系统中的照片是否在数据库中有记录")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Object> validateFileSystemPhotos() {
@@ -795,7 +790,7 @@ public class PhotoController {
         }
     }
     
-    @DeleteMapping("/deletePhotosNotInDatabase")
+    @DeleteMapping("/not-in-database")
     @Operation(summary = "删除数据库中没有记录的照片", description = "删除文件系统中存在但数据库中没有记录的照片文件")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Object> deletePhotosNotInDatabase() {
@@ -818,7 +813,7 @@ public class PhotoController {
         }
     }
     
-    @DeleteMapping("/deleteMissingPhotoRecords")
+    @DeleteMapping("/missing-records")
     @Operation(summary = "删除丢失了全部三种图片的数据库记录", description = "删除数据库中丢失了原图、100K和1000K全部三种图片文件的记录")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Object> deleteMissingPhotoRecords() {

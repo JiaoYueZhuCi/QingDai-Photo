@@ -30,7 +30,7 @@ import java.util.List;
 @RestController
 @Tag(name = "时间线管理", description = "时间线相关操作接口")
 @SecurityRequirement(name = "BearerAuth")
-@RequestMapping("/timeline")
+@RequestMapping("/timelines")
 public class TimelineController {
 
     @Autowired
@@ -38,7 +38,7 @@ public class TimelineController {
 
     private final SnowflakeIdGenerator snowflakeIdGenerator = new SnowflakeIdGenerator(1, 1);
 
-    @GetMapping("/getAllTimelines")
+    @GetMapping
     @PreAuthorize("permitAll()")
     @Operation(summary = "获取全部时间线信息(时间倒叙)", description = "从数据库获取所有时间线的详细信息(时间倒叙)")
     public ResponseEntity<List<Timeline>> getAllTimelines() {
@@ -62,7 +62,7 @@ public class TimelineController {
         }
     }
 
-    @PostMapping("/addTimeline")
+    @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "添加时间线信息", description = "向数据库中添加一条时间线信息")
     public ResponseEntity<Timeline> addTimeline(@RequestBody TimelineDTO timelineDTO) {
@@ -87,7 +87,7 @@ public class TimelineController {
         }
     }
 
-    @DeleteMapping("/deleteTimeline/{id}")
+    @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "删除时间线信息", description = "根据ID从数据库中删除一条时间线信息")
     public ResponseEntity<Void> deleteTimeline(@PathVariable String id) {
@@ -112,10 +112,10 @@ public class TimelineController {
         }
     }
 
-    @PutMapping("/updateTimeline")
+    @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "更新时间线信息", description = "根据传入的时间线信息更新数据库中的记录")
-    public ResponseEntity<Timeline> updateTimeline(@RequestBody Timeline timeline) {
+    public ResponseEntity<Timeline> updateTimeline(@RequestBody Timeline timeline, @PathVariable String id) {
         try {
             boolean success = timelineService.updateById(timeline);
             if (success) {

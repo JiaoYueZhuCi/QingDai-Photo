@@ -17,13 +17,13 @@ import java.util.Map;
 @Slf4j
 @RestController
 @Tag(name = "照片分享", description = "照片分享相关接口")
-@RequestMapping("/share")
+@RequestMapping("/shares")
 public class SharePhotoController {
 
     @Autowired
     private SharePhotoService sharePhotoService;
 
-    @PostMapping("/create")
+    @PostMapping
     @Operation(summary = "创建分享链接", description = "创建照片分享链接，返回分享ID")
     @PreAuthorize("permitAll()")
     public ResponseEntity<String> createShareLink(
@@ -75,7 +75,7 @@ public class SharePhotoController {
         }
     }
     
-    @GetMapping("/list")
+    @GetMapping
     @Operation(summary = "获取所有分享", description = "获取所有分享的列表")
     @PreAuthorize("hasAnyRole('ADMIN', 'VIEWER')")
     public ResponseEntity<List<Map<String, Object>>> getAllShares() {

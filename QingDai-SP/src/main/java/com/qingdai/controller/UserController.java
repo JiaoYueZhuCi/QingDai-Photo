@@ -42,7 +42,7 @@ import java.util.Map;
 @RestController
 @Tag(name = "用户管理", description = "用户增删改查接口")
 @SecurityRequirement(name = "BearerAuth")
-@RequestMapping("/user")
+@RequestMapping("/users")
 public class UserController {
     @Autowired
     private UserService userService;
@@ -173,7 +173,7 @@ public class UserController {
 
     // 开发环境方法 只用于校验token信息
     @Operation(summary = "获取当前用户信息", description = "通过JWT令牌获取用户详情")
-    @GetMapping("/info")
+    @GetMapping("/me")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserInfoDTO> getUserInfo(
             @RequestParam(value = "testToken", required = false) String tokenParam) {
@@ -219,7 +219,7 @@ public class UserController {
 
     // 根据header获取用户角色及权限
     @Operation(summary = "根据header获取用户角色及权限", description = "通过JWT令牌获取用户角色及权限信息")
-    @GetMapping("/roles-permissions")
+    @GetMapping("/me/roles-permissions")
     @PreAuthorize("permitAll()")
     public ResponseEntity<Map<String, Object>> getRolesAndPermissions(
             @RequestHeader(value = "Authorization", required = false) String authorization) {
@@ -256,7 +256,7 @@ public class UserController {
 
     // 用户更新
     @Operation(summary = "更新用户信息", description = "根据用户ID更新用户信息")
-    @PutMapping("/info/{id}")
+    @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<User> updateUserInfo(
             @Parameter(description = "用户ID", required = true) @PathVariable String id,

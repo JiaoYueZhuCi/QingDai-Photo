@@ -2,7 +2,7 @@ import request from './request';
 import type { WaterfallItem } from '@/types';
 
 // 基础路径
-const BASE_URL = '/api/QingDai/photo';
+const BASE_URL = '/api/QingDai/photos';
 // 类型定义
 export interface PhotoQueryParams {
   page?: number;
@@ -25,7 +25,7 @@ export interface PhotoStatusUpdateParams {
 
 export interface PhotoInfoUpdateParams extends WaterfallItem { }// 获取100K压缩照片(批量)
 export const getThumbnail100KPhotos = async (ids: string): Promise<any> => {
-  return await request.get(`${BASE_URL}/getThumbnail100KPhotos`, {
+  return await request.get(`${BASE_URL}/thumbnails/small`, {
     params: { ids },
     responseType: 'arraybuffer'
   });
@@ -34,31 +34,28 @@ export const getThumbnail100KPhotos = async (ids: string): Promise<any> => {
 
 // 获取100K压缩照片(单张)
 export const getThumbnail100KPhoto = async (id: string): Promise<any> => {
-  return await request.get(`${BASE_URL}/getThumbnail100KPhoto`, {
-    params: { id },
+  return await request.get(`${BASE_URL}/${id}/thumbnail/small`, {
     responseType: 'blob'
   });
 };
 
 // 获取1000K压缩照片
 export const getThumbnail1000KPhoto = async (id: string) => {
-  return await request.get(`${BASE_URL}/getThumbnail1000KPhoto`, {
-    params: { id },
+  return await request.get(`${BASE_URL}/${id}/thumbnail/medium`, {
     responseType: 'blob'
   });
 };
 
 // 获取原图
 export const getFullSizePhoto = async (id: string) => {
-  return await request.get(`${BASE_URL}/getFullSizePhoto`, {
-    params: { id },
+  return await request.get(`${BASE_URL}/${id}/original`, {
     responseType: 'blob'
   });
 };
 
 // 上传照片
 export const processPhotosFromFrontend = async (formData: FormData) => {
-  return await request.post(`${BASE_URL}/processPhotosFromFrontend`, formData, {
+  return await request.post(`${BASE_URL}`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data'
     },
@@ -67,82 +64,82 @@ export const processPhotosFromFrontend = async (formData: FormData) => {
 };
 // 获取照片分页数据
 export const getPhotosByPage = async (params: PhotoQueryParams): Promise<any> => {
-  return await request.get<PhotoResponse>(`${BASE_URL}/getPhotosByPage`, { params });
+  return await request.get<PhotoResponse>(`${BASE_URL}/page`, { params });
 };
 
 // 获取可见照片数据
 export const getVisiblePhotosByPage = async (params: PhotoQueryParams): Promise<any> => {
-  return await request.get<PhotoResponse>(`${BASE_URL}/getVisiblePhotosByPage`, { params });
+  return await request.get<PhotoResponse>(`${BASE_URL}/visible`, { params });
 };
 
 // 获取星标照片数据
 export const getStartPhotosByPage = async (params: PhotoQueryParams): Promise<any> => {
-  return await request.get<PhotoResponse>(`${BASE_URL}/getStartPhotosByPage`, { params });
+  return await request.get<PhotoResponse>(`${BASE_URL}/starred/page`, { params });
 };
 
 // 获取隐藏照片数据
 export const getHiddenPhotosByPage = async (params: PhotoQueryParams): Promise<any> => {
-  return await request.get<PhotoResponse>(`${BASE_URL}/getHiddenPhotosByPage`, { params });
+  return await request.get<PhotoResponse>(`${BASE_URL}/hidden/page`, { params });
 };
 
 // 获取气象照片数据
-export const getWeatherPhotosByPage = async (params: PhotoQueryParams): Promise<any> => {
-  return await request.get<PhotoResponse>(`${BASE_URL}/getWeatherPhotosByPage`, { params });
+export const getMeteorologyPhotosByPage = async (params: PhotoQueryParams): Promise<any> => {
+  return await request.get<PhotoResponse>(`${BASE_URL}/meteorology/page`, { params });
 };
 
 // 获取照片详细信息
 export const getPhotoInfo = async (id: string) => {
-  return await request.get(`${BASE_URL}/getPhotoInfo`, { params: { id } });
+  return await request.get(`${BASE_URL}/${id}`);
 };
 
 // 更新照片信息
 export const updatePhotoInfo = async (data: PhotoInfoUpdateParams) => {
-  return await request.put(`${BASE_URL}/updatePhotoInfo`, data);
+  return await request.put(`${BASE_URL}/${data.id}`, data);
 };
 
 // 更新照片星标状态
 export const updatePhotoStartStatus = async (data: PhotoStatusUpdateParams) => {
-  return await request.put(`${BASE_URL}/updatePhotoStartStatus`, data);
+  return await request.put(`${BASE_URL}/${data.id}/starred`, data);
 };
 
 // 删除照片
 export const deletePhotoById = async (id: string) => {
-  return await request.delete(`${BASE_URL}/deletePhotoById`, { params: { id } });
+  return await request.delete(`${BASE_URL}/${id}`);
 };
 
 // 获取星标照片统计数据
 export const getStartPhotoCount = async (): Promise<number> => {
-  return await request.get(`${BASE_URL}/getStartPhotoCount`);
+  return await request.get(`${BASE_URL}/count/starred`);
 };
 
 // 获取月度星标照片变化
 export const getMonthlyStartPhotoCountChange = async (): Promise<number> => {
-  return await request.get(`${BASE_URL}/getMonthlyStartPhotoCountChange`);
+  return await request.get(`${BASE_URL}/count/starred/monthly-change`);
 };
 
 // 获取年度星标照片变化
 export const getYearlyStartPhotoCountChange = async (): Promise<number> => {
-  return await request.get(`${BASE_URL}/getYearlyStartPhotoCountChange`);
+  return await request.get(`${BASE_URL}/count/starred/yearly-change`);
 };
 
 // 获取照片总数
 export const getPhotoCount = async (): Promise<number> => {
-  return await request.get(`${BASE_URL}/getPhotoCount`);
+  return await request.get(`${BASE_URL}/count`);
 };
 
 // 获取月度照片变化
 export const getMonthlyPhotoCountChange = async (): Promise<number> => {
-  return await request.get(`${BASE_URL}/getMonthlyPhotoCountChange`);
+  return await request.get(`${BASE_URL}/count/monthly-change`);
 };
 
 // 获取年度照片变化
 export const getYearlyPhotoCountChange = async (): Promise<number> => {
-  return await request.get(`${BASE_URL}/getYearlyPhotoCountChange`);
+  return await request.get(`${BASE_URL}/count/yearly-change`);
 };
 
 // 根据ID列表获取多个照片对象
 export const getPhotosByIds = async (ids: string[]): Promise<WaterfallItem[]> => {
-  return await request.get(`${BASE_URL}/getPhotosByIds`, {
+  return await request.get(`${BASE_URL}/batch`, {
     params: { ids: ids.join(',') }
   });
 };
@@ -150,39 +147,39 @@ export const getPhotosByIds = async (ids: string[]): Promise<WaterfallItem[]> =>
 // 开发者方法-----------------------------------------------------------------------------------------
 // 原图导入数据库
 export const fullSizePhotoToMysql = async (): Promise<any> => {
-  return await request.post(`${BASE_URL}/toMysql`);
+  return await request.post(`${BASE_URL}/import`);
 };
 
 // 生成缩略图
 export const thumbnailImages = async (maxSizeKB: number = 1024, overwrite: boolean = false): Promise<any> => {
-  return await request.get(`${BASE_URL}/thumbnail`, {
+  return await request.post(`${BASE_URL}/thumbnail`, {
     params: { maxSizeKB, overwrite }
   });
 };
 
 // 处理待处理照片
 export const processPendingPhotos = async (overwrite: boolean = false): Promise<any> => {
-  return await request.get(`${BASE_URL}/processPendingPhotos`, {
+  return await request.post(`${BASE_URL}/process-pending`, {
     params: { overwrite }
   });
 };
 
 // 验证数据库照片在文件系统中的存在性
 export const validatePhotoExistence = async (): Promise<any> => {
-  return await request.get(`${BASE_URL}/validatePhotoExistence`);
+  return await request.get(`${BASE_URL}/validate-existence`);
 };
 
 // 验证文件系统照片在数据库中的存在性
 export const validateFileSystemPhotos = async (): Promise<any> => {
-  return await request.get(`${BASE_URL}/validateFileSystemPhotos`);
+  return await request.get(`${BASE_URL}/validate-filesystem`);
 };
 
 // 删除数据库中没有记录的照片
 export const deletePhotosNotInDatabase = async (): Promise<any> => {
-  return await request.delete(`${BASE_URL}/deletePhotosNotInDatabase`);
+  return await request.delete(`${BASE_URL}/not-in-database`);
 };
 
 // 删除丢失了全部三种图片的数据库记录
 export const deleteMissingPhotoRecords = async (): Promise<any> => {
-  return await request.delete(`${BASE_URL}/deleteMissingPhotoRecords`);
+  return await request.delete(`${BASE_URL}/missing-records`);
 };

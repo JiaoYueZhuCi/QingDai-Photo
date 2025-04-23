@@ -187,7 +187,7 @@
 import { ref, onMounted, onUnmounted, watch, computed, toRaw } from 'vue';
 import { ElImage, ElIcon, ElMessage, ElPopover, ElEmpty } from 'element-plus';
 import { Picture as IconPicture, FullScreen, Star, StarFilled, Collection, Check, Edit, Share, Close, Select } from '@element-plus/icons-vue';
-import { getVisiblePhotosByPage, getStartPhotosByPage, updatePhotoStartStatus as updatePhotoStart, getHiddenPhotosByPage, getWeatherPhotosByPage } from '@/api/photo';
+import { getVisiblePhotosByPage, getStartPhotosByPage, updatePhotoStartStatus as updatePhotoStart, getHiddenPhotosByPage, getMeteorologyPhotosByPage } from '@/api/photo';
 import { getAllGroupPhotos, updateGroupPhoto } from '@/api/groupPhoto';
 import { debounce } from 'lodash';
 import FilmPreview from "@/components/photo/FilmPreview.vue";
@@ -238,7 +238,7 @@ const getPhotos = async () => {
                 apiEndpoint = getHiddenPhotosByPage;
                 break;
             case 3: // 气象照片
-                apiEndpoint = getWeatherPhotosByPage;
+                apiEndpoint = getMeteorologyPhotosByPage;
                 break;
             default:
                 apiEndpoint = getVisiblePhotosByPage;

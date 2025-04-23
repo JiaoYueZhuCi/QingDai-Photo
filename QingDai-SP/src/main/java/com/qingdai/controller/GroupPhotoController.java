@@ -30,7 +30,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 @Slf4j
 @RestController
 @Tag(name = "组图管理", description = "组图相关操作接口")
-@RequestMapping("/groupPhoto")
+@RequestMapping("/group-photos")
 public class GroupPhotoController {
     @Autowired
     private GroupPhotoService groupPhotoService;
@@ -40,7 +40,7 @@ public class GroupPhotoController {
     private final SnowflakeIdGenerator snowflakeIdGenerator = new SnowflakeIdGenerator(1, 1);
 
     @Operation(summary = "获取组图详情", description = "根据ID查询组图详细信息")
-    @GetMapping("/getGroupPhoto/{id}")
+    @GetMapping("/{id}")
     @PreAuthorize("permitAll()")
     public ResponseEntity<GroupPhotoDTO> getGroupPhotoById(@PathVariable String id) {
         try {
@@ -60,7 +60,7 @@ public class GroupPhotoController {
     }
 
     @Operation(summary = "获取所有组图", description = "获取所有组图列表")
-    @GetMapping("/getAllGroupPhotos")
+    @GetMapping
     @PreAuthorize("permitAll()")
     public ResponseEntity<List<GroupPhotoDTO>> getAllGroupPhotos() {
         try {
@@ -80,7 +80,7 @@ public class GroupPhotoController {
     }
 
     @Operation(summary = "创建组图", description = "创建新的组图记录")
-    @PostMapping("/addGroupPhoto")
+    @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> createGroupPhoto(@RequestBody GroupPhotoDTO groupPhotoDTO) {
         try {
@@ -115,12 +115,11 @@ public class GroupPhotoController {
     }
 
     @Operation(summary = "更新组图", description = "更新组图信息")
-    @PutMapping("/updateGroupPhoto")
+    @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<String> updateGroupPhoto(@RequestBody GroupPhotoDTO groupPhotoDTO) {
+    public ResponseEntity<String> updateGroupPhoto(@RequestBody GroupPhotoDTO groupPhotoDTO, @PathVariable String id) {
         try {
             GroupPhoto groupPhoto = groupPhotoDTO.getGroupPhoto();
-            String id = groupPhoto.getId();
             if (id == null) {
                 return ResponseEntity.badRequest().body("ID不能为空");
             }
@@ -149,7 +148,7 @@ public class GroupPhotoController {
     }
 
     @Operation(summary = "删除组图", description = "删除指定ID的组图记录")
-    @DeleteMapping("/deleteGroupPhoto/{id}")
+    @DeleteMapping("/{id}")
     @Transactional
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> deleteGroupPhoto(@PathVariable String id) {
@@ -206,7 +205,7 @@ public class GroupPhotoController {
     // }
 
     @Operation(summary = "获取组图照片数量", description = "根据ID获取组图中照片的数量")
-    @GetMapping("/getPhotoCount/{id}")
+    @GetMapping("/{id}/photos/count")
     @PreAuthorize("permitAll()")
     public ResponseEntity<Integer> getPhotoCountById(@PathVariable String id) {
         try {

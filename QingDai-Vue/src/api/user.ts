@@ -2,7 +2,7 @@ import { ElMessage } from 'element-plus';
 import request from './request';
 
 // 基础路径
-const BASE_URL = '/api/QingDai/user';
+const BASE_URL = '/api/QingDai/users';
 
 // 类型定义
 export interface LoginParams {
@@ -57,7 +57,7 @@ export interface RolesPermissionsResponse {
 export const getRolesPermissions = async (): Promise<any> => {
   try {
     const response = await request.get<RolesPermissionsResponse>(
-      `${BASE_URL}/roles-permissions`,
+      `${BASE_URL}/me/roles-permissions`,
       {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`
@@ -78,7 +78,7 @@ export interface UpdateUserInfoParams {
 
 export const updateUserInfo = async (id: string, data: UpdateUserInfoParams): Promise<any> => {
   try {
-    const response = await request.put<any>(`${BASE_URL}/info/${id}`, data);
+    const response = await request.put<any>(`${BASE_URL}/${id}`, data);
     return response;
   } catch (error) {
     console.error('更新用户信息失败:', error);
@@ -88,7 +88,7 @@ export const updateUserInfo = async (id: string, data: UpdateUserInfoParams): Pr
 
 export const getUserInfo = async (token: string): Promise<any> => {
   try {
-    const response = await request.get<any>(`${BASE_URL}/info`, {
+    const response = await request.get<any>(`${BASE_URL}/me`, {
       params: {
         testToken: token
       },

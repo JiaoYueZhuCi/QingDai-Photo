@@ -63,7 +63,7 @@ const router = createRouter({
               props: { photoType: 2 }
             },
             {
-              path: 'weather',
+              path: 'meteorology',
               component: () => import('@/views/home/photo/Photo.vue').catch(() => errorPage),
               props: { photoType: 3 }
             },

@@ -15,7 +15,7 @@
                 <el-tab-pane label="晚霞" name="sunsetGlow"></el-tab-pane>
                 <el-tab-pane label="日出" name="sunrise"></el-tab-pane>
                 <el-tab-pane label="日落" name="sunset"></el-tab-pane>
-                <el-tab-pane label="气象" name="weather"></el-tab-pane>
+                <el-tab-pane label="气象" name="meteorology"></el-tab-pane>
                 <el-tab-pane label="隐藏" name="hidden"></el-tab-pane>
             </el-tabs>
         </div>

@@ -1,7 +1,7 @@
 import request from './request';
 import type { AxiosResponse } from 'axios';
 
-const BASE_URL = '/api/QingDai/share';
+const BASE_URL = '/api/QingDai/shares';
 
 // 创建分享链接的请求参数接口
 export interface CreateShareLinkRequest {
@@ -25,7 +25,7 @@ export interface ShareInfo {
 
 // 创建分享链接
 export const createShareLink = async (data: CreateShareLinkRequest): Promise<any> => {
-    const response = await request.post<CreateShareLinkResponse>(`${BASE_URL}/create`, data);
+    const response = await request.post<CreateShareLinkResponse>(`${BASE_URL}`, data);
     return response;
 };
 
@@ -43,7 +43,7 @@ export const validateShareLink = async (shareId: string): Promise<any> => {
 
 // 获取所有分享
 export const getAllShares = async (): Promise<any> => {
-    const response = await request.get<ShareInfo[]>(`${BASE_URL}/list`);
+    const response = await request.get<ShareInfo[]>(`${BASE_URL}`);
     return response;
 };
 
