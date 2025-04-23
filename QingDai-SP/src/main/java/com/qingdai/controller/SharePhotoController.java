@@ -16,7 +16,7 @@ import java.util.Map;
 
 @Slf4j
 @RestController
-@Tag(name = "照片分享", description = "照片分享相关接口")
+@Tag(name = "照片分享管理", description = "照片分享相关接口")
 @RequestMapping("/shares")
 public class SharePhotoController {
 

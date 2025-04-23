@@ -1,11 +1,15 @@
 package com.qingdai.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.qingdai.entity.dto.PhotoStartStatusDTO;
 import com.qingdai.entity.Photo;
+import com.qingdai.entity.GroupPhotoPhoto;
 import com.qingdai.service.PhotoService;
+import com.qingdai.service.GroupPhotoPhotoService;
+import com.qingdai.service.GroupPhotoService;
 import com.qingdai.utils.FileUtils;
 import com.qingdai.utils.ValidationUtils;
 import io.swagger.v3.oas.annotations.Operation;
@@ -58,6 +62,10 @@ public class PhotoController {
 
     @Autowired
     PhotoService photoService;
+
+    @Autowired
+    GroupPhotoPhotoService groupPhotoPhotoService;
+
     @Value("${qingdai.fullSizeUrl}")
     private String fullSizeUrl;
     @Value("${qingdai.pendingUrl}")
@@ -69,7 +77,6 @@ public class PhotoController {
     @Value("${qingdai.thumbnail100KUrl}")
     private String thumbnail100KUrl;
 
-
     @GetMapping
     @Operation(summary = "获取全部照片信息(时间倒叙)", description = "从数据库获取所有照片的详细信息(时间倒叙)")
     @PreAuthorize("hasRole('ADMIN')")
@@ -77,8 +84,7 @@ public class PhotoController {
         try {
             List<Photo> photos = photoService.list(
                     new LambdaQueryWrapper<Photo>()
-                            .orderByDesc(Photo::getTime)
-            );
+                            .orderByDesc(Photo::getTime));
 
             if (photos == null || photos.isEmpty()) {
                 log.warn("未找到任何照片记录");
@@ -118,7 +124,7 @@ public class PhotoController {
         }
     }
 
-    @PostMapping("/import")
+    @PostMapping("/import-pending")
     @Operation(summary = "pending目录所有图片信息自动入数据库", description = "pending目录所有图片信息自动入数据库")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> FullSizePhototoMysql() {
@@ -158,7 +164,7 @@ public class PhotoController {
             @Parameter(name = "maxSizeKB", in = ParameterIn.QUERY, description = "最大文件大小(KB)", schema = @Schema(type = "integer", minimum = "10", maximum = "10240", example = "1024")),
             @Parameter(name = "overwrite", in = ParameterIn.QUERY, description = "覆盖已存在文件", schema = @Schema(type = "boolean"))
     })
-    @PostMapping("/thumbnail")
+    @PostMapping("/thumbnail-pending")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> thumbnailImages(
             @RequestParam(defaultValue = "1024") int maxSizeKB,
@@ -328,6 +334,31 @@ public class PhotoController {
         }
     }
 
+    @GetMapping("/count/by-types")
+    @PreAuthorize("permitAll()")
+    @Operation(summary = "根据照片类型获取照片总数", description = "从数据库获取指定类型的照片总数，支持多个类型")
+    public ResponseEntity<Long> getPhotoCountByTypes(@RequestParam String types) {
+        try {
+            // 解析类型参数，支持多个类型，如 "0,1,2"
+            String[] typeArray = types.split(",");
+            List<Integer> typeList = new ArrayList<>();
+            for (String type : typeArray) {
+                typeList.add(Integer.parseInt(type.trim()));
+            }
+
+            // 构建查询条件
+            LambdaQueryWrapper<Photo> queryWrapper = new LambdaQueryWrapper<Photo>()
+                    .in(Photo::getStart, typeList);
+
+            long count = photoService.count(queryWrapper);
+            log.info("成功获取照片类型{}的照片总数: {}", types, count);
+            return ResponseEntity.ok().body(count);
+        } catch (Exception e) {
+            log.error("获取照片类型{}的照片总数时发生错误: {}", types, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
     @GetMapping("/count/monthly-change")
     @PreAuthorize("permitAll()")
     @Operation(summary = "获取本月照片数量相比上个月照片数量的变化", description = "根据time字段计算本月照片数量相比上个月照片数量的变化")
@@ -483,7 +514,8 @@ public class PhotoController {
 
             // 处理图片压缩流程
             try {
-                photoService.processPhotoCompression(pendingDir, thumbnail100KDir, thumbnail1000KDir, fullSizeDir, overwrite);
+                photoService.processPhotoCompression(pendingDir, thumbnail100KDir, thumbnail1000KDir, fullSizeDir,
+                        overwrite);
             } catch (IOException e) {
                 log.error("处理文件时出错, 错误: {}", e.getMessage(), e);
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -516,9 +548,7 @@ public class PhotoController {
     public ResponseEntity<String> processPhotosFromFrontend(
             @RequestParam(defaultValue = "true") boolean overwrite,
             @RequestParam(defaultValue = "0") Integer start,
-            @Parameter(description = "上传的图片文件数组", content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE,
-                    array = @ArraySchema(arraySchema = @Schema(type = "array", implementation = File.class),
-                            schema = @Schema(type = "string", format = "binary")))) @RequestParam("files") MultipartFile[] files) {
+            @Parameter(description = "上传的图片文件数组", content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE, array = @ArraySchema(arraySchema = @Schema(type = "array", implementation = File.class), schema = @Schema(type = "string", format = "binary")))) @RequestParam("files") MultipartFile[] files) {
         long startTime = System.currentTimeMillis();
         try {
             if (files == null || files.length == 0) {
@@ -552,7 +582,8 @@ public class PhotoController {
 
             try {
                 // 处理图片压缩流程
-                photoService.processPhotoCompression(tempDir, thumbnail100KDir, thumbnail1000KDir, fullSizeDir, overwrite);
+                photoService.processPhotoCompression(tempDir, thumbnail100KDir, thumbnail1000KDir, fullSizeDir,
+                        overwrite);
             } catch (IOException e) {
                 log.error("处理文件时出错, 错误: {}", e.getMessage(), e);
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -569,15 +600,15 @@ public class PhotoController {
             if (result.isSuccess()) {
                 long endTime = System.currentTimeMillis();
                 long duration = endTime - startTime;
-                log.info("成功处理{}张图片，其中更新{}张，新增{}张，耗时{}毫秒", 
-                    result.getExistingPhotos().size() + result.getNewPhotos().size(), 
-                    result.getExistingPhotos().size(), 
-                    result.getNewPhotos().size(), 
-                    duration);
-                return ResponseEntity.ok("成功处理 " + (result.getExistingPhotos().size() + result.getNewPhotos().size()) + 
-                    " 张图片，其中更新 " + result.getExistingPhotos().size() + 
-                    " 张，新增 " + result.getNewPhotos().size() + 
-                    " 张，耗时" + duration + "毫秒");
+                log.info("成功处理{}张图片，其中更新{}张，新增{}张，耗时{}毫秒",
+                        result.getExistingPhotos().size() + result.getNewPhotos().size(),
+                        result.getExistingPhotos().size(),
+                        result.getNewPhotos().size(),
+                        duration);
+                return ResponseEntity.ok("成功处理 " + (result.getExistingPhotos().size() + result.getNewPhotos().size()) +
+                        " 张图片，其中更新 " + result.getExistingPhotos().size() +
+                        " 张，新增 " + result.getNewPhotos().size() +
+                        " 张，耗时" + duration + "毫秒");
             } else {
                 log.error("数据库保存失败");
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("数据库保存失败");
@@ -674,7 +705,7 @@ public class PhotoController {
         }
     }
 
-    @GetMapping("/batch")
+    @GetMapping("/ids")
     @PreAuthorize("permitAll()")
     @Operation(summary = "根据ID列表获取多个照片对象", description = "从数据库获取对应ID列表的多个照片信息")
     public ResponseEntity<List<Photo>> getPhotosByIds(@RequestParam List<String> ids) {
@@ -781,7 +812,8 @@ public class PhotoController {
     public ResponseEntity<Object> validateFileSystemPhotos() {
         try {
             log.info("控制器调用: 验证文件系统中照片在数据库中的存在性");
-            Map<String, Object> result = photoService.validateFileSystemPhotos(fullSizeUrl, thumbnail100KUrl, thumbnail1000KUrl);
+            Map<String, Object> result = photoService.validateFileSystemPhotos(fullSizeUrl, thumbnail100KUrl,
+                    thumbnail1000KUrl);
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             log.error("验证文件系统照片时发生错误: {}", e.getMessage(), e);
@@ -789,21 +821,22 @@ public class PhotoController {
                     .body(Collections.singletonMap("error", "验证过程中发生错误: " + e.getMessage()));
         }
     }
-    
+
     @DeleteMapping("/not-in-database")
     @Operation(summary = "删除数据库中没有记录的照片", description = "删除文件系统中存在但数据库中没有记录的照片文件")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Object> deletePhotosNotInDatabase() {
         try {
             log.info("控制器调用: 删除文件系统中数据库没有记录的照片");
-            Map<String, Object> result = photoService.deletePhotosNotInDatabase(fullSizeUrl, thumbnail100KUrl, thumbnail1000KUrl);
-            
+            Map<String, Object> result = photoService.deletePhotosNotInDatabase(fullSizeUrl, thumbnail100KUrl,
+                    thumbnail1000KUrl);
+
             if (result.containsKey("error")) {
                 log.error("删除操作失败: {}", result.get("error"));
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .body(result);
             }
-            
+
             log.info("成功删除数据库中没有记录的照片");
             return ResponseEntity.ok(result);
         } catch (Exception e) {
@@ -812,7 +845,7 @@ public class PhotoController {
                     .body(Collections.singletonMap("error", "删除过程中发生错误: " + e.getMessage()));
         }
     }
-    
+
     @DeleteMapping("/missing-records")
     @Operation(summary = "删除丢失了全部三种图片的数据库记录", description = "删除数据库中丢失了原图、100K和1000K全部三种图片文件的记录")
     @PreAuthorize("hasRole('ADMIN')")
@@ -820,19 +853,33 @@ public class PhotoController {
         try {
             log.info("控制器调用: 删除丢失了全部三种图片的数据库记录");
             Map<String, Object> result = photoService.deleteMissingPhotoRecords();
-            
+
             if (result.containsKey("error")) {
                 log.error("删除操作失败: {}", result.get("error"));
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .body(result);
             }
-            
+
             log.info("成功删除丢失了全部三种图片的数据库记录");
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             log.error("删除丢失照片记录时发生错误: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Collections.singletonMap("error", "删除过程中发生错误: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/stats/dashboard")
+    @Operation(summary = "获取所有照片统计数据", description = "获取照片类型、年月变化、拍摄主题、相机、镜头、参数等全面统计数据")
+    @PreAuthorize("permitAll()")
+    public ResponseEntity<Map<String, Object>> getPhotoDashboardStats() {
+        try {
+            Map<String, Object> stats = photoService.getPhotoDashboardStats();
+            log.info("成功获取照片统计数据");
+            return ResponseEntity.ok(stats);
+        } catch (Exception e) {
+            log.error("获取照片统计数据时发生错误: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 }

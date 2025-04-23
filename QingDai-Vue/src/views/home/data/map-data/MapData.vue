@@ -1,47 +1,37 @@
 <template>
   <div class="map-group">
-      <el-affix :offset="10">
+    <div class="Container">
       <div class="card mapCard">
+        <div class="province-list-title">拍摄足迹</div>
         <div ref="mapContainer" class="map-container"></div>
       </div>
-    </el-affix>
-    <div class="card timelineCard">
-      <Timeline />
+      <div class="province-list-card">
+        <h3 class="province-list-title">已拍摄省份</h3>
+        <ul class="province-list">
+          <li v-for="province in activeProvinces" :key="province.adcode" class="province-item">
+            {{ province.name }}
+          </li>
+        </ul>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, nextTick, watch } from 'vue';
+import { ref, onMounted, onBeforeUnmount, nextTick, computed } from 'vue';
 import * as echarts from 'echarts';
 import chinaJson from '@/data/china.json';
-import Timeline from '@/views/home/timeline/Timeline.vue';
-
-const activatedProvinces = ref([
-  110000, // 北京市
-  310000, // 上海市
-  440000, // 广东省
-  120000, // 天津市
-  130000, // 河北省
-  150000, // 内蒙古自治区
-  210000, // 辽宁省
-  140000, // 山西省
-  610000, // 陕西省
-  510000, // 四川省
-  320000, // 江苏省
-  330000, // 浙江省
-  350000, // 福建省
-  440000, // 广东省
-  500000, // 重庆市
-  450000, // 广西自治区
-  460000, // 海南省
-  430000, // 湖南省
-  370000, // 山东省
-]);
+import { allProvinces } from '@/data/mapProvinces';
 
 const mapContainer = ref(null);
 let chart = null;
 let hasRegisteredMap = false; // 防止重复注册地图
+
+// 计算已激活的省份列表
+const activeProvinces = computed(() => {
+  return allProvinces.filter(province => province.isActive)
+    .sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'));
+});
 
 // 统一处理图表初始化
 const initChart = async () => {
@@ -54,8 +44,21 @@ const initChart = async () => {
 
     // 单次注册地图
     if (!hasRegisteredMap) {
-      echarts.registerMap('china', chinaJson);
-      hasRegisteredMap = true;
+      try {
+        // 确保chinaJson是有效的GeoJSON格式
+        if (typeof chinaJson === 'string') {
+          // 如果是字符串，尝试解析
+          const parsedJson = JSON.parse(chinaJson);
+          echarts.registerMap('china', parsedJson);
+        } else {
+          // 如果已经是对象，直接使用
+          echarts.registerMap('china', chinaJson);
+        }
+        hasRegisteredMap = true;
+      } catch (error) {
+        console.error('注册地图失败:', error);
+        throw new Error('地图数据格式错误，无法注册地图');
+      }
     }
 
     // 初始化图表
@@ -63,23 +66,41 @@ const initChart = async () => {
 
     // 配置项
     const option = {
-      geo: {
-        map: 'china',
-        // width: '40vh',
-        // height: '40vh',
-        roam: false,
-        itemStyle: {
-          areaColor: '#EEEEEE',
-          borderColor: 'black',
-          borderWidth: 1
-        },
-        emphasis: {
+      backgroundColor: '#000000',
+      title: {
+        text: '',
+        left: 'center',
+        textStyle: {
+          color: '#fff',
+        }
+      },
+      tooltip: {
+        trigger: 'item',
+        formatter: '{b}'
+      },
+      series: [
+        {
+          name: '中国',
+          type: 'map',
+          map: 'china',
+          selectedMode: false,
+          aspectScale: 0.75,
+          zoom: 1.2,
+          roam: false, // 禁用地图缩放和平移
+          label: {
+            show: false // 不显示省份名称
+          },
           itemStyle: {
-            areaColor: '#FF0000'
-          }
-        },
-        regions: getRegionStyles()
-      }
+            areaColor: '#222222', 
+            borderColor: '#222222', // 默认边框颜色与填充色相同
+            borderWidth: 1
+          },
+          emphasis: {
+            disabled: true // 禁用鼠标悬浮高亮效果
+          },
+          data: getMapData()
+        }
+      ]
     };
 
     chart.setOption(option);
@@ -87,6 +108,24 @@ const initChart = async () => {
   } catch (error) {
     console.error('地图初始化失败:', error);
   }
+};
+
+// 获取地图数据
+const getMapData = () => {
+  return allProvinces.map(province => {
+    // 颜色设置
+    const activeColor = '#c2c5df'; // 已拍摄地区颜色，使用主题色
+    const inactiveColor = '#222222'; // 未拍摄地区颜色
+    
+    return {
+      name: province.name,
+      value: province.isActive ? 100 : 0,
+      itemStyle: {
+        areaColor: province.isActive ? activeColor : inactiveColor,
+        borderColor: province.isActive ? activeColor : inactiveColor // 边框颜色与区域填充色相同
+      }
+    };
+  });
 };
 
 // 清理资源
@@ -112,81 +151,87 @@ onBeforeUnmount(() => {
   disposeChart();
 });
 
-const getRegionStyles = () => {  // 返回选定省份样式
-  return activatedProvinces.value.map(adcode => ({
-    name: getProvinceName(adcode),
-    itemStyle: {
-      areaColor: '#FF0000',
-      borderColor: '#FFFFFF'
-    }
-  }));
-};
-
-const getProvinceName = (adcode) => {   //根据省份代码返回省份名称
-  const feature = chinaJson.features.find(f => f.properties.adcode === adcode);
-  return feature?.properties?.name || '';
-};
-
 </script>
 
 <style scoped>
 .map-group {
-  background-color: black;
+  background-color: #000000;
+  padding: 10px;
+}
+
+.Container {
   display: flex;
-  padding: 0 10px 10px 10px;
-  justify-content: space-around;
+  justify-content: space-between;
   gap: 10px;
-  /* min-width: 520px; */
 }
 
 .map-container {
-  /* width: 40vw;
-  height: 70vh; */
   width: 100%;
   height: 100%;
-  padding: 10px 0 0 0;
-  position: relative;
-  top: -1vh;
 }
 
 .mapCard {
-  padding: 10px;
-  width: 40vw;
-  height: 94vh;
-}
-
-.timelineCard {
-  width: 54vw;
-}
-
-.card {
+  width: 80%;
+  height: auto;
+  background-color: #000000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--qd-color-primary-light-3);
   border-radius: 4px;
-  background-color: rgb(250, 250, 250);
 }
+
+.province-list-card {
+  width: 20%;
+  height: 100%;
+  background-color: #000000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--qd-color-primary-light-3);
+  border-radius: 4px;
+  overflow-y: auto;
+}
+
+.province-list-title {
+  color: #fff;
+  text-align: center;
+  font-size: 18px;
+  margin: 0;
+  padding: 10px 0;
+  border-bottom: 1px solid #45465E;
+}
+
+.province-list {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.province-item {
+  color: #fff;
+  padding: 8px 15px;
+  border-bottom: 1px solid rgba(69, 70, 94, 0.2);
+  font-size: 16px;
+  transition: background-color 0.3s;
+}
+
+.province-item:hover {
+  background-color: rgba(69, 70, 94, 0.3);
+}
+
 
 /* 添加媒体查询，当屏幕宽度小于等于 768px 时（通常为手机屏幕），调整 mapCard 的样式 */
-@media (max-width: 600px) {
-  .map-group {
-    flex-direction: column;
+@media (max-width: 768px) {
+  .map-container{
+    width: 95%;
+    height: 25vh;
+    margin-top: 3vh;
   }
-
-  .map-container {
-    top: -5vh;
-  }
-
-  .map-container {
-    width: 90vw;
-    height: 300px;
-  }
-
   .mapCard {
-    width: 90vw;
-    height: 230px;
+    width: 100%;
+    height: 35vh;
   }
 
-  .timelineCard {
+  .province-list-card {
     width: 100%;
-    margin-top: 10px;
-  }
+    height: 35vh;
+  } 
 }
 </style>

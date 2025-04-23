@@ -101,6 +101,72 @@ public interface PhotoService extends IService<Photo> {
     Map<String, Object> deleteMissingPhotoRecords();
 
     /**
+     * 获取照片仪表盘统计数据
+     * @return 包含各种统计信息的Map
+     */
+    Map<String, Object> getPhotoDashboardStats();
+    
+    /**
+     * 获取照片类型统计（精选/普通/气象/隐藏）
+     * @return 包含各类型照片数量的Map
+     */
+    Map<String, Long> getPhotoTypeCounts();
+    
+    /**
+     * 获取照片数量年月变化统计
+     * @return 包含年月变化统计的Map
+     */
+    Map<String, Object> getPhotoChangeStats();
+    
+    /**
+     * 获取拍摄主题统计（朝霞/晚霞/日出/日落）
+     * @return 包含拍摄主题统计的Map
+     */
+    Map<String, Long> getPhotoSubjectStats();
+    
+    /**
+     * 获取相机统计
+     * @return 包含相机使用频率的列表
+     */
+    List<Map<String, Object>> getCameraStats();
+    
+    /**
+     * 获取镜头统计
+     * @return 包含镜头使用频率的列表
+     */
+    List<Map<String, Object>> getLensStats();
+    
+    /**
+     * 获取ISO统计
+     * @return 包含ISO值使用频率的列表
+     */
+    List<Map<String, Object>> getIsoStats();
+    
+    /**
+     * 获取快门速度统计
+     * @return 包含快门速度使用频率的列表
+     */
+    List<Map<String, Object>> getShutterStats();
+    
+    /**
+     * 获取光圈值统计
+     * @return 包含光圈值使用频率的列表
+     */
+    List<Map<String, Object>> getApertureStats();
+    
+    /**
+     * 获取按月份统计的拍摄时间统计
+     * @return 包含每月拍摄数量的Map
+     */
+    Map<String, Long> getMonthStats();
+    
+    /**
+     * 获取按年份统计的拍摄数量
+     * @return 包含每年拍摄数量的Map
+     */
+    Map<String, Long> getYearStats();
+
+    /**
      * 处理结果类
      */
     class ProcessResult {

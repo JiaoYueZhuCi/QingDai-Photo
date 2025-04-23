@@ -1,8 +1,10 @@
 package com.qingdai.service.impl;
 
 import com.qingdai.entity.Photo;
+import com.qingdai.entity.GroupPhotoPhoto;
 import com.qingdai.mapper.PhotoMapper;
 import com.qingdai.service.PhotoService;
+import com.qingdai.service.GroupPhotoPhotoService;
 import com.qingdai.service.base.BaseCachedServiceImpl;
 import org.springframework.stereotype.Service;
 import lombok.extern.slf4j.Slf4j;
@@ -48,6 +50,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Set;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * <p>
@@ -73,6 +76,9 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
     
     @Value("${qingdai.thumbnail1000KUrl}")
     private String thumbnail1000KUrl;
+
+    @Autowired
+    private GroupPhotoPhotoService groupPhotoPhotoService;
 
     // 雪花算法生成器
     private final SnowflakeIdGenerator idGenerator = new SnowflakeIdGenerator(1, 1);
@@ -884,5 +890,280 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
         log.info("删除操作完成，总共删除{}条记录", totalDeleted);
         
         return result;
+    }
+
+    @Override
+    public Map<String, Object> getPhotoDashboardStats() {
+        try {
+            Map<String, Object> stats = new HashMap<>();
+            
+            // 1. 照片类型统计
+            stats.put("typeStats", getPhotoTypeCounts());
+            
+            // 2. 年月变化
+            stats.put("changeStats", getPhotoChangeStats());
+            
+            // 3. 拍摄主题统计
+            stats.put("subjectStats", getPhotoSubjectStats());
+            
+            // 4. 相机统计
+            stats.put("cameraStats", getCameraStats());
+            
+            // 5. 镜头统计
+            stats.put("lensStats", getLensStats());
+            
+            // 6. ISO统计
+            stats.put("isoStats", getIsoStats());
+            
+            // 7. 快门统计
+            stats.put("shutterStats", getShutterStats());
+            
+            // 8. 光圈统计
+            stats.put("apertureStats", getApertureStats());
+            
+            // 9. 拍摄时间按月份统计
+            stats.put("monthStats", getMonthStats());
+            
+            // 10. 年度拍摄数量统计
+            stats.put("yearStats", getYearStats());
+            
+            log.info("成功获取照片仪表盘统计数据");
+            return stats;
+        } catch (Exception e) {
+            log.error("获取照片仪表盘统计数据时发生错误: {}", e.getMessage(), e);
+            throw new RuntimeException("获取照片仪表盘统计数据失败", e);
+        }
+    }
+    
+    @Override
+    @Cacheable(key = "'photoTypeCounts'")
+    public Map<String, Long> getPhotoTypeCounts() {
+        Map<String, Long> photoTypeCounts = new HashMap<>();
+        photoTypeCounts.put("starred", count(new LambdaQueryWrapper<Photo>().eq(Photo::getStart, 1)));
+        photoTypeCounts.put("normal", count(new LambdaQueryWrapper<Photo>().eq(Photo::getStart, 0)));
+        photoTypeCounts.put("meteorology", count(new LambdaQueryWrapper<Photo>().eq(Photo::getStart, 2)));
+        photoTypeCounts.put("hidden", count(new LambdaQueryWrapper<Photo>().eq(Photo::getStart, -1)));
+        return photoTypeCounts;
+    }
+    
+    @Override
+    @Cacheable(key = "'photoChangeStats'")
+    public Map<String, Object> getPhotoChangeStats() {
+        Map<String, Object> changeStats = new HashMap<>();
+        
+        // 普通照片变化
+        changeStats.put("monthlyChange", countByMonth(YearMonth.now()) 
+                - countByMonth(YearMonth.now().minusMonths(1)));
+        changeStats.put("yearlyChange", 
+                countByYear(Year.now()) - countByYear(Year.now().minusYears(1)));
+        
+        // 精选照片变化
+        changeStats.put("monthlyStarredChange", countByMonthAndStart(YearMonth.now(), 1) 
+                - countByMonthAndStart(YearMonth.now().minusMonths(1), 1));
+        changeStats.put("yearlyStarredChange", countByYearAndStart(Year.now(), 1) 
+                - countByYearAndStart(Year.now().minusYears(1), 1));
+        
+        // 气象照片变化
+        changeStats.put("monthlyMeteorologyChange", countByMonthAndStart(YearMonth.now(), 2) 
+                - countByMonthAndStart(YearMonth.now().minusMonths(1), 2));
+        changeStats.put("yearlyMeteorologyChange", countByYearAndStart(Year.now(), 2) 
+                - countByYearAndStart(Year.now().minusYears(1), 2));
+                
+        return changeStats;
+    }
+    
+    @Override
+    @Cacheable(key = "'photoSubjectStats'")
+    public Map<String, Long> getPhotoSubjectStats() {
+        Map<String, Long> subjectCounts = new HashMap<>();
+        // 查询ID为1的组（朝霞）的照片数量
+        subjectCounts.put("morningGlow", 
+                groupPhotoPhotoService.count(new LambdaQueryWrapper<GroupPhotoPhoto>()
+                        .eq(GroupPhotoPhoto::getGroupPhotoId, "1")));
+        
+        // 查询ID为2的组（晚霞）的照片数量
+        subjectCounts.put("eveningGlow", 
+                groupPhotoPhotoService.count(new LambdaQueryWrapper<GroupPhotoPhoto>()
+                        .eq(GroupPhotoPhoto::getGroupPhotoId, "2")));
+        
+        // 查询ID为3的组（日出）的照片数量
+        subjectCounts.put("sunrise", 
+                groupPhotoPhotoService.count(new LambdaQueryWrapper<GroupPhotoPhoto>()
+                        .eq(GroupPhotoPhoto::getGroupPhotoId, "3")));
+        
+        // 查询ID为4的组（日落）的照片数量
+        subjectCounts.put("sunset", 
+                groupPhotoPhotoService.count(new LambdaQueryWrapper<GroupPhotoPhoto>()
+                        .eq(GroupPhotoPhoto::getGroupPhotoId, "4")));
+                
+        return subjectCounts;
+    }
+    
+    @Override
+    @Cacheable(key = "'cameraStats'")
+    public List<Map<String, Object>> getCameraStats() {
+        final List<Map<String, Object>> cameraCounts = new ArrayList<>();
+        
+        Map<String, Long> cameraCountMap = list(new LambdaQueryWrapper<Photo>()
+                .isNotNull(Photo::getCamera))
+                .stream()
+                .map(Photo::getCamera)
+                .filter(camera -> camera != null && !camera.isEmpty())
+                .collect(Collectors.groupingBy(
+                        camera -> camera,
+                        Collectors.counting()));
+        
+        cameraCountMap.forEach((cameraName, count) -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("name", cameraName);
+            map.put("value", count);
+            cameraCounts.add(map);
+        });
+        
+        return cameraCounts;
+    }
+    
+    @Override
+    @Cacheable(key = "'lensStats'")
+    public List<Map<String, Object>> getLensStats() {
+        final List<Map<String, Object>> lensCounts = new ArrayList<>();
+        
+        Map<String, Long> lensCountMap = list(new LambdaQueryWrapper<Photo>()
+                .isNotNull(Photo::getLens))
+                .stream()
+                .map(Photo::getLens)
+                .filter(lens -> lens != null && !lens.isEmpty())
+                .collect(Collectors.groupingBy(
+                        lens -> lens,
+                        Collectors.counting()));
+        
+        lensCountMap.forEach((lensName, count) -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("name", lensName);
+            map.put("value", count);
+            lensCounts.add(map);
+        });
+        
+        return lensCounts;
+    }
+    
+    @Override
+    @Cacheable(key = "'isoStats'")
+    public List<Map<String, Object>> getIsoStats() {
+        final List<Map<String, Object>> isoCounts = new ArrayList<>();
+        
+        Map<String, Long> isoCountMap = list(new LambdaQueryWrapper<Photo>()
+                .isNotNull(Photo::getIso))
+                .stream()
+                .map(Photo::getIso)
+                .filter(iso -> iso != null && !iso.isEmpty())
+                .collect(Collectors.groupingBy(
+                        iso -> iso,
+                        Collectors.counting()));
+        
+        isoCountMap.forEach((isoName, count) -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("name", isoName);
+            map.put("value", count);
+            isoCounts.add(map);
+        });
+        
+        return isoCounts;
+    }
+    
+    @Override
+    @Cacheable(key = "'shutterStats'")
+    public List<Map<String, Object>> getShutterStats() {
+        final List<Map<String, Object>> shutterCounts = new ArrayList<>();
+        
+        Map<String, Long> shutterCountMap = list(new LambdaQueryWrapper<Photo>()
+                .isNotNull(Photo::getShutter))
+                .stream()
+                .map(Photo::getShutter)
+                .filter(shutter -> shutter != null && !shutter.isEmpty())
+                .collect(Collectors.groupingBy(
+                        shutter -> shutter,
+                        Collectors.counting()));
+        
+        shutterCountMap.forEach((shutterName, count) -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("name", shutterName);
+            map.put("value", count);
+            shutterCounts.add(map);
+        });
+        
+        return shutterCounts;
+    }
+    
+    @Override
+    @Cacheable(key = "'apertureStats'")
+    public List<Map<String, Object>> getApertureStats() {
+        final List<Map<String, Object>> apertureCounts = new ArrayList<>();
+        
+        Map<String, Long> apertureCountMap = list(new LambdaQueryWrapper<Photo>()
+                .isNotNull(Photo::getAperture))
+                .stream()
+                .map(Photo::getAperture)
+                .filter(aperture -> aperture != null && !aperture.isEmpty())
+                .collect(Collectors.groupingBy(
+                        aperture -> aperture,
+                        Collectors.counting()));
+        
+        apertureCountMap.forEach((apertureName, count) -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("name", apertureName);
+            map.put("value", count);
+            apertureCounts.add(map);
+        });
+        
+        return apertureCounts;
+    }
+    
+    @Override
+    @Cacheable(key = "'monthStats'")
+    public Map<String, Long> getMonthStats() {
+        Map<String, Long> monthStats = new HashMap<>();
+        
+        for (int i = 1; i <= 12; i++) {
+            final int month = i;
+            long count = count(new LambdaQueryWrapper<Photo>()
+                    .apply("DATE_FORMAT(time, '%m') = {0}", String.format("%02d", month)));
+            monthStats.put(String.valueOf(month), count);
+        }
+        
+        return monthStats;
+    }
+    
+    @Override
+    @Cacheable(key = "'yearStats'")
+    public Map<String, Long> getYearStats() {
+        Map<String, Long> yearStats = new HashMap<>();
+        
+        // 获取最早的照片年份和当前年份
+        int currentYear = Year.now().getValue();
+        
+        // 尝试获取最早照片的年份
+        Integer earliestYear = getOne(new LambdaQueryWrapper<Photo>()
+                .orderByAsc(Photo::getTime)
+                .last("LIMIT 1"))
+                .getTime() != null ? Integer.parseInt(
+                        getOne(new LambdaQueryWrapper<Photo>()
+                                .orderByAsc(Photo::getTime)
+                                .last("LIMIT 1"))
+                                .getTime().substring(0, 4))
+                        : currentYear - 5; // 如果没有照片，默认显示近5年
+        
+        // 确保至少有5年的数据显示
+        earliestYear = Math.min(earliestYear, currentYear - 4);
+        
+        // 统计每年的照片数量
+        for (int year = earliestYear; year <= currentYear; year++) {
+            final int queryYear = year;
+            long count = count(new LambdaQueryWrapper<Photo>()
+                    .apply("DATE_FORMAT(time, '%Y') = {0}", String.valueOf(queryYear)));
+            yearStats.put(String.valueOf(queryYear), count);
+        }
+        
+        return yearStats;
     }
 }

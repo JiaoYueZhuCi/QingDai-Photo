@@ -112,6 +112,14 @@ export const getStartPhotoCount = async (): Promise<number> => {
   return await request.get(`${BASE_URL}/count/starred`);
 };
 
+// 根据类型获取照片数量统计
+export const getPhotoCountByTypes = async (types: number | number[]): Promise<number> => {
+  const typesParam = Array.isArray(types) ? types.join(',') : types;
+  return await request.get(`${BASE_URL}/count/by-types`, {
+    params: { types: typesParam }
+  });
+};
+
 // 获取月度星标照片变化
 export const getMonthlyStartPhotoCountChange = async (): Promise<number> => {
   return await request.get(`${BASE_URL}/count/starred/monthly-change`);
@@ -139,7 +147,7 @@ export const getYearlyPhotoCountChange = async (): Promise<number> => {
 
 // 根据ID列表获取多个照片对象
 export const getPhotosByIds = async (ids: string[]): Promise<WaterfallItem[]> => {
-  return await request.get(`${BASE_URL}/batch`, {
+  return await request.get(`${BASE_URL}/ids`, {
     params: { ids: ids.join(',') }
   });
 };
@@ -147,12 +155,12 @@ export const getPhotosByIds = async (ids: string[]): Promise<WaterfallItem[]> =>
 // 开发者方法-----------------------------------------------------------------------------------------
 // 原图导入数据库
 export const fullSizePhotoToMysql = async (): Promise<any> => {
-  return await request.post(`${BASE_URL}/import`);
+  return await request.post(`${BASE_URL}/import-pending`);
 };
 
 // 生成缩略图
 export const thumbnailImages = async (maxSizeKB: number = 1024, overwrite: boolean = false): Promise<any> => {
-  return await request.post(`${BASE_URL}/thumbnail`, {
+  return await request.post(`${BASE_URL}/thumbnail-pending`, {
     params: { maxSizeKB, overwrite }
   });
 };
@@ -182,4 +190,9 @@ export const deletePhotosNotInDatabase = async (): Promise<any> => {
 // 删除丢失了全部三种图片的数据库记录
 export const deleteMissingPhotoRecords = async (): Promise<any> => {
   return await request.delete(`${BASE_URL}/missing-records`);
+};
+
+// 获取所有照片统计数据
+export const getPhotoDashboardStats = async (): Promise<any> => {
+  return await request.get(`${BASE_URL}/stats/dashboard`);
 };
