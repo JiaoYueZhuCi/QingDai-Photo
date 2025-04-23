@@ -4,7 +4,7 @@
 
     <el-table :data="shareList" stripe style="width: 100%"
       :empty-text="loading ? '加载中...' : '暂无分享数据'" :max-height="tableHeight">
-      <el-table-column prop="id" label="分享ID" width="150"></el-table-column>
+      <el-table-column prop="id" label="分享ID" width="150" fixed="left"></el-table-column>
       <el-table-column label="照片" width="130">
         <template #default="scope">
           <div class="photo-ids-container">
@@ -40,7 +40,7 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="80">
+      <el-table-column label="操作" width="80" fixed="right">
         <template #default="scope">
           <el-popconfirm title="确定要删除这个分享吗？" @confirm="handleDelete(scope.row.id)" confirm-button-text="确定"
             cancel-button-text="取消">

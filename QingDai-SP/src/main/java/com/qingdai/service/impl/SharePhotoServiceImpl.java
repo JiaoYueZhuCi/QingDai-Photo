@@ -40,8 +40,13 @@ public class SharePhotoServiceImpl implements SharePhotoService {
 
         // 存储分享信息到Redis
         redisTemplate.opsForHash().put(shareKey, PHOTO_IDS_KEY, String.join(",", photoIds));
-        redisTemplate.opsForHash().put(shareKey, CREATE_TIME_KEY, System.currentTimeMillis());
-        redisTemplate.opsForHash().put(shareKey, EXPIRE_TIME_KEY, System.currentTimeMillis() + expireDays * 24 * 60 * 60 * 1000L);
+        
+        // 区分创建时间和过期时间
+        long currentTimeMillis = System.currentTimeMillis();
+        long expireTimeMillis = currentTimeMillis + expireDays * 24 * 60 * 60 * 1000L;
+        
+        redisTemplate.opsForHash().put(shareKey, CREATE_TIME_KEY, currentTimeMillis);
+        redisTemplate.opsForHash().put(shareKey, EXPIRE_TIME_KEY, expireTimeMillis);
 
         // 设置过期时间
         redisTemplate.expire(shareKey, Duration.ofDays(expireDays));
@@ -131,10 +136,11 @@ public class SharePhotoServiceImpl implements SharePhotoService {
                 continue;
             }
             
-            // 转换时间格式和判断是否过期
+            // 确保创建时间和过期时间使用正确的时间戳
             String createTime = formatTime(createTimeMs);
             String expireTime = formatTime(expireTimeMs);
-            boolean isExpired = currentTime > expireTimeMs;
+            
+            boolean isExpired = currentTime > expireTimeMs; 
             
             // 构建返回数据
             Map<String, Object> shareInfo = new HashMap<>();
@@ -178,7 +184,13 @@ public class SharePhotoServiceImpl implements SharePhotoService {
         if (timeMillis == null) {
             return "";
         }
-        return LocalDateTime.ofInstant(Instant.ofEpochMilli(timeMillis), ZoneId.systemDefault())
-                .format(DATE_FORMATTER);
+        
+        // 确保使用正确的时区和格式
+        LocalDateTime dateTime = LocalDateTime.ofInstant(
+            Instant.ofEpochMilli(timeMillis), 
+            ZoneId.systemDefault()
+        );
+        
+        return dateTime.format(DATE_FORMATTER);
     }
 } 

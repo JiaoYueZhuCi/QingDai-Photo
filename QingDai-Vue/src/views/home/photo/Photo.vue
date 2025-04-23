@@ -205,18 +205,6 @@ const route = useRoute();
 
 // 添加 props 来接收父组件传递的值
 const props = defineProps({
-    rowHeightMax: {
-        type: Number,
-        default: 300,
-    },
-    rowHeightMin: {
-        type: Number,
-        default: 150,
-    },
-    gap: {
-        type: Number,
-        default: 10,
-    },
     photoType: {
         type: Number,
         default: 0,
@@ -297,27 +285,27 @@ const handleScroll = debounce(() => {
 }, 200);
 
 // 响应式变量来存储动态的行高
-const dynamicRowHeightMax = ref<number>(props.rowHeightMax);
-const dynamicRowHeightMin = ref<number>(props.rowHeightMin);
+const rowHeightMax = ref<number>(300);
+const rowHeightMin = ref<number>(150);
 
 const sideMargin = ref(8); // 边距
 
 const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-const gap = ref(props.gap); // 因为每行设置了justify-content: space-between;  所以gap实际为最小间隙（当照片+间隙刚好填满一行时）
+const gap = ref(10); // 因为每行设置了justify-content: space-between;  所以gap实际为最小间隙（当照片+间隙刚好填满一行时）
 const rowWidth = ref(window.innerWidth - scrollbarWidth - 2 * sideMargin.value);
 
 // // 监听窗口大小变化
 const handleResize = () => {
     if (window.innerWidth <= 600) {
-        dynamicRowHeightMax.value = 200;
-        dynamicRowHeightMin.value = 100;
+        rowHeightMax.value = 200;
+        rowHeightMin.value = 100;
         gap.value = 4; // 图片间隙
         sideMargin.value = 4; // 更新 sideMargin 变量
         rowWidth.value = window.innerWidth - 2 * sideMargin.value; // 调整 rowWidth   
     } else {
-        dynamicRowHeightMax.value = props.rowHeightMax;
-        dynamicRowHeightMin.value = props.rowHeightMin;
-        gap.value = props.gap; // 图片间隙
+        rowHeightMax.value = 300;
+        rowHeightMin.value = 150;
+        gap.value = 10; // 图片间隙
         sideMargin.value = 8; // 更新 sideMargin 变量
         rowWidth.value = window.innerWidth - scrollbarWidth - 2 * sideMargin.value; // 恢复 rowWidth
     }
@@ -460,7 +448,7 @@ const calculateLayout = () => {
         const newGap = (currentRow.length) * gap.value; // 当前行图片的间隙总和
 
         const idealH = (rowWidth.value - newGap) / newAspectSum;// 计算理想行高
-        let clampedH = Math.min(dynamicRowHeightMax.value, Math.max(dynamicRowHeightMin.value, idealH));// 限制行高
+        let clampedH = Math.min(rowHeightMax.value, Math.max(rowHeightMin.value, idealH));// 限制行高
 
         const totalWidth = newAspectSum * clampedH + newGap; // 计算当前行总宽度
 
@@ -468,7 +456,7 @@ const calculateLayout = () => {
             const rowHeight = (rowWidth.value - (currentRow.length - 1) * gap.value) / currentAspectRatioSum;// 计算当前行总高度
             rowsData.push({
                 items: [...currentRow],
-                height: Math.min(dynamicRowHeightMax.value, Math.max(dynamicRowHeightMin.value, rowHeight)) // 限制行高
+                height: Math.min(rowHeightMax.value, Math.max(rowHeightMin.value, rowHeight)) // 限制行高
             });
 
             // 重置当前行，以当前 item 开始新行
@@ -486,7 +474,7 @@ const calculateLayout = () => {
         const rowHeight = (rowWidth.value - (currentRow.length - 1) * gap.value) / currentAspectRatioSum;// 计算当前行总高度
         rowsData.push({
             items: currentRow,
-            height: Math.min(dynamicRowHeightMax.value, Math.max(dynamicRowHeightMin.value, rowHeight))
+            height: Math.min(rowHeightMax.value, Math.max(rowHeightMin.value, rowHeight))
         });
     }
 
