@@ -37,12 +37,18 @@ const router = createRouter({
             },
             {
               path: 'featured',
-              component: () => import('@/views/home/photo/Photo.vue').catch(() => errorPage),
+              component: () => import('@/views/home/photo/Photo.vue').catch((error) => {
+                console.error('组件加载失败:', error);
+                return errorPage;
+              }),
               props: { photoType: 1 }
             },
             {
               path: 'photos',
-              component: () => import('@/views/home/photo/Photo.vue').catch(() => errorPage),
+              component: () => import('@/views/home/photo/Photo.vue').catch((error) => {
+                console.error('组件加载失败:', error);
+                return errorPage;
+              }),
               props: { photoType: 0 }
             },
             {

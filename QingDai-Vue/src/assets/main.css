@@ -183,9 +183,9 @@ body {
 }
 
 .el-timeline-item__timestamp {
-    color: var(--qd-color-primary) !important;
+    color: var(--qd-color-primary) ;
 }
-
+ 
 /* statistic样式 */
 .el-statistic__number {
     color: var(--qd-color-primary) !important;

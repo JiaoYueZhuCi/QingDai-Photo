@@ -1,6 +1,7 @@
 <template>
     <div class="photo-list-container">
         <el-button class="refresh-button" type="primary" @click="fetchData">刷新照片列表</el-button>
+        <el-button class="no-metadata-button" type="warning" @click="fetchNoMetadataData">无元数据照片列表</el-button>
         
         <el-table :data="tableData" style="width: 100%" border stripe :max-height="tableHeight">
             <el-table-column label="缩略图" width="180" fixed>
@@ -72,12 +73,17 @@
                                 <span class="param-label">光圈:</span>
                                 <el-input v-model="scope.row.aperture" size="small" class="param-input" />
                             </div>
+                            <div class="param-row">
+                                <span class="param-label">焦距:</span>
+                                <el-input v-model="scope.row.focalLength" size="small" class="param-input" />
+                            </div>
                         </div>
                         <div v-else>
                             <div class="params">
-                                <span v-if="scope.row.iso">ISO: {{scope.row.iso}}</span>
-                                <span v-if="scope.row.shutter">快门: {{scope.row.shutter}}</span>
-                                <span v-if="scope.row.aperture">光圈: {{scope.row.aperture}}</span>
+                                <span>ISO: {{scope.row.iso || '未知'}}</span>
+                                <span>快门: {{scope.row.shutter || '未知'}}</span>
+                                <span >光圈: {{scope.row.aperture || '未知'}}</span>
+                                <span>焦距: {{scope.row.focalLength || '未知'}}</span>
                             </div>
                         </div>
                     </template>
@@ -159,7 +165,7 @@ import PhotoPreview from '@/components/photo/PhotoPreview.vue'
 import { ref, watchEffect, onMounted, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox, ElLoading } from 'element-plus'
 import { Upload } from '@element-plus/icons-vue'
-import { getPhotosByPage, updatePhotoInfo, deletePhotoById, getVisiblePhotosByPage } from '@/api/photo'
+import { getPhotosByPage, updatePhotoInfo, deletePhotoById, getVisiblePhotosByPage, getNoMetadataPhotosByPage } from '@/api/photo'
 import { getRolesPermissions } from '@/api/user'
 import type { PhotoResponse } from '@/api/photo'
 import { get100KPhotos, processPhotoData, type EnhancedWaterfallItem } from '@/utils/photo'
@@ -246,6 +252,43 @@ const fetchData = async () => {
     }
 };
 
+// 获取无元数据照片列表数据
+const fetchNoMetadataData = async () => {
+    const loadingInstance = ElLoading.service({
+        lock: true,
+        text: '加载无元数据照片中...',
+        background: 'rgba(0, 0, 0, 0.7)'
+    });
+    
+    try {
+        const response = await getNoMetadataPhotosByPage({
+            page: currentPage.value,
+            pageSize: pageSize.value
+        });
+
+        console.log(response);
+        // 使用工具函数处理数据
+        const processedData = response.records.map((item: EnhancedWaterfallItem) => 
+            processPhotoData({
+                ...item,
+                isEditing: false,
+            })
+        );
+        
+        tableData.value = processedData;
+        total.value = response.total;
+        
+        // 批量获取缩略图
+        await get100KPhotos(tableData.value);
+        ElMessage.success('已切换到无元数据照片列表');
+    } catch (error) {
+        console.error('获取无元数据照片数据失败:', error);
+        ElMessage.error('无元数据照片加载失败');
+    } finally {
+        loadingInstance.close();
+    }
+};
+
 // 分页相关方法
 const handleCurrentChange = (val: number) => {
     currentPage.value = val;
@@ -273,7 +316,23 @@ const cancelEdit = (row: EnhancedWaterfallItem) => {
 // 提交编辑
 const submitEdit = async (row: EnhancedWaterfallItem) => {
     try {
-        await updatePhotoInfo(row);
+        await updatePhotoInfo({
+            id: row.id,
+            title: row.title,
+            introduce: row.introduce,
+            start: row.start,
+            camera: row.camera,
+            lens: row.lens,
+            aperture: row.aperture,
+            shutter: row.shutter,
+            iso: row.iso,
+            focalLength: row.focalLength,
+            fileName: row.fileName,
+            author: row.author,
+            width: row.width,
+            height: row.height,
+            time: row.time
+        });
         ElMessage.success('更新成功');
         row.isEditing = false;
         delete editOriginData.value[row.id];
@@ -368,6 +427,12 @@ const adjustTableHeight = () => {
 .refresh-button {
     position: fixed;
     right: 20px;
+    top: 15px;
+}
+
+.no-metadata-button {
+    position: fixed;
+    right: 150px;
     top: 15px;
 }
 

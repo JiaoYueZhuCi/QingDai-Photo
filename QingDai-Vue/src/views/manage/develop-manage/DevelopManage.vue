@@ -375,14 +375,155 @@
           </div>
         </div>
       </el-card>
+
+      <el-card class="develop-card">
+        <template #header>
+          <div class="card-header">
+            <span>相机型号替换</span>
+          </div>
+        </template>
+        <div class="card-content">
+          <div class="equipment-manager">
+            <el-button type="primary" @click="loadCameras" :loading="loadingCameras" class="load-button">
+              获取相机型号列表
+            </el-button>
+            
+            <div class="equipment-list-container">
+              <div v-if="cameras.length > 0" class="equipment-list">
+                <div class="list-header">
+                  <span>共有 {{ cameras.length }} 种相机型号</span>
+                </div>
+                <div class="list-content">
+                  <div v-for="camera in cameras" :key="camera" 
+                       class="list-item"
+                       :class="{ 'selected': selectedCamera === camera }"
+                       @click="handleCameraSelect(camera)">
+                    <span class="item-name">{{ camera }}</span>
+                    <span v-if="selectedCamera === camera" class="item-count">
+                      使用数量: {{ cameraCount || 0 }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div v-else class="empty-list">
+                <span>暂无相机型号数据</span>
+              </div>
+            </div>
+
+            <div class="equipment-update">
+              <el-input v-model="newCameraName" placeholder="输入新的相机型号名称" :disabled="!selectedCamera" />
+              <el-button type="primary" @click="handleUpdateCamera" :disabled="!selectedCamera || !newCameraName">
+                更新名称
+              </el-button>
+            </div>
+          </div>
+          <div class="description">
+            点击按钮获取相机型号列表，选择要修改的相机型号
+          </div>
+        </div>
+      </el-card>
+
+      <el-card class="develop-card">
+        <template #header>
+          <div class="card-header">
+            <span>镜头型号替换</span>
+          </div>
+        </template>
+        <div class="card-content">
+          <div class="equipment-manager">
+            <el-button type="primary" @click="loadLenses" :loading="loadingLenses" class="load-button">
+              获取镜头型号列表
+            </el-button>
+            
+            <div class="equipment-list-container">
+              <div v-if="lenses.length > 0" class="equipment-list">
+                <div class="list-header">
+                  <span>共有 {{ lenses.length }} 种镜头型号</span>
+                </div>
+                <div class="list-content">
+                  <div v-for="lens in lenses" :key="lens" 
+                       class="list-item"
+                       :class="{ 'selected': selectedLens === lens }"
+                       @click="handleLensSelect(lens)">
+                    <span class="item-name">{{ lens }}</span>
+                    <span v-if="selectedLens === lens" class="item-count">
+                      使用数量: {{ lensCount || 0 }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div v-else class="empty-list">
+                <span>暂无镜头型号数据</span>
+              </div>
+            </div>
+
+            <div class="equipment-update">
+              <el-input v-model="newLensName" placeholder="输入新的镜头型号名称" :disabled="!selectedLens" />
+              <el-button type="primary" @click="handleUpdateLens" :disabled="!selectedLens || !newLensName">
+                更新名称
+              </el-button>
+            </div>
+          </div>
+          <div class="description">
+            点击按钮获取镜头型号列表，选择要修改的镜头型号
+          </div>
+        </div>
+      </el-card>
+
+      <el-card class="develop-card">
+        <template #header>
+          <div class="card-header">
+            <span>焦距替换</span>
+          </div>
+        </template>
+        <div class="card-content">
+          <div class="equipment-manager">
+            <el-button type="primary" @click="loadFocalLengths" :loading="loadingFocalLengths" class="load-button">
+              获取焦距列表
+            </el-button>
+            
+            <div class="equipment-list-container">
+              <div v-if="focalLengths.length > 0" class="equipment-list">
+                <div class="list-header">
+                  <span>共有 {{ focalLengths.length }} 种焦距</span>
+                </div>
+                <div class="list-content">
+                  <div v-for="focalLength in focalLengths" :key="focalLength" 
+                       class="list-item"
+                       :class="{ 'selected': selectedFocalLength === focalLength }"
+                       @click="handleFocalLengthSelect(focalLength)">
+                    <span class="item-name">{{ focalLength }}</span>
+                    <span v-if="selectedFocalLength === focalLength" class="item-count">
+                      使用数量: {{ focalLengthCount || 0 }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div v-else class="empty-list">
+                <span>暂无焦距数据</span>
+              </div>
+            </div>
+
+            <div class="equipment-update">
+              <el-input v-model="newFocalLength" placeholder="输入新的焦距值" :disabled="!selectedFocalLength" />
+              <el-button type="primary" @click="handleUpdateFocalLength" :disabled="!selectedFocalLength || !newFocalLength">
+                更新焦距
+              </el-button>
+            </div>
+          </div>
+          <div class="description">
+            点击按钮获取焦距列表，选择要修改的焦距值
+          </div>
+        </div>
+      </el-card>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { fullSizePhotoToMysql, thumbnailImages, processPendingPhotos, validatePhotoExistence, validateFileSystemPhotos, deletePhotosNotInDatabase, deleteMissingPhotoRecords } from '@/api/photo';
+import { fullSizePhotoToMysql, thumbnailImages, processPendingPhotos, validatePhotoExistence, validateFileSystemPhotos, deletePhotosNotInDatabase, deleteMissingPhotoRecords, getAllCameras, getAllLenses, updateCameraName, updateLensName, getPhotoCountByCamera, getPhotoCountByLens, getAllFocalLengths, updateFocalLengthValue, getPhotoCountByFocalLength } from '@/api/photo';
 import { getUserInfo } from '@/api/user';
 
 interface PhotoExistenceResult {
@@ -426,6 +567,21 @@ const pageSize = ref(10);
 const fullSizePage = ref(1);
 const thumbnail100KPage = ref(1);
 const thumbnail1000KPage = ref(1);
+const cameras = ref<string[]>([]);
+const lenses = ref<string[]>([]);
+const selectedCamera = ref('');
+const selectedLens = ref('');
+const newCameraName = ref('');
+const newLensName = ref('');
+const cameraCount = ref<number | null>(null);
+const lensCount = ref<number | null>(null);
+const loadingCameras = ref(false);
+const loadingLenses = ref(false);
+const focalLengths = ref<string[]>([]);
+const selectedFocalLength = ref('');
+const newFocalLength = ref('');
+const focalLengthCount = ref<number | null>(null);
+const loadingFocalLengths = ref(false);
 
 const handleFullSizePhotoToMysql = async () => {
   try {
@@ -705,6 +861,158 @@ const paginatedThumbnail1000KFiles = computed(() => {
   const end = start + pageSize.value;
   return filteredThumbnail1000KFiles.value.slice(start, end);
 });
+
+const loadCameras = async () => {
+  try {
+    loadingCameras.value = true;
+    cameras.value = await getAllCameras();
+    ElMessage.success('获取相机型号列表成功');
+  } catch (error) {
+    ElMessage.error('获取相机列表失败：' + (error as Error).message);
+  } finally {
+    loadingCameras.value = false;
+  }
+};
+
+const loadLenses = async () => {
+  try {
+    loadingLenses.value = true;
+    lenses.value = await getAllLenses();
+    ElMessage.success('获取镜头型号列表成功');
+  } catch (error) {
+    ElMessage.error('获取镜头列表失败：' + (error as Error).message);
+  } finally {
+    loadingLenses.value = false;
+  }
+};
+
+const handleCameraSelect = async (camera: string) => {
+  try {
+    selectedCamera.value = camera;
+    cameraCount.value = await getPhotoCountByCamera(camera);
+  } catch (error) {
+    ElMessage.error('获取相机照片数量失败：' + (error as Error).message);
+  }
+};
+
+const handleLensSelect = async (lens: string) => {
+  try {
+    selectedLens.value = lens;
+    lensCount.value = await getPhotoCountByLens(lens);
+  } catch (error) {
+    ElMessage.error('获取镜头照片数量失败：' + (error as Error).message);
+  }
+};
+
+const handleUpdateCamera = async () => {
+  if (!selectedCamera.value || !newCameraName.value) {
+    ElMessage.warning('请选择要修改的相机并输入新名称');
+    return;
+  }
+
+  try {
+    await ElMessageBox.confirm(
+      `确定要将相机型号"${selectedCamera.value}"改为"${newCameraName.value}"吗？这将影响${cameraCount.value}张照片。`,
+      '确认修改',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }
+    );
+
+    await updateCameraName(selectedCamera.value, newCameraName.value);
+    ElMessage.success('相机型号更新成功');
+    await loadCameras();
+    selectedCamera.value = newCameraName.value;
+    newCameraName.value = '';
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('更新相机型号失败：' + (error as Error).message);
+    }
+  }
+};
+
+const handleUpdateLens = async () => {
+  if (!selectedLens.value || !newLensName.value) {
+    ElMessage.warning('请选择要修改的镜头并输入新名称');
+    return;
+  }
+
+  try {
+    await ElMessageBox.confirm(
+      `确定要将镜头型号"${selectedLens.value}"改为"${newLensName.value}"吗？这将影响${lensCount.value}张照片。`,
+      '确认修改',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }
+    );
+
+    await updateLensName(selectedLens.value, newLensName.value);
+    ElMessage.success('镜头型号更新成功');
+    await loadLenses();
+    selectedLens.value = newLensName.value;
+    newLensName.value = '';
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('更新镜头型号失败：' + (error as Error).message);
+    }
+  }
+};
+
+const loadFocalLengths = async () => {
+  try {
+    loadingFocalLengths.value = true;
+    const response = await getAllFocalLengths();
+    focalLengths.value = response;
+    ElMessage.success('获取焦距列表成功');
+  } catch (error) {
+    ElMessage.error('获取焦距列表失败：' + (error as Error).message);
+  } finally {
+    loadingFocalLengths.value = false;
+  }
+};
+
+const handleFocalLengthSelect = async (focalLength: string) => {
+  try {
+    selectedFocalLength.value = focalLength;
+    const response = await getPhotoCountByFocalLength(focalLength);
+    focalLengthCount.value = response;
+  } catch (error) {
+    ElMessage.error('获取焦距使用数量失败：' + (error as Error).message);
+  }
+};
+
+const handleUpdateFocalLength = async () => {
+  if (!selectedFocalLength.value || !newFocalLength.value) {
+    ElMessage.warning('请选择要修改的焦距并输入新值');
+    return;
+  }
+
+  try {
+    await ElMessageBox.confirm(
+      `确定要将焦距"${selectedFocalLength.value}"改为"${newFocalLength.value}"吗？这将影响${focalLengthCount.value}张照片。`,
+      '确认修改',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }
+    );
+
+    await updateFocalLengthValue(selectedFocalLength.value, newFocalLength.value);
+    ElMessage.success('焦距更新成功');
+    await loadFocalLengths();
+    selectedFocalLength.value = newFocalLength.value;
+    newFocalLength.value = '';
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('更新焦距失败：' + (error as Error).message);
+    }
+  }
+};
 </script>
 
 <style scoped>
@@ -917,5 +1225,105 @@ const paginatedThumbnail1000KFiles = computed(() => {
   }
 }
 
+.equipment-manager {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  width: 100%;
+}
 
+.equipment-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.equipment-info p {
+  margin: 0;
+  color: var(--qd-color-primary);
+  text-align: center;
+}
+
+.equipment-update {
+  margin-bottom: 15px;
+  display: flex;
+  gap: 10px;
+}
+
+.load-button {
+}
+
+:deep(.el-select) {
+  width: 100%;
+}
+
+.equipment-update .el-input {
+  flex: 1;
+}
+
+.equipment-list {
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+}
+
+.list-header {
+  padding: 8px 12px;
+  background-color: #f5f7fa;
+  border-bottom: 1px solid #dcdfe6;
+  font-size: 14px;
+  color: #606266;
+}
+
+.list-content {
+  max-height: 255px;
+  overflow-y: auto;
+}
+
+.list-item {
+  padding: 8px 12px;
+  border-bottom: 1px solid #ebeef5;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.list-item:last-child {
+  border-bottom: none;
+}
+
+.list-item:hover {
+  background-color: #f5f7fa;
+}
+
+.list-item.selected {
+  background-color: #ecf5ff;
+  color: var(--qd-color-primary);
+}
+
+.item-name {
+  flex: 1;
+}
+
+.item-count {
+  font-size: 12px;
+  color: #909399;
+  margin-left: 10px;
+}
+
+.equipment-list-container {
+  height: 300px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  background-color: #fff;
+}
+
+.empty-list {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #909399;
+  font-size: 14px;
+}
 </style>

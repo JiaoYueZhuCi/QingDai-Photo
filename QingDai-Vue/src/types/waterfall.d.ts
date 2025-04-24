@@ -9,6 +9,7 @@ export interface WaterfallItem {
   shutter: string       // 快门
   camera: string        // 相机
   lens: string          // 镜头
+  focalLength: string   // 焦距
   time: string          // 拍摄时间
   title: string         // 标题
   introduce: string     // 介绍

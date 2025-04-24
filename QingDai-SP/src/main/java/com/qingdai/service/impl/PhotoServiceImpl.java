@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import lombok.extern.slf4j.Slf4j;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 
 import java.time.YearMonth;
 import java.time.Year;
@@ -51,6 +52,8 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 
 /**
  * <p>
@@ -379,6 +382,7 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
         processShootingTime(exif, photo);
         processCameraSettings(exif, photo);
         processCameraModel(metadata, photo);
+        processFocalLength(exif, photo);
     }
 
     // 格式化拍摄时间
@@ -435,7 +439,7 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
         Rational fNumberRational = exif.getRational(ExifSubIFDDirectory.TAG_FNUMBER);
         if (fNumberRational != null) {
             double fNumber = fNumberRational.doubleValue();
-            photo.setAperture(String.format("F%.1f", fNumber));
+            photo.setAperture(String.format("%.1f", fNumber));
         }
 
         // 处理快门速度 ExposureTime
@@ -487,6 +491,16 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
         }
 
         photo.setCamera(model);
+    }
+
+    // 处理焦距数据
+    private void processFocalLength(ExifSubIFDDirectory exif, Photo photo) {
+        // 处理焦距 FocalLength
+        Rational focalLengthRational = exif.getRational(ExifSubIFDDirectory.TAG_FOCAL_LENGTH);
+        if (focalLengthRational != null) {
+            double focalLength = focalLengthRational.doubleValue();
+            photo.setFocalLength(String.format("%.0fmm", focalLength));
+        }
     }
 
     @Override
@@ -894,45 +908,23 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
 
     @Override
     public Map<String, Object> getPhotoDashboardStats() {
+        Map<String, Object> stats = new HashMap<>();
         try {
-            Map<String, Object> stats = new HashMap<>();
-            
-            // 1. 照片类型统计
             stats.put("typeStats", getPhotoTypeCounts());
-            
-            // 2. 年月变化
             stats.put("changeStats", getPhotoChangeStats());
-            
-            // 3. 拍摄主题统计
             stats.put("subjectStats", getPhotoSubjectStats());
-            
-            // 4. 相机统计
             stats.put("cameraStats", getCameraStats());
-            
-            // 5. 镜头统计
             stats.put("lensStats", getLensStats());
-            
-            // 6. ISO统计
             stats.put("isoStats", getIsoStats());
-            
-            // 7. 快门统计
             stats.put("shutterStats", getShutterStats());
-            
-            // 8. 光圈统计
             stats.put("apertureStats", getApertureStats());
-            
-            // 9. 拍摄时间按月份统计
+            stats.put("focalLengthStats", getFocalLengthStats());
             stats.put("monthStats", getMonthStats());
-            
-            // 10. 年度拍摄数量统计
             stats.put("yearStats", getYearStats());
-            
-            log.info("成功获取照片仪表盘统计数据");
-            return stats;
         } catch (Exception e) {
-            log.error("获取照片仪表盘统计数据时发生错误: {}", e.getMessage(), e);
-            throw new RuntimeException("获取照片仪表盘统计数据失败", e);
+            log.error("获取照片统计数据时发生错误: {}", e.getMessage(), e);
         }
+        return stats;
     }
     
     @Override
@@ -1120,6 +1112,40 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
     }
     
     @Override
+    @Cacheable(key = "'focalLengthStats'")
+    public List<Map<String, Object>> getFocalLengthStats() {
+        List<Map<String, Object>> stats = new ArrayList<>();
+        try {
+            // 获取所有不重复的焦距值
+            List<String> focalLengths = baseMapper.selectList(
+                new LambdaQueryWrapper<Photo>()
+                    .select(Photo::getFocalLength)
+                    .isNotNull(Photo::getFocalLength)
+                    .ne(Photo::getFocalLength, "")
+            ).stream()
+            .map(Photo::getFocalLength)
+            .distinct()
+            .collect(Collectors.toList());
+
+            // 统计每个焦距的使用次数
+            for (String focalLength : focalLengths) {
+                long count = baseMapper.selectCount(
+                    new LambdaQueryWrapper<Photo>()
+                        .eq(Photo::getFocalLength, focalLength)
+                );
+                
+                Map<String, Object> stat = new HashMap<>();
+                stat.put("name", focalLength);
+                stat.put("value", count);
+                stats.add(stat);
+            }
+        } catch (Exception e) {
+            log.error("获取焦距统计数据时发生错误: {}", e.getMessage(), e);
+        }
+        return stats;
+    }
+    
+    @Override
     @Cacheable(key = "'monthStats'")
     public Map<String, Long> getMonthStats() {
         Map<String, Long> monthStats = new HashMap<>();
@@ -1165,5 +1191,245 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
         }
         
         return yearStats;
+    }
+
+    @Override
+    @Cacheable(key = "'allCameras'")
+    public List<String> getAllCameras() {
+        log.info("获取所有相机型号");
+        List<String> cameras = list()
+                .stream()
+                .map(Photo::getCamera)
+                .filter(camera -> camera != null && !camera.isEmpty())
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList());
+        
+        log.info("成功获取所有相机型号，共{}种", cameras.size());
+        return cameras;
+    }
+
+    @Override
+    @Cacheable(key = "'allLenses'")
+    public List<String> getAllLenses() {
+        log.info("获取所有镜头型号");
+        List<String> lenses = list()
+                .stream()
+                .map(Photo::getLens)
+                .filter(lens -> lens != null && !lens.isEmpty())
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList());
+        
+        log.info("成功获取所有镜头型号，共{}种", lenses.size());
+        return lenses;
+    }
+
+    @Override
+    @CacheEvict(value = {"photo"}, allEntries = true)
+    public boolean updateCameraName(String oldCamera, String newCamera) {
+        log.info("更新相机型号: {} -> {}", oldCamera, newCamera);
+        try {
+            // 检查是否有使用该相机型号的照片
+            long count = count(new LambdaQueryWrapper<Photo>()
+                    .eq(Photo::getCamera, oldCamera));
+            
+            if (count == 0) {
+                log.warn("没有找到使用该相机型号的照片: {}", oldCamera);
+                return false;
+            }
+            
+            // 更新相机型号
+            boolean updated = update()
+                    .eq("camera", oldCamera)
+                    .set("camera", newCamera)
+                    .update();
+            
+            if (updated) {
+                log.info("成功将相机型号从 {} 更新为 {}, 更新了 {} 条记录", oldCamera, newCamera, count);
+            } else {
+                log.error("更新相机型号失败: {} -> {}", oldCamera, newCamera);
+            }
+            
+            return updated;
+        } catch (Exception e) {
+            log.error("更新相机型号时发生错误: {}", e.getMessage(), e);
+            return false;
+        }
+    }
+
+    @Override
+    @CacheEvict(value = {"photo"}, allEntries = true)
+    public boolean updateLensName(String oldLens, String newLens) {
+        log.info("更新镜头型号: {} -> {}", oldLens, newLens);
+        try {
+            // 检查是否有使用该镜头型号的照片
+            long count = count(new LambdaQueryWrapper<Photo>()
+                    .eq(Photo::getLens, oldLens));
+            
+            if (count == 0) {
+                log.warn("没有找到使用该镜头型号的照片: {}", oldLens);
+                return false;
+            }
+            
+            // 更新镜头型号
+            boolean updated = update()
+                    .eq("lens", oldLens)
+                    .set("lens", newLens)
+                    .update();
+            
+            if (updated) {
+                log.info("成功将镜头型号从 {} 更新为 {}, 更新了 {} 条记录", oldLens, newLens, count);
+            } else {
+                log.error("更新镜头型号失败: {} -> {}", oldLens, newLens);
+            }
+            
+            return updated;
+        } catch (Exception e) {
+            log.error("更新镜头型号时发生错误: {}", e.getMessage(), e);
+            return false;
+        }
+    }
+
+    @Override
+    @Cacheable(key = "'photoCountByCamera_' + #camera")
+    public long getPhotoCountByCamera(String camera) {
+        log.info("获取相机 {} 的照片数量", camera);
+        try {
+            long count = count(new LambdaQueryWrapper<Photo>()
+                    .eq(Photo::getCamera, camera));
+            
+            log.info("成功获取相机 {} 的照片数量: {}", camera, count);
+            return count;
+        } catch (Exception e) {
+            log.error("获取相机照片数量时发生错误: {}", e.getMessage(), e);
+            return 0;
+        }
+    }
+
+    @Override
+    @Cacheable(key = "'photoCountByLens_' + #lens")
+    public long getPhotoCountByLens(String lens) {
+        return baseMapper.selectCount(
+            new LambdaQueryWrapper<Photo>()
+                .eq(Photo::getLens, lens)
+        );
+    }
+
+    @Override
+    @Cacheable(key = "'allFocalLengths'")
+    public List<String> getAllFocalLengths() {
+        return baseMapper.selectList(
+            new LambdaQueryWrapper<Photo>()
+                .select(Photo::getFocalLength)
+                .isNotNull(Photo::getFocalLength)
+                .ne(Photo::getFocalLength, "")
+        ).stream()
+        .map(Photo::getFocalLength)
+        .distinct()
+        .collect(Collectors.toList());
+    }
+
+    @Override
+    @Cacheable(key = "'photoCountByFocalLength_' + #focalLength")
+    public long getPhotoCountByFocalLength(String focalLength) {
+        return baseMapper.selectCount(
+            new LambdaQueryWrapper<Photo>()
+                .eq(Photo::getFocalLength, focalLength)
+        );
+    }
+
+    @Override
+    @CacheEvict(value = {"photo"}, allEntries = true)
+    public boolean updateFocalLength(String oldFocalLength, String newFocalLength) {
+        return baseMapper.update(
+            new LambdaUpdateWrapper<Photo>()
+                .eq(Photo::getFocalLength, oldFocalLength)
+                .set(Photo::getFocalLength, newFocalLength)
+        ) > 0;
+    }
+
+    /**
+     * 重命名照片文件
+     * @param oldFileName 原文件名
+     * @param newFileName 新文件名
+     * @return 是否所有文件都重命名成功
+     */
+    @Override
+    public boolean renamePhotoFiles(String oldFileName, String newFileName) {
+        if (oldFileName == null || newFileName == null || oldFileName.equals(newFileName)) {
+            return true;
+        }
+
+        boolean allSuccess = true;
+        List<String> paths = Arrays.asList(fullSizeUrl, thumbnail100KUrl, thumbnail1000KUrl);
+        List<String> failedPaths = new ArrayList<>();
+
+        for (String path : paths) {
+            File oldFile = new File(path, oldFileName);
+            File newFile = new File(path, newFileName);
+
+            if (oldFile.exists()) {
+                try {
+                    if (!oldFile.renameTo(newFile)) {
+                        log.error("重命名文件失败: {} -> {}", oldFile.getAbsolutePath(), newFile.getAbsolutePath());
+                        allSuccess = false;
+                        failedPaths.add(path);
+                    } else {
+                        log.info("成功重命名文件: {} -> {}", oldFile.getAbsolutePath(), newFile.getAbsolutePath());
+                    }
+                } catch (Exception e) {
+                    log.error("重命名文件时发生异常: {} -> {}, 错误: {}", 
+                        oldFile.getAbsolutePath(), newFile.getAbsolutePath(), e.getMessage(), e);
+                    allSuccess = false;
+                    failedPaths.add(path);
+                }
+            } else {
+                log.warn("文件不存在，无需重命名: {}", oldFile.getAbsolutePath());
+            }
+        }
+
+        if (!allSuccess) {
+            log.error("部分文件重命名失败，失败的路径: {}", String.join(", ", failedPaths));
+        }
+
+        return allSuccess;
+    }
+
+    @Override
+    @Cacheable(key = "'noMetadataPhotos_' + #page + '_' + #pageSize")
+    public Page<Photo> getNoMetadataPhotosByPage(int page, int pageSize) {
+        Page<Photo> photoPage = new Page<>(page, pageSize);
+        
+        // 构建查询条件：任何一个元数据字段为NULL或空字符串
+        LambdaQueryWrapper<Photo> queryWrapper = new LambdaQueryWrapper<Photo>()
+                .orderByDesc(Photo::getTime)
+                .and(wrapper -> wrapper
+                    .isNull(Photo::getFileName).or().eq(Photo::getFileName, "")
+                    .or()
+                    .isNull(Photo::getAuthor).or().eq(Photo::getAuthor, "")
+                    .or()
+                    .isNull(Photo::getWidth)
+                    .or()
+                    .isNull(Photo::getHeight)
+                    .or()
+                    .isNull(Photo::getTime).or().eq(Photo::getTime, "")
+                    .or()
+                    .isNull(Photo::getAperture).or().eq(Photo::getAperture, "")
+                    .or()
+                    .isNull(Photo::getShutter).or().eq(Photo::getShutter, "")
+                    .or()
+                    .isNull(Photo::getIso).or().eq(Photo::getIso, "")
+                    .or()
+                    .isNull(Photo::getCamera).or().eq(Photo::getCamera, "")
+                    .or()
+                    .isNull(Photo::getLens).or().eq(Photo::getLens, "")
+                    .or()
+                    .isNull(Photo::getFocalLength).or().eq(Photo::getFocalLength, "")
+                    .or()
+                    .isNull(Photo::getStart)
+                );
+        
+        return page(photoPage, queryWrapper);
     }
 }

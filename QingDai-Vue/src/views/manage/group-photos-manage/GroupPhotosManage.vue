@@ -158,6 +158,7 @@ const fetchData = async () => {
           shutter: '',
           camera: '',
           lens: '',
+          focalLength: '',
           time: '',
           title: '',
           introduce: '',

@@ -79,6 +79,9 @@
           <el-form-item label="ISO">
             <el-input v-model="form.iso" placeholder="ISO值" />
           </el-form-item>
+          <el-form-item label="焦距">
+            <el-input v-model="form.focalLength" placeholder="焦距" />
+          </el-form-item>
         </el-form>
       </div>
     </div>
@@ -141,7 +144,8 @@ const form = reactive({
   lens: '',
   aperture: '',
   shutter: '',
-  iso: ''
+  iso: '',
+  focalLength: ''
 });
 
 // 加载照片数据
@@ -163,6 +167,7 @@ const loadPhotoData = async () => {
       form.aperture = photoData.aperture || '';
       form.shutter = photoData.shutter || '';
       form.iso = photoData.iso || '';
+      form.focalLength = photoData.focalLength || '';
 
       // 加载缩略图
       const thumbnailResult = await get100KPhoto(props.photoId);
@@ -215,6 +220,7 @@ const submitForm = async () => {
       aperture: form.aperture,
       shutter: form.shutter,
       iso: form.iso,
+      focalLength: form.focalLength,
       fileName: photoInfo.value.fileName || '',
       author: photoInfo.value.author || '',
       width: photoInfo.value.width || 0,
@@ -232,7 +238,8 @@ const submitForm = async () => {
       lens: form.lens,
       aperture: form.aperture,
       shutter: form.shutter,
-      iso: form.iso
+      iso: form.iso,
+      focalLength: form.focalLength
     };
 
     ElMessage.success('保存成功');

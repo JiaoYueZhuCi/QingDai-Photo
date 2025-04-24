@@ -121,7 +121,7 @@ const submitForm = async () => {
 }
 
 .back {
-  background: url('/public/img/introduce/background.jpg') no-repeat center center;
+  background: url('/public/img/home/background.jpg') no-repeat center center;
   background-size: cover;
   height: 100vh;
   width: 100%;

@@ -1,7 +1,7 @@
 <template>
   <div class="map-group">
     <div class="Container">
-      <div class="card mapCard">
+      <div class="mapCard">
         <div class="province-list-title">拍摄足迹</div>
         <div ref="mapContainer" class="map-container"></div>
       </div>
@@ -76,7 +76,13 @@ const initChart = async () => {
       },
       tooltip: {
         trigger: 'item',
-        formatter: '{b}'
+        formatter: '{b}',
+        textStyle: {
+          color: '#fff' // 设置提示框文字颜色为白色
+        },
+        backgroundColor: 'rgba(0, 0, 0, 0.7)', // 设置提示框背景色
+        borderColor: '#45465E', // 设置提示框边框颜色
+        borderWidth: 1
       },
       series: [
         {
@@ -91,12 +97,23 @@ const initChart = async () => {
             show: false // 不显示省份名称
           },
           itemStyle: {
-            areaColor: '#222222', 
-            borderColor: '#222222', // 默认边框颜色与填充色相同
+            areaColor: '#FAFBFF', 
+            borderColor: '#45465E',
             borderWidth: 1
           },
           emphasis: {
-            disabled: true // 禁用鼠标悬浮高亮效果
+            disabled: false,
+            scale: true,
+            label: {
+              show: true,
+              color: '#fff', // 悬浮时省份名称颜色为白色
+              fontSize: 14 // 悬浮时字体稍大
+            },
+            itemStyle: {
+              areaColor: '#c2c5df',
+              shadowBlur: 10,
+              shadowColor: 'rgba(0, 0, 0, 0.5)'
+            }
           },
           data: getMapData()
         }
@@ -122,7 +139,7 @@ const getMapData = () => {
       value: province.isActive ? 100 : 0,
       itemStyle: {
         areaColor: province.isActive ? activeColor : inactiveColor,
-        borderColor: province.isActive ? activeColor : inactiveColor // 边框颜色与区域填充色相同
+        borderColor: '#45465E' // 修改为统一的描边颜色
       }
     };
   });
@@ -172,18 +189,18 @@ onBeforeUnmount(() => {
 
 .mapCard {
   width: 80%;
-  height: auto;
+  /* height: 300px; */
   background-color: #000000;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
   border: 1px solid var(--qd-color-primary-light-3);
   border-radius: 4px;
 }
 
 .province-list-card {
   width: 20%;
-  height: 100%;
+  /* height: 300px; */
   background-color: #000000;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
   border: 1px solid var(--qd-color-primary-light-3);
   border-radius: 4px;
   overflow-y: auto;
@@ -216,22 +233,39 @@ onBeforeUnmount(() => {
   background-color: rgba(69, 70, 94, 0.3);
 }
 
-
-/* 添加媒体查询，当屏幕宽度小于等于 768px 时（通常为手机屏幕），调整 mapCard 的样式 */
 @media (max-width: 768px) {
   .map-container{
     width: 95%;
-    height: 25vh;
+    height: 100vw;
     margin-top: 3vh;
+    left: 2.5vw;
   }
+  .Container {
+    flex-direction: column;
+  }
+  
   .mapCard {
     width: 100%;
-    height: 35vh;
+    height: 120vw;
+    margin-bottom: 10px;
   }
-
+  
   .province-list-card {
     width: 100%;
     height: 35vh;
-  } 
+  }
+  
+  .province-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 5px;
+    padding: 10px;
+  }
+  
+  .province-item {
+    text-align: center;
+    padding: 8px 5px;
+    font-size: 14px;
+  }
 }
 </style>

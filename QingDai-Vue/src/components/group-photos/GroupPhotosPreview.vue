@@ -193,6 +193,7 @@ const currentPhotoData = ref<EnhancedWaterfallItem>({
     shutter: '',
     camera: '',
     lens: '',
+    focalLength: '',
     time: '',
     title: '',
     introduce: '',

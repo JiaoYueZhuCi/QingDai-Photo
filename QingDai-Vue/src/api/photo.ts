@@ -196,3 +196,73 @@ export const deleteMissingPhotoRecords = async (): Promise<any> => {
 export const getPhotoDashboardStats = async (): Promise<any> => {
   return await request.get(`${BASE_URL}/stats/dashboard`);
 };
+
+// 获取所有相机型号
+export function getAllCameras(): Promise<any> {
+  return request.get<string[]>(`${BASE_URL}/cameras`);
+}
+
+// 获取所有镜头型号
+export function getAllLenses(): Promise<any> {
+  return request.get<string[]>(`${BASE_URL}/lenses`);
+}
+
+// 更新相机型号
+export function updateCameraName(oldCamera: string, newCamera: string): Promise<any> {
+  return request({
+    url: `${BASE_URL}/cameras/${encodeURI(oldCamera)}`,
+    method: 'put',
+    params: { newCamera }
+  })
+}
+
+// 更新镜头型号
+export function updateLensName(oldLens: string, newLens: string): Promise<any> {
+  return request({
+    url: `${BASE_URL}/lenses/${encodeURI(oldLens)}`,
+    method: 'put',
+    params: { newLens }
+  })
+}
+
+// 获取指定相机型号的照片数量
+export function getPhotoCountByCamera(camera: string): Promise<any> {
+  return request.get<number>(`${BASE_URL}/count/by-camera/${encodeURI(camera)}`);
+}
+
+// 获取指定镜头型号的照片数量
+export function getPhotoCountByLens(lens: string): Promise<any> {
+  return request.get<number>(`${BASE_URL}/count/by-lens/${encodeURI(lens)}`);
+}
+
+// 更新焦距信息
+export const updateFocalLength = async (): Promise<any> => {
+  return await request.post<{
+    totalCount: number;
+    updatedCount: number;
+    failedCount: number;
+    failedFiles: string[];
+  }>(`${BASE_URL}/update-focal-length`);
+};
+
+// 获取所有焦距值
+export function getAllFocalLengths(): Promise<any> {
+  return request.get<string[]>(`${BASE_URL}/focal-lengths`);
+}
+
+// 获取指定焦距的照片数量
+export function getPhotoCountByFocalLength(focalLength: string): Promise<any> {
+  return request.get<number>(`${BASE_URL}/count/by-focal-length/${encodeURI(focalLength)}`);
+}
+
+// 更新焦距值
+export function updateFocalLengthValue(oldFocalLength: string, newFocalLength: string): Promise<any> {
+  return request.put(`${BASE_URL}/focal-lengths/${encodeURI(oldFocalLength)}`, null, {
+    params: { newFocalLength }
+  });
+}
+
+// 获取无元数据照片数据
+export const getNoMetadataPhotosByPage = (params: { page: number; pageSize: number }): Promise<any> => {
+  return request.get<PhotoResponse>(`${BASE_URL}/no-metadata/page`, { params })
+}

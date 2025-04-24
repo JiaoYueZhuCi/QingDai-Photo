@@ -164,6 +164,7 @@ export const processPhotoData = (item: any): EnhancedWaterfallItem => {
     shutter: item.shutter || '',
     camera: item.camera || '',
     lens: item.lens || '',
+    focalLength: item.focalLength || '',
     time: item.time || '',
     title: item.title || '',
     introduce: item.introduce || '',

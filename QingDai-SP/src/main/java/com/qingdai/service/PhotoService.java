@@ -1,6 +1,7 @@
 package com.qingdai.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.drew.imaging.ImageProcessingException;
 import com.drew.metadata.Metadata;
 import com.qingdai.entity.Photo;
@@ -155,6 +156,12 @@ public interface PhotoService extends IService<Photo> {
     List<Map<String, Object>> getApertureStats();
     
     /**
+     * 获取焦距统计
+     * @return 包含焦距使用频率的列表
+     */
+    List<Map<String, Object>> getFocalLengthStats();
+    
+    /**
      * 获取按月份统计的拍摄时间统计
      * @return 包含每月拍摄数量的Map
      */
@@ -165,6 +172,85 @@ public interface PhotoService extends IService<Photo> {
      * @return 包含每年拍摄数量的Map
      */
     Map<String, Long> getYearStats();
+
+    /**
+     * 获取所有相机型号
+     * @return 所有不重复的相机型号列表
+     */
+    List<String> getAllCameras();
+
+    /**
+     * 获取所有镜头型号
+     * @return 所有不重复的镜头型号列表
+     */
+    List<String> getAllLenses();
+
+    /**
+     * 更新相机型号名称
+     * @param oldCamera 旧相机型号
+     * @param newCamera 新相机型号
+     * @return 更新是否成功
+     */
+    boolean updateCameraName(String oldCamera, String newCamera);
+
+    /**
+     * 更新镜头型号名称
+     * @param oldLens 旧镜头型号
+     * @param newLens 新镜头型号
+     * @return 更新是否成功
+     */
+    boolean updateLensName(String oldLens, String newLens);
+
+    /**
+     * 获取指定相机型号的照片数量
+     * @param camera 相机型号
+     * @return 照片数量
+     */
+    long getPhotoCountByCamera(String camera);
+
+    /**
+     * 获取指定镜头型号的照片数量
+     * @param lens 镜头型号
+     * @return 照片数量
+     */
+    long getPhotoCountByLens(String lens);
+
+    /**
+     * 获取所有焦距值
+     * @return 所有不重复的焦距值列表
+     */
+    List<String> getAllFocalLengths();
+
+    /**
+     * 获取指定焦距的照片数量
+     * @param focalLength 焦距值
+     * @return 照片数量
+     */
+    long getPhotoCountByFocalLength(String focalLength);
+
+    /**
+     * 更新焦距值
+     * @param oldFocalLength 旧焦距值
+     * @param newFocalLength 新焦距值
+     * @return 更新是否成功
+     */
+    boolean updateFocalLength(String oldFocalLength, String newFocalLength);
+
+    /**
+     * 获取无元数据照片分页信息
+     * @param page 页码
+     * @param pageSize 每页大小
+     * @return 分页照片信息
+     */
+    Page<Photo> getNoMetadataPhotosByPage(int page, int pageSize);
+
+    /**
+     * 重命名照片文件
+     * @param oldFileName 原文件名
+     * @param newFileName 新文件名
+     * @return 是否所有文件都重命名成功
+     */
+    boolean renamePhotoFiles(String oldFileName, String newFileName);
 
     /**
      * 处理结果类

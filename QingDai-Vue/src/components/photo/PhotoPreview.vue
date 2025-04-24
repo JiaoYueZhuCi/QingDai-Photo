@@ -27,6 +27,9 @@
                     <el-descriptions-item label="镜头">
                         {{ previewData.lens || '未知' }}
                     </el-descriptions-item>
+                    <el-descriptions-item label="焦距">
+                        {{ previewData.focalLength || '未知' }}
+                    </el-descriptions-item>
                     <el-descriptions-item label="拍摄时间">
                         {{ previewData.time || '未知' }}
                     </el-descriptions-item>
@@ -83,6 +86,7 @@ const previewData = ref<EnhancedWaterfallItem>({
     shutter: "",
     camera: "",
     lens: "",
+    focalLength: "",
     time: "",
     title: "",
     introduce: "",
@@ -150,6 +154,7 @@ const handleClose = () => {
         shutter: "",
         camera: "",
         lens: "",
+        focalLength: "",
         time: "",
         title: "",
         introduce: "",

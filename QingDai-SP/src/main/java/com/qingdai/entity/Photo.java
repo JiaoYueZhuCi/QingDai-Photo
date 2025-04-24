@@ -53,6 +53,9 @@ public class Photo {
     @TableField(value = "lens")
     @Schema(description = "镜头")
     private String lens;
+    @TableField(value = "focal_length")
+    @Schema(description = "焦距")
+    private String focalLength;
     @TableField(value = "introduce")
     @Schema(description = "照片介绍")
     private String introduce;

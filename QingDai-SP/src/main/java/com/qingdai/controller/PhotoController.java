@@ -632,6 +632,23 @@ public class PhotoController {
                 return ResponseEntity.badRequest().body("ID不能为空");
             }
 
+            // 获取原照片信息
+            Photo oldPhoto = photoService.getById(photo.getId());
+            if (oldPhoto == null) {
+                log.warn("未找到ID为{}的照片记录", photo.getId());
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("未找到对应照片记录");
+            }
+
+            // 如果文件名发生变化，先重命名文件
+            if (!oldPhoto.getFileName().equals(photo.getFileName())) {
+                boolean renameSuccess = photoService.renamePhotoFiles(oldPhoto.getFileName(), photo.getFileName());
+                if (!renameSuccess) {
+                    log.error("重命名照片文件失败，ID: {}", photo.getId());
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("重命名照片文件失败");
+                }
+            }
+
+            // 更新数据库记录
             boolean updated = photoService.updateById(photo);
             if (!updated) {
                 log.warn("未找到ID为{}的照片记录", photo.getId());
@@ -879,6 +896,126 @@ public class PhotoController {
             return ResponseEntity.ok(stats);
         } catch (Exception e) {
             log.error("获取照片统计数据时发生错误: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @GetMapping("/cameras")
+    @Operation(summary = "获取所有相机型号", description = "获取数据库中所有不重复的相机型号列表")
+    @PreAuthorize("permitAll()")
+    public ResponseEntity<List<String>> getAllCameras() {
+        log.info("获取所有相机型号");
+        List<String> cameras = photoService.getAllCameras();
+        return ResponseEntity.ok(cameras);
+    }
+
+    @GetMapping("/lenses")
+    @Operation(summary = "获取所有镜头型号", description = "获取数据库中所有不重复的镜头型号列表")
+    @PreAuthorize("permitAll()")
+    public ResponseEntity<List<String>> getAllLenses() {
+        log.info("获取所有镜头型号");
+        List<String> lenses = photoService.getAllLenses();
+        return ResponseEntity.ok(lenses);
+    }
+
+    @PutMapping("/cameras/{oldCamera}")
+    @Operation(summary = "批量更新相机型号", description = "将所有使用指定相机型号的照片更新为新的相机型号")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> updateCameraName(
+            @PathVariable String oldCamera,
+            @RequestParam String newCamera) {
+        log.info("更新相机型号: {} -> {}", oldCamera, newCamera);
+        
+        if (photoService.updateCameraName(oldCamera, newCamera)) {
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PutMapping("/lenses/{oldLens}")
+    @Operation(summary = "批量更新镜头型号", description = "将所有使用指定镜头型号的照片更新为新的镜头型号")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> updateLensName(
+            @PathVariable String oldLens,
+            @RequestParam String newLens) {
+        log.info("更新镜头型号: {} -> {}", oldLens, newLens);
+        
+        if (photoService.updateLensName(oldLens, newLens)) {
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @GetMapping("/count/by-camera/{camera}")
+    @Operation(summary = "获取指定相机型号的照片数量", description = "获取使用指定相机型号拍摄的照片数量")
+    @PreAuthorize("permitAll()")
+    public ResponseEntity<Long> getPhotoCountByCamera(@PathVariable String camera) {
+        log.info("获取相机 {} 的照片数量", camera);
+        long count = photoService.getPhotoCountByCamera(camera);
+        return ResponseEntity.ok(count);
+    }
+
+    @GetMapping("/count/by-lens/{lens}")
+    @Operation(summary = "获取指定镜头型号的照片数量", description = "获取使用指定镜头型号拍摄的照片数量")
+    @PreAuthorize("permitAll()")
+    public ResponseEntity<Long> getPhotoCountByLens(@PathVariable String lens) {
+        log.info("获取镜头 {} 的照片数量", lens);
+        long count = photoService.getPhotoCountByLens(lens);
+        return ResponseEntity.ok(count);
+    }
+
+    @GetMapping("/focal-lengths")
+    @Operation(summary = "获取所有焦距值", description = "获取数据库中所有不重复的焦距值列表")
+    @PreAuthorize("permitAll()")
+    public ResponseEntity<List<String>> getAllFocalLengths() {
+        log.info("获取所有焦距值");
+        List<String> focalLengths = photoService.getAllFocalLengths();
+        return ResponseEntity.ok(focalLengths);
+    }
+
+    @GetMapping("/count/by-focal-length/{focalLength}")
+    @Operation(summary = "获取指定焦距的照片数量", description = "获取使用指定焦距拍摄的照片数量")
+    @PreAuthorize("permitAll()")
+    public ResponseEntity<Long> getPhotoCountByFocalLength(@PathVariable String focalLength) {
+        log.info("获取焦距 {} 的照片数量", focalLength);
+        long count = photoService.getPhotoCountByFocalLength(focalLength);
+        return ResponseEntity.ok(count);
+    }
+
+    @PutMapping("/focal-lengths/{oldFocalLength}")
+    @Operation(summary = "批量更新焦距值", description = "将所有使用指定焦距的照片更新为新的焦距值")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> updateFocalLength(
+            @PathVariable String oldFocalLength,
+            @RequestParam String newFocalLength) {
+        log.info("更新焦距值: {} -> {}", oldFocalLength, newFocalLength);
+        
+        if (photoService.updateFocalLength(oldFocalLength, newFocalLength)) {
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @GetMapping("/no-metadata/page")
+    @Operation(summary = "获取无元数据照片分页信息", description = "获取除title、introduce、created_time、updated_time外其他字段为空的分页照片信息")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Page<Photo>> getNoMetadataPhotosByPage(
+            @RequestParam int page,
+            @RequestParam int pageSize) {
+        try {
+            if (page < 1) {
+                page = 1;
+                log.warn("页码小于1，已自动调整为1");
+            }
+            
+            Page<Photo> photoPage = photoService.getNoMetadataPhotosByPage(page, pageSize);
+            log.info("成功获取无元数据照片分页信息，总记录数: {}, 总页数: {}", photoPage.getTotal(), photoPage.getPages());
+            return ResponseEntity.ok().body(photoPage);
+        } catch (Exception e) {
+            log.error("获取无元数据照片分页信息时发生错误，页码: {}, 每页大小: {}, 错误: {}", page, pageSize, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }

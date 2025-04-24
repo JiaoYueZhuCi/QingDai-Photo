@@ -74,9 +74,10 @@
                             <p class="description">{{ previewData.introduce || '暂无介绍' }}</p>
                         </el-tooltip>
                         <div class="metadata">
-                            <span class="metadata-item">{{ previewData.camera || '未知' }}</span>
-                            <span class="metadata-item">{{ previewData.lens || '未知' }}</span>
-                            <span class="metadata-item">{{ previewData.time || '未知' }}</span>
+                            <span class="metadata-item">{{ previewData.camera || '未知相机' }}</span>
+                            <span class="metadata-item">{{ previewData.lens || '未知镜头' }}</span>
+                            <span class="metadata-item">{{ previewData.focalLength || '未知焦距' }}</span>
+                            <span class="metadata-item">{{ previewData.time || '未知时间' }}</span>
                             <span class="metadata-item">
                                 <span v-if="previewData.aperture">光圈：{{ previewData.aperture }}</span>
                                 <span v-if="previewData.shutter"> 快门：{{ previewData.shutter }}</span>
@@ -209,6 +210,7 @@ const previewData = ref<EnhancedWaterfallItem>({
     shutter: "",
     camera: "",
     lens: "",
+    focalLength: "",
     time: "",
     title: "",
     introduce: "",
@@ -468,6 +470,7 @@ const handleClose = () => {
         shutter: "",
         camera: "",
         lens: "",
+        focalLength: "",
         time: "",
         title: "",
         introduce: "",
