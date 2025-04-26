@@ -106,9 +106,8 @@
 
 ## 配置说明
 
-### 配置文件
-- application-dev.yml (已写出)
-- application-prod.yml(涉及真实配置 需手动添加)
+### 配置文件(涉及真实配置 需手动添加)
+- QingDai-Photo/QingDai-SP/src/main/resources/application-prod.yml
 
 ```properties
 spring:
@@ -134,9 +133,7 @@ qingdai:
   thumbnailSizeUrl: ?
   pendingUrl: ?
 ```
-
-- application.yaml    (已写出)
-- application.yml (涉及真实配置 需手动添加)
+- QingDai-Photo/QingDai-SP/src/main/resources/application.yml
 
 ```properties
 spring:
@@ -146,6 +143,15 @@ spring:
 jwt:
   # 密钥
   secret: ?
+```
+
+- QingDai-Photo/QingDai-Vue/src/data/beian.ts
+```ts
+// 备案信息
+export const beianInfo = {
+  number: '',
+  link: 'https://beian.miit.gov.cn/'
+};
 ```
 ### 推荐图片目录
 ```
