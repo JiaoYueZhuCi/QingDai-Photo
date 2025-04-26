@@ -226,8 +226,8 @@ create table sys_permission
     code         varchar(100)                       not null,
     name         varchar(50)                        not null,
     description  varchar(200)                       null,
-    created_time datetime default CURRENT_TIMESTAMP null,
-    updated_time datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP,
+    created_time datetime default CURRENT_TIMESTAMP null comment '创建时间',
+    updated_time datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间',
     constraint code
         unique (code)
 );
@@ -238,8 +238,8 @@ create table sys_role
         primary key,
     name         varchar(50)                        not null,
     description  varchar(200)                       null,
-    created_time datetime default CURRENT_TIMESTAMP null,
-    updated_time datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP,
+    created_time datetime default CURRENT_TIMESTAMP null comment '创建时间',
+    updated_time datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间',
     constraint name
         unique (name)
 );
@@ -263,8 +263,8 @@ create table sys_user
     username     varchar(50)                        not null,
     password     varchar(100)                       not null,
     status       tinyint  default 1                 null comment '0-禁用, 1-启用',
-    created_time datetime default CURRENT_TIMESTAMP null,
-    updated_time datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP,
+    created_time datetime default CURRENT_TIMESTAMP null comment '创建时间',
+    updated_time datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间',
     constraint username
         unique (username)
 );
