@@ -3,7 +3,7 @@
     <div class="header-content">
       <div class="logo-container" ref="logoRef">
         <router-link to="/show" class="logo-link">
-          <img src="@/assets/logo.png" alt="青黛影像" class="logo-image" />
+          <img src="/logo.png" alt="青黛影像" class="logo-image" />
           <span class="logo-text">青黛影像</span>
         </router-link>
       </div>
@@ -32,7 +32,7 @@
         </router-link>
 
         <a 
-          href="https://gitee.com/liuziming33/qingdai-photo" 
+          href="https://github.com/JiaoYueZhuCi/QingDai-Photo" 
           target="_blank"
           class="nav-item" 
           @mouseenter="handleNavHover($event, true)"

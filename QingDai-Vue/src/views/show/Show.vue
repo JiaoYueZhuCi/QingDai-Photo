@@ -20,7 +20,7 @@
           <router-link to="/home" class="nav-button primary-button">
             <i class="el-icon-home"></i> 我的摄影主页
           </router-link>
-          <a href="https://gitee.com/liuziming33/qingdai-photo" target="_blank" class="nav-button secondary-button">
+          <a href="https://github.com/JiaoYueZhuCi/QingDai-Photo" target="_blank" class="nav-button secondary-button">
             <i class="el-icon-share"></i> 开源项目
           </a>
         </div>

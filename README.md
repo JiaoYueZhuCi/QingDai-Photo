@@ -31,14 +31,19 @@
   ```
   ├── pubic/
         ├── img/                           
-            └── introduce     
+            ├── home     
                 ├── avatar.jpg             # 头像
-                └── background.jpg         # 背景图                    
+                └── background.jpg         # 背景图
+            └── introduce                                     
         └── favicon.ico                    # 图标        
   ├── src/
         ├── api/                           # 接口封装
         ├── assets/                        # 静态资源
-            └── main.css                   # 全局css(包含主题色)
+            └── css/    
+                ├── el/                    # 自定义的ElementPlus的组件样式
+                ├── jicui.css              # 备选主题色(吉翠)
+                ├── main.css               # 全局css
+                └── qingdai.css            # 主题色(青黛)
         ├── components/                    # 通用组件(根据类型使用扁平目录结构)
         ├── data/                          # 静态数据  
         ├── router/                        # 路由配置
