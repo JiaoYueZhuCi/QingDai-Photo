@@ -1,203 +1,75 @@
 <template>
-  <div class="phopoDataContainer">
-    <div class="statistic-container">
-      <div class="statistic-card">
-        <el-statistic :value="stats.typeStats?.starred || 0">
-          <template #title>
-            <div style="display: inline-flex; align-items: center">
-              精选照片数量
-              <el-icon style="margin-left: 4px">
-                <Camera />
-              </el-icon>
-            </div>
-          </template>
-          <template #suffix>
-            <div class="change-info">
-              <span v-if="stats.changeStats?.monthlyStarredChange > 0" style="color:#3fb27f">
-                <el-icon>
-                  <Top />
-                </el-icon>
-                {{ stats.changeStats.monthlyStarredChange }} / 月
-              </span>
-              <span v-else-if="stats.changeStats?.monthlyStarredChange < 0" style="color:#fc605d">
-                <el-icon>
-                  <Bottom />
-                </el-icon>
-                {{ Math.abs(stats.changeStats.monthlyStarredChange) }} / 月
-              </span>
-              <span v-else>月持平</span>
-
-              <span v-if="stats.changeStats?.yearlyStarredChange > 0" style="color:#3fb27f">
-                <el-icon>
-                  <Top />
-                </el-icon>
-                {{ stats.changeStats.yearlyStarredChange }} / 年
-              </span>
-              <span v-else-if="stats.changeStats?.yearlyStarredChange < 0" style="color:#fc605d">
-                <el-icon>
-                  <Bottom />
-                </el-icon>
-                {{ Math.abs(stats.changeStats.yearlyStarredChange) }} / 年
-              </span>
-              <span v-else>年持平</span>
-            </div>
-          </template>
-        </el-statistic>
-      </div>
-      <div class="statistic-card">
-        <el-statistic :value="stats.typeStats?.normal || 0">
-          <template #title>
-            <div style="display: inline-flex; align-items: center">
-              普通照片数量
-              <el-icon style="margin-left: 4px">
-                <Picture />
-              </el-icon>
-            </div>
-          </template>
-          <template #suffix>
-            <div class="change-info">
-              <span v-if="stats.changeStats?.monthlyChange > 0" style="color:#3fb27f">
-                <el-icon>
-                  <Top />
-                </el-icon>
-                {{ stats.changeStats.monthlyChange }} / 月
-              </span>
-              <span v-else-if="stats.changeStats?.monthlyChange < 0" style="color:#fc605d">
-                <el-icon>
-                  <Bottom />
-                </el-icon>
-                {{ Math.abs(stats.changeStats.monthlyChange) }} / 月
-              </span>
-              <span v-else>月持平</span>
-
-              <span v-if="stats.changeStats?.yearlyChange > 0" style="color:#3fb27f">
-                <el-icon>
-                  <Top />
-                </el-icon>
-                {{ stats.changeStats.yearlyChange }} / 年
-              </span>
-              <span v-else-if="stats.changeStats?.yearlyChange < 0" style="color:#fc605d">
-                <el-icon>
-                  <Bottom />
-                </el-icon>
-                {{ Math.abs(stats.changeStats.yearlyChange) }} / 年
-              </span>
-              <span v-else>年持平</span>
-            </div>
-          </template>
-        </el-statistic>
-      </div>
-      <div class="statistic-card">
-        <el-statistic :value="stats.typeStats?.meteorology || 0">
-          <template #title>
-            <div style="display: inline-flex; align-items: center">
-              气象照片数量
-              <el-icon style="margin-left: 4px">
-                <Sunny />
-              </el-icon>
-            </div>
-          </template>
-          <template #suffix>
-            <div class="change-info">
-              <span v-if="stats.changeStats?.monthlyMeteorologyChange > 0" style="color:#3fb27f">
-                <el-icon>
-                  <Top />
-                </el-icon>
-                {{ stats.changeStats.monthlyMeteorologyChange }} / 月
-              </span>
-              <span v-else-if="stats.changeStats?.monthlyMeteorologyChange < 0" style="color:#fc605d">
-                <el-icon>
-                  <Bottom />
-                </el-icon>
-                {{ Math.abs(stats.changeStats.monthlyMeteorologyChange) }} / 月
-              </span>
-              <span v-else>月持平</span>
-
-              <span v-if="stats.changeStats?.yearlyMeteorologyChange > 0" style="color:#3fb27f">
-                <el-icon>
-                  <Top />
-                </el-icon>
-                {{ stats.changeStats.yearlyMeteorologyChange }} / 年
-              </span>
-              <span v-else-if="stats.changeStats?.yearlyMeteorologyChange < 0" style="color:#fc605d">
-                <el-icon>
-                  <Bottom />
-                </el-icon>
-                {{ Math.abs(stats.changeStats.yearlyMeteorologyChange) }} / 年
-              </span>
-              <span v-else>年持平</span>
-            </div>
-          </template>
-        </el-statistic>
-      </div>
-      <div class="statistic-card">
-        <el-statistic :value="stats.typeStats?.hidden || 0">
-          <template #title>
-            <div style="display: inline-flex; align-items: center">
-              隐藏照片数量
-              <el-icon style="margin-left: 4px">
-                <Hide />
-              </el-icon>
-            </div>
-          </template>
-        </el-statistic>
-      </div>
+  <div class="visualization-container">
+    <div class="visualization-card">
+      <div class="chart-title">相机/无人机使用统计</div>
+      <div class="chart-container" ref="cameraChartRef"></div>
     </div>
-
-    <div class="visualization-container">
-      <div class="visualization-card">
-        <div class="chart-title">相机/无人机使用统计</div>
-        <div class="chart-container" ref="cameraChartRef"></div>
-      </div>
-      <div class="visualization-card">
-        <div class="chart-title">相机型号统计</div>
-        <div class="chart-container" ref="cameraModelChartRef"></div>
-      </div>
-      <div class="visualization-card">
-        <div class="chart-title">镜头型号统计</div>
-        <div class="chart-container" ref="lensChartRef"></div>
-      </div>
-      <div class="visualization-card">
-        <div class="chart-title">气象照片类型统计</div>
-        <div class="chart-container" ref="subjectChartRef"></div>
-      </div>
-      <div class="visualization-card">
-        <div class="chart-title">照片分级统计</div>
-        <div class="chart-container" ref="typeChartRef"></div>
-      </div>
-      <div class="visualization-card">
-        <div class="chart-title">焦距分布统计</div>
-        <div class="chart-container" ref="focalLengthChartRef"></div>
-      </div>
-      <div class="visualization-card">
-        <div class="chart-title">ISO分布</div>
-        <div class="chart-container" ref="isoChartRef"></div>
-      </div>
-      <div class="visualization-card">
-        <div class="chart-title">快门分布</div>
-        <div class="chart-container" ref="shutterChartRef"></div>
-      </div>
-      <div class="visualization-card">
-        <div class="chart-title">光圈分布</div>
-        <div class="chart-container" ref="apertureChartRef"></div>
-      </div>
-      <div class="visualization-card">
-        <div class="chart-title">月度拍摄数量统计</div>
-        <div class="chart-container" ref="monthChartRef"></div>
-      </div>
-      <div class="visualization-card">
-        <div class="chart-title">年度拍摄数量统计</div>
-        <div class="chart-container" ref="yearChartRef"></div>
-      </div>
+    <div class="visualization-card">
+      <div class="chart-title">相机型号统计</div>
+      <div class="chart-container" ref="cameraModelChartRef"></div>
+    </div>
+    <div class="visualization-card">
+      <div class="chart-title">镜头型号统计</div>
+      <div class="chart-container" ref="lensChartRef"></div>
+    </div>
+    <div class="visualization-card">
+      <div class="chart-title">气象照片类型统计</div>
+      <div class="chart-container" ref="subjectChartRef"></div>
+    </div>
+    <div class="visualization-card">
+      <div class="chart-title">照片分级统计</div>
+      <div class="chart-container" ref="typeChartRef"></div>
+    </div>
+    <div class="visualization-card">
+      <div class="chart-title">焦距分布统计</div>
+      <div class="chart-container" ref="focalLengthChartRef"></div>
+    </div>
+    <div class="visualization-card">
+      <div class="chart-title">ISO分布</div>
+      <div class="chart-container" ref="isoChartRef"></div>
+    </div>
+    <div class="visualization-card">
+      <div class="chart-title">快门分布</div>
+      <div class="chart-container" ref="shutterChartRef"></div>
+    </div>
+    <div class="visualization-card">
+      <div class="chart-title">光圈分布</div>
+      <div class="chart-container" ref="apertureChartRef"></div>
+    </div>
+    <div class="visualization-card">
+      <div class="chart-title">月度拍摄数量统计</div>
+      <div class="chart-container" ref="monthChartRef"></div>
+    </div>
+    <div class="visualization-card">
+      <div class="chart-title">年度拍摄数量统计</div>
+      <div class="chart-container" ref="yearChartRef"></div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue';
-import { Camera, Picture, Sunny, Hide, Top, Bottom } from '@element-plus/icons-vue';
+import { ref, onMounted, onBeforeUnmount, nextTick, watch } from 'vue';
 import * as echarts from 'echarts';
-import { getPhotoDashboardStats } from '@/api/photo';
+import { getCommonChartConfig, getBarColors, colorList } from './ChartUtils';
+
+const props = defineProps({
+  stats: {
+    type: Object,
+    required: true,
+    default: () => ({
+      typeStats: {},
+      subjectStats: {},
+      cameraStats: [],
+      lensStats: [],
+      isoStats: [],
+      shutterStats: [],
+      apertureStats: [],
+      monthStats: {},
+      yearStats: {},
+      focalLengthStats: []
+    })
+  }
+});
 
 let cameraChart: echarts.ECharts | null = null;
 let subjectChart: echarts.ECharts | null = null;
@@ -223,35 +95,6 @@ const monthChartRef = ref<HTMLElement | null>(null);
 const yearChartRef = ref<HTMLElement | null>(null);
 const focalLengthChartRef = ref<HTMLElement | null>(null);
 
-const stats = ref<any>({
-  typeStats: {},
-  changeStats: {},
-  subjectStats: {},
-  cameraStats: [],
-  lensStats: [],
-  isoStats: [],
-  shutterStats: [],
-  apertureStats: [],
-  monthStats: {},
-  yearStats: {},
-  focalLengthStats: []
-});
-
-// 获取照片数据统计
-const fetchPhotoStats = async () => {
-  try {
-    const response = await getPhotoDashboardStats();
-    stats.value = response;
-
-    // 确保DOM已完全渲染后再初始化图表
-    nextTick(() => {
-      initCharts();
-    });
-  } catch (error) {
-    console.error('获取照片统计数据失败', error);
-  }
-};
-
 // 初始化所有图表
 const initCharts = () => {
   initCameraChart();
@@ -265,62 +108,6 @@ const initCharts = () => {
   initMonthChart();
   initYearChart();
   initFocalLengthChart();
-};
-
-// 定义统一的图表配置和样式
-const getCommonChartConfig = () => {
-  return {
-    tooltip: {
-      trigger: 'axis',
-      axisPointer: {
-        type: 'shadow'
-      }
-    },
-    grid: {
-      left: '0%',
-      right: '0%',
-      bottom: '1%',
-      top: '0%',
-      containLabel: true
-    },
-    xAxis: {
-      axisLabel: {
-        show: false
-      },
-      axisLine: {
-        show: false
-      },
-      axisTick: {
-        show: false
-      }
-    },
-    yAxis: {
-      axisLabel: {
-        show: false
-      },
-      axisLine: {
-        show: false
-      },
-      axisTick: {
-        show: false
-      },
-      splitLine: {
-        show: false
-      }
-    }
-  };
-};
-
-// 定义统一的颜色列表，使用月度拍摄数量统计的配色方案
-const colorList = [
-  '#fc605d', '#fdd555', '#3fb27f', '#4992ff',
-  '#b18fd6', '#ff7741', '#fcac52', '#5ac8fa',
-  '#ef6aa7', '#66c654', '#67ace6', '#cc5325'
-];
-
-// 获取柱状图通用配色函数
-const getBarColors = (index: number) => {
-  return colorList[index % colorList.length];
 };
 
 // 初始化相机/无人机统计图
@@ -387,7 +174,7 @@ const initSubjectChart = () => {
   try {
     subjectChart = echarts.init(subjectChartRef.value);
 
-    const { morningGlow, eveningGlow, sunrise, sunset } = stats.value.subjectStats;
+    const { morningGlow, eveningGlow, sunrise, sunset } = props.stats.subjectStats;
 
     const option = {
       ...getCommonChartConfig(),
@@ -442,7 +229,7 @@ const initTypeChart = () => {
   try {
     typeChart = echarts.init(typeChartRef.value);
 
-    const { starred, normal, meteorology, hidden } = stats.value.typeStats;
+    const { starred, normal, meteorology, hidden } = props.stats.typeStats;
 
     const option = {
       ...getCommonChartConfig(),
@@ -497,7 +284,7 @@ const initCameraModelChart = () => {
     cameraModelChart = echarts.init(cameraModelChartRef.value);
 
     // 排序并只显示前10种相机型号
-    const topCameras = [...stats.value.cameraStats]
+    const topCameras = [...props.stats.cameraStats]
       .sort((a, b) => b.value - a.value)
       .slice(0, 10);
 
@@ -552,7 +339,7 @@ const initLensChart = () => {
     lensChart = echarts.init(lensChartRef.value);
 
     // 排序并只显示前10种镜头型号
-    const topLenses = [...stats.value.lensStats]
+    const topLenses = [...props.stats.lensStats]
       .sort((a, b) => b.value - a.value)
       .slice(0, 10);
 
@@ -607,7 +394,7 @@ const initIsoChart = () => {
     isoChart = echarts.init(isoChartRef.value);
 
     // 排序并只显示前10种ISO
-    const topIsos = [...stats.value.isoStats]
+    const topIsos = [...props.stats.isoStats]
       .sort((a, b) => b.value - a.value)
       .slice(0, 10);
 
@@ -662,7 +449,7 @@ const initShutterChart = () => {
     shutterChart = echarts.init(shutterChartRef.value);
 
     // 排序并只显示前10种快门速度
-    const topShutters = [...stats.value.shutterStats]
+    const topShutters = [...props.stats.shutterStats]
       .sort((a, b) => b.value - a.value)
       .slice(0, 10);
 
@@ -717,7 +504,7 @@ const initApertureChart = () => {
     apertureChart = echarts.init(apertureChartRef.value);
 
     // 排序并只显示前10种光圈
-    const topApertures = [...stats.value.apertureStats]
+    const topApertures = [...props.stats.apertureStats]
       .sort((a, b) => b.value - a.value)
       .slice(0, 10);
 
@@ -774,7 +561,7 @@ const initMonthChart = () => {
     const monthLabels = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
     const monthData = monthLabels.map((_, index) => {
       const month = String(index + 1);
-      return stats.value.monthStats[month] || 0;
+      return props.stats.monthStats[month] || 0;
     });
 
     const option = {
@@ -829,7 +616,7 @@ const initYearChart = () => {
     yearChart = echarts.init(yearChartRef.value);
 
     // 获取年份数据并排序
-    const yearData = Object.entries(stats.value.yearStats || {})
+    const yearData = Object.entries(props.stats.yearStats || {})
       .sort(([yearA], [yearB]) => Number(yearA) - Number(yearB))
       .map(([year, count]) => ({ year, count }));
 
@@ -885,7 +672,7 @@ const initFocalLengthChart = () => {
     focalLengthChart = echarts.init(focalLengthChartRef.value);
 
     // 排序并只显示前10种焦距
-    const topFocalLengths = [...stats.value.focalLengthStats]
+    const topFocalLengths = [...props.stats.focalLengthStats]
       .sort((a, b) => b.value - a.value)
       .slice(0, 10);
 
@@ -940,32 +727,22 @@ const handleResize = () => {
   }, 200);
 };
 
-// 手动触发重新渲染所有图表
-const refreshAllCharts = () => {
-  // 使用防抖，避免频繁触发
-  if (refreshTimer) {
-    clearTimeout(refreshTimer);
-  }
-  refreshTimer = setTimeout(() => {
-    nextTick(() => {
-      initCharts();
-    });
-  }, 200);
-};
-
-// 添加防抖定时器
+// 防抖定时器
 let resizeTimer: ReturnType<typeof setTimeout> | null = null;
-let refreshTimer: ReturnType<typeof setTimeout> | null = null;
+
+// 监听stats变化，重新渲染图表
+watch(() => props.stats, () => {
+  nextTick(() => {
+    initCharts();
+  });
+}, { deep: true });
 
 onMounted(() => {
-  // 在window.onload回调中初始化,确保DOM完全加载
-  if (document.readyState === 'complete') {
-    fetchPhotoStats();
-  } else {
-    window.addEventListener('load', fetchPhotoStats);
-  }
+  // 初始化图表
+  nextTick(() => {
+    initCharts();
+  });
 
-  // 移除标签页切换事件监听，避免不必要的重绘
   window.addEventListener('resize', handleResize);
 });
 
@@ -1020,44 +797,21 @@ onBeforeUnmount(() => {
   if (resizeTimer) {
     clearTimeout(resizeTimer);
   }
-  if (refreshTimer) {
-    clearTimeout(refreshTimer);
-  }
 
   window.removeEventListener('resize', handleResize);
-  window.removeEventListener('load', fetchPhotoStats);
 });
 
+// 向父组件暴露刷新方法
+defineExpose({
+  refreshCharts: initCharts
+});
 </script>
 
 <style scoped>
-.phopoDataContainer {
-  padding: 8px;
-  background-color: var(--qd-color-bg-dark);
-}
-
-.statistic-container {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  margin-bottom: 8px;
-  height: 120px;
-}
-
 .visualization-container {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
-}
-
-.statistic-card {
-  background-color: var(--qd-color-bg);
-  border: 1px solid var(--qd-color-border);
-  border-radius: 4px;
-  box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
-  padding: 8px;
-  height: 100px;
-
 }
 
 .visualization-card {
@@ -1082,32 +836,11 @@ onBeforeUnmount(() => {
   height: 280px;
 }
 
-.change-info {
-  display: flex;
-  flex-direction: column;
-  font-size: 12px;
-  color: var(--qd-color-text-secondary);
-}
-
 /* 响应式调整 */
 @media (max-width: 768px) {
-  .phopoDataContainer {
-    padding: 4px;
-  }
-
-  .statistic-container {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 4px;
-    height: 220px;
-  }
-
   .visualization-container {
     grid-template-columns: 1fr;
     gap: 4px;
-  }
-
-  .statistic-card {
-    padding: 4px;
   }
 
   .visualization-card {
@@ -1116,7 +849,6 @@ onBeforeUnmount(() => {
 }
 
 /* 夜间模式下的卡片样式 */
-.dark .statistic-card,
 .dark .visualization-card {
   background-color: var(--qd-color-primary-dark-9);
   border: 1px solid var(--qd-color-primary-dark-7);
@@ -1125,10 +857,6 @@ onBeforeUnmount(() => {
 
 .dark .chart-title {
   color: var(--qd-color-primary-light-8);
-}
-
-.dark .change-info {
-  color: var(--qd-color-primary-light-6);
 }
 
 /* 图表横轴隐藏数值 */
@@ -1146,5 +874,4 @@ onBeforeUnmount(() => {
 .dark .chart-title {
   color: var(--qd-color-dark-2);
 }
-
-</style>
+</style> 

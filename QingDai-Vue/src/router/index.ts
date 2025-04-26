@@ -75,7 +75,10 @@ const router = createRouter({
             },
             {
               path: 'sunriseGlow',
-              component: () => import('@/views/home/meteorology/MeteorologyTimeLine.vue').catch(() => errorPage),
+              component: () => import('@/views/home/meteorology/MeteorologyTimeLine.vue').catch((error) => {
+                console.error('组件加载失败:', error);
+                return errorPage;
+              }),
               props: { meteorologyType: '1' }
             },
             {

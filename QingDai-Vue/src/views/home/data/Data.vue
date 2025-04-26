@@ -4,8 +4,8 @@
 </template>
 
 <script setup lang="ts">
-import MapData from '@/views/home/data/map-data/MapData.vue';
-import PhotoData from '@/views/home/data/photo-data/PhotoData.vue';
+import MapData from '@/components/data/MapData.vue';
+import PhotoData from '@/components/data/PhotoData.vue';
 
 defineProps<{
     photoType?: number
