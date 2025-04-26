@@ -142,7 +142,7 @@ spring:
 
 jwt:
   # 密钥
-  secret: ?
+  secret: QingDai
 ```
 
 - QingDai-Photo/QingDai-Vue/src/data/beian.ts
