@@ -10,13 +10,17 @@
         <div class="share-buttons-container" v-else>
             <!-- 取消按钮 -->
             <div class="action-button cancel-button" @click="cancelShareMode">
-                <el-icon><Close /></el-icon>
+                <el-icon>
+                    <Close />
+                </el-icon>
                 <span class="button-text">取消</span>
             </div>
-            
+
             <!-- 确认分享按钮 -->
             <div class="action-button share-button" @click="openShareDialog">
-                <el-icon><Share /></el-icon>
+                <el-icon>
+                    <Share />
+                </el-icon>
                 <span class="button-text">确认分享({{ selectedPhotos.length }})</span>
             </div>
         </div>
@@ -71,9 +75,11 @@
 
         <el-empty v-if="images.length === 0" description="暂无照片数据"></el-empty>
 
-        <div class="container-in" v-else>
-            <div class="image-row" v-for="(row, rowIndex) in rows" :key="rowIndex"
-                :style="{ height: `${row.height}px`, width: `${rowWidth}px`, flex: '0 0 auto', margin: `0 ${sideMarginStyle} ${sideMarginStyle} ${sideMarginStyle}` }">
+        <div class="container-in" :style="{ padding: `${containerPadding}px` }" v-else>
+            <div class="image-row" v-for="(row, rowIndex) in rows" :key="rowIndex" :style="{
+                height: `${row.height}px`, width: `${rowWidth}px`,
+                flex: '0 0 auto', margin: `0 0 ${sideMarginStyle} 0`, gap: `${gap}px`
+            }">
                 <div class="image-item" v-for="(item, index) in row.items" :key="item.id"
                     @click="handleImageClick(item, $event)"
                     :class="{ 'selected': isShareMode && selectedPhotos.includes(item) }">
@@ -85,7 +91,7 @@
                                     <div class="action-icon" @click.stop>
                                         <el-icon :color="getStarColor(item.start)">
                                             <Star v-if="item.start === -1" />
-                                            <StarFilled v-else/>
+                                            <StarFilled v-else />
                                         </el-icon>
                                     </div>
                                 </template>
@@ -289,25 +295,30 @@ const rowHeightMax = ref<number>(300);
 const rowHeightMin = ref<number>(150);
 
 const sideMargin = ref(8); // 边距
+const containerPadding = ref(8); // container-in的padding
 
 const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-const gap = ref(10); // 因为每行设置了justify-content: space-between;  所以gap实际为最小间隙（当照片+间隙刚好填满一行时）
-const rowWidth = ref(window.innerWidth - scrollbarWidth - 2 * sideMargin.value);
+const gap = ref(8); // 因为每行设置了justify-content: space-between;  所以gap实际为最小间隙（当照片+间隙刚好填满一行时）
+// 考虑container-in的padding
+const rowWidth = ref(window.innerWidth - scrollbarWidth - 2 * containerPadding.value);
 
 // // 监听窗口大小变化
 const handleResize = () => {
     if (window.innerWidth <= 600) {
         rowHeightMax.value = 200;
         rowHeightMin.value = 100;
-        gap.value = 4; // 图片间隙
-        sideMargin.value = 4; // 更新 sideMargin 变量
-        rowWidth.value = window.innerWidth - 2 * sideMargin.value; // 调整 rowWidth   
+        gap.value = 1; // 图片间隙
+        sideMargin.value = 1; // 更新 sideMargin 变量
+        containerPadding.value = 1; // 小屏幕下container-in的padding
+        rowWidth.value = window.innerWidth - 2 * containerPadding.value;  
     } else {
         rowHeightMax.value = 300;
         rowHeightMin.value = 150;
-        gap.value = 10; // 图片间隙
+        gap.value = 8; // 图片间隙
         sideMargin.value = 8; // 更新 sideMargin 变量
-        rowWidth.value = window.innerWidth - scrollbarWidth - 2 * sideMargin.value; // 恢复 rowWidth
+        containerPadding.value = 8; // 大屏幕下container-in的padding
+        rowWidth.value = window.innerWidth - scrollbarWidth - 2 * sideMargin.value - 2 * containerPadding.value;
+        console.log(rowWidth.value)
     }
     calculateLayout(); // 重新计算布局
 };
@@ -677,12 +688,61 @@ const generateShareLink = async () => {
 // 复制分享链接
 const copyShareLink = () => {
     if (!shareLink.value) return;
-    navigator.clipboard.writeText(shareLink.value).then(() => {
-        ElMessage.success('链接已复制到剪贴板');
-        closeShareDialog();
-    }).catch(() => {
-        ElMessage.error('复制失败');
-    });
+    
+    // 创建临时的兼容方法，当navigator.clipboard API不可用时使用
+    const fallbackCopyTextToClipboard = (text: string) => {
+        try {
+            // 创建临时文本区域
+            const textArea = document.createElement('textarea');
+            // 设置文本区域的样式，使其不可见
+            textArea.style.position = 'fixed';
+            textArea.style.top = '0';
+            textArea.style.left = '0';
+            textArea.style.width = '2em';
+            textArea.style.height = '2em';
+            textArea.style.padding = '0';
+            textArea.style.border = 'none';
+            textArea.style.outline = 'none';
+            textArea.style.boxShadow = 'none';
+            textArea.style.background = 'transparent';
+            // 设置文本区域的值为要复制的内容
+            textArea.value = text;
+            // 将文本区域添加到文档
+            document.body.appendChild(textArea);
+            // 选中文本区域的内容
+            textArea.focus();
+            textArea.select();
+            // 尝试执行复制命令
+            const successful = document.execCommand('copy');
+            if (successful) {
+                ElMessage.success('链接已复制到剪贴板');
+                closeShareDialog();
+            } else {
+                ElMessage.error('复制失败');
+            }
+            // 移除临时文本区域
+            document.body.removeChild(textArea);
+        } catch (err) {
+            console.error('复制失败:', err);
+            ElMessage.error('复制失败，请手动复制链接');
+        }
+    };
+    
+    // 如果支持现代Clipboard API，则使用它
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(shareLink.value)
+            .then(() => {
+                ElMessage.success('链接已复制到剪贴板');
+                closeShareDialog();
+            })
+            .catch(() => {
+                // 如果现代方法失败，回退到传统方法
+                fallbackCopyTextToClipboard(shareLink.value);
+            });
+    } else {
+        // 如果不支持现代Clipboard API，直接使用传统方法
+        fallbackCopyTextToClipboard(shareLink.value);
+    }
 };
 
 // 移除已选择的照片
@@ -723,28 +783,39 @@ const cancelShareMode = () => {
 
 <style scoped>
 .icon-color {
-    color: var(--qd-color-primary-light-7);
+    color: var(--qd-color-border-light);
 }
 
 .container {
     width: 100%;
     margin: 0 0;
     padding: 0 0;
-    background-color: black;
+    background-color: var(--qd-color-bg-dark);
 }
 
 .image-item {
     position: relative;
     overflow: hidden;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    background: #fff;
-    transition: transform 0.3s;
     cursor: pointer;
+    transition: all 0.3s;
+}
+
+/* 添加选中照片的边框样式 */
+.image-item.selected {
+    border: 3px solid var(--qd-color-primary);
+    box-shadow: 0 0 12px var(--qd-color-primary);
+}
+
+/* 夜间模式下的选中边框样式 */
+.dark .image-item.selected {
+    border: 3px solid var(--qd-color-primary-light-4);
+    box-shadow: 0 0 12px var(--qd-color-primary-light-2);
 }
 
 .image-item:hover {
     transform: translateY(-5px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    z-index: 1;
 }
 
 .image-actions {
@@ -824,18 +895,17 @@ const cancelShareMode = () => {
     font-size: 30px;
 }
 
-.container-in {
-    padding: 8px 0;
-}
+.container-in {}
 
 .image-row {
+    width: 100%;
     display: flex;
     justify-content: space-between;
 }
 
 @media (max-width: 600px) {
     .container-in {
-        padding: 4px 0;
+        width: calc(100vw - 2px);
     }
 
     .actions-container {
@@ -845,10 +915,23 @@ const cancelShareMode = () => {
     .action-icon {
         padding: 3px;
     }
+
+    .image-row {
+    }
 }
 
 .star-selection {
     padding: 0;
+}
+
+/* 添加夜间模式下的popover样式 */
+.dark :deep(.el-popover) {
+    background-color: var(--qd-color-primary-dark-8);
+    border: 1px solid var(--qd-color-primary-dark-6);
+}
+
+.dark :deep(.el-popover__title) {
+    color: var(--qd-color-primary-light-9);
 }
 
 .star-option {
@@ -862,16 +945,39 @@ const cancelShareMode = () => {
     gap: 8px;
 }
 
-.star-option:hover {
-    background-color: var(--qd-color-primary-light-9);
+/* 添加夜间模式下的选项样式 */
+.dark .star-option {
+    color: var(--qd-color-primary-light-8);
 }
 
-.star-option .el-icon {
-    font-size: 16px;
+.star-option:hover {
+    background-color: var(--qd-color-hover);
+}
+
+/* 添加夜间模式下选项悬停样式 */
+.dark .star-option:hover {
+    background-color: var(--qd-color-primary-dark-5);
 }
 
 .group-selection {
     padding: 0;
+}
+
+/* 添加夜间模式下组图选项样式 */
+.dark .group-option {
+    color: var(--qd-color-primary-light-8);
+}
+
+.dark .group-option:hover {
+    background-color: var(--qd-color-primary-dark-5);
+}
+
+.dark .photo-count {
+    color: var(--qd-color-primary-light-6);
+}
+
+.dark .no-groups {
+    color: var(--qd-color-primary-light-6);
 }
 
 .group-options {
@@ -891,17 +997,17 @@ const cancelShareMode = () => {
 }
 
 .group-option:hover {
-    background-color: #f5f7fa;
+    background-color: var(--qd-color-hover);
 }
 
 .photo-count {
-    color: #909399;
+    color: var(--qd-color-text-secondary);
     font-size: 12px;
 }
 
 .no-groups {
     padding: 10px;
-    color: #909399;
+    color: var(--qd-color-text-secondary);
     text-align: center;
 }
 
@@ -967,7 +1073,7 @@ const cancelShareMode = () => {
 
 .share-button {
     bottom: 20px;
-    background-color:#67c23a;
+    background-color: #67c23a;
 }
 
 .share-dialog-content {
@@ -988,7 +1094,7 @@ const cancelShareMode = () => {
 
 .selected-count {
     margin-bottom: 10px;
-    color: var(--el-text-color-regular);
+    color: var(--qd-color-text-secondary);
 }
 
 .photo-grid {
@@ -1076,25 +1182,8 @@ const cancelShareMode = () => {
 }
 
 .selection-checkbox :deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
-    background-color: var(--qd-color-primary-light-7);
-    border-color: var(--qd-color-primary-light-7);
-}
-
-.image-item.selected {
-    position: relative;
-    border: 3px solid var(--qd-color-primary-light-7);
-    border-radius: 10px;
-}
-
-.image-item.selected::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    opacity: 0.2;
-    pointer-events: none;
+    background-color: var(--qd-color-border-light);
+    border-color: var(--qd-color-border-light);
 }
 
 .share-buttons-container {

@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div :class="['introduce-container', { 'dark-theme': isDarkTheme }]">
         <!-- 背景图静态展示 -->
         <div class="cover-container" :style="{ backgroundImage: `url(${backgroundImageUrl})` }"
             @click="openPreview(backgroundImageUrl)">
@@ -17,10 +17,6 @@
                             </el-icon>
                         </template>
                     </el-avatar>
-                    <el-button class="logout" v-if="hasToken" type="danger" @click="handleLogout"
-                        style="margin-top: 10px;">
-                        注销
-                    </el-button>
                 </div>
             </div>
 
@@ -153,9 +149,16 @@ import PhotoViewer from '@/components/photo/PhotoViewer.vue'
 import ScrollReveal from '@/components/util/ScrollReveal.vue'
 import { userInfo } from '@/data/userInfo'
 import { homeImages } from '@/data/imageUrls'
+import { useThemeStore } from '@/stores/theme'
 import gsap from 'gsap';
 
 const { backgroundImageUrl, avatarImageUrl } = homeImages;
+const themeStore = useThemeStore();
+
+// 计算是否为暗色主题
+const isDarkTheme = computed(() => {
+    return themeStore.theme === 'dark';
+});
 
 const iconStyle = computed(() => {
     const marginMap = {
@@ -184,13 +187,6 @@ const manageOpacity = computed(() => {
     return scrollY > 650 ? 0.6 : 1
 })
 
-const hasToken = computed(() => {
-    return !!localStorage.getItem('token');
-});
-const handleLogout = () => {
-    localStorage.removeItem('token');
-    window.location.href = '/';
-};
 
 // 添加预览相关变量
 const previewVisible = ref(false)
@@ -274,19 +270,37 @@ onMounted(() => {
 .el-descriptions {
     margin-bottom: 5px !important;
 }
+
+.introduce-container {
+    background-color: transparent;
+    transition: background-color 0.3s ease;
+}
+
+.dark-theme {
+    background-color: var(--qd-color-bg);
+}
+
 .cover-container {
     height: 400px;
     background-size: cover;
     background-position: 50% 50%;
     background-repeat: no-repeat;
     cursor: pointer;
-    /* 添加鼠标指针样式 */
+    position: relative;
+}
+
+
+.avatar-section {
+    position: relative;
+    z-index: 10; /* 提高z-index确保头像在暗色模式下不被遮挡 */
 }
 
 .avatar-static {
     margin-top: -66px;
     cursor: pointer;
-    /* 添加鼠标指针样式 */
+    position: relative;
+    z-index: 10;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
 }
 
 .avatar-container {
@@ -295,7 +309,13 @@ onMounted(() => {
 }
 
 .profile-info {
-    color: black;
+    color: var(--qd-color-text-primary);
+    position: relative;
+    z-index: 5;
+}
+
+.dark-theme .profile-info {
+    color: var(--qd-color-text-regular);
 }
 
 .profile-info-in {
@@ -309,7 +329,7 @@ onMounted(() => {
 }
 
 .username {
-    color: var(--qd-color-primary-dark-2);
+    color: var(--qd-color-text-primary);
     font-size: 48px;
     margin: 5px;
 }
@@ -423,5 +443,18 @@ onMounted(() => {
 
 .descriptions-wrapper:hover::before {
     transform: scaleX(1);
+}
+
+/* 暗色主题特定样式 */
+.dark-theme .username {
+    color: var(--qd-color-text-regular);
+}
+
+.dark-theme .description {
+    color: var(--qd-color-primary);
+}
+
+.dark-theme .cover-container {
+    filter: brightness(0.8);
 }
 </style>

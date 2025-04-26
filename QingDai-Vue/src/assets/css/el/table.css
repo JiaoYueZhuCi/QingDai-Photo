@@ -1,0 +1,53 @@
+/* Element Plus表格样式 */
+.el-table {
+  --el-table-border-color: var(--qd-color-border-light);
+  --el-table-text-color: var(--qd-color-text-primary);
+  --el-table-header-text-color: var(--qd-color-text-primary);
+  --el-table-row-hover-bg-color: var(--qd-color-hover);
+  --el-table-tr-bg-color: var(--qd-color-bg);
+  --el-table-bg-color: var(--qd-color-bg);
+}
+
+/* 夜间模式下的表格样式变量 */
+[data-theme="dark"] .el-table,
+.dark .el-table {
+  --el-table-border-color: var(--qd-color-border-light);
+  --el-table-text-color: var(--qd-color-text-primary);
+  --el-table-header-text-color: var(--qd-color-text-regular);
+  --el-table-row-hover-bg-color: var(--qd-color-hover);
+  --el-table-tr-bg-color: var(--qd-color-bg);
+  --el-table-bg-color: var(--qd-color-bg);
+}
+
+/* 表格行样式 */
+.el-table__row {
+  background-color: var(--el-table-tr-bg-color);
+}
+
+.el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell {
+  background-color: var(--qd-color-bg-dark) !important;
+}
+
+[data-theme="dark"] .el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell {
+  background-color: var(--qd-color-bg-dark) !important;
+}
+
+.el-table th {
+  background-color: var(--qd-color-bg-dark) !important;
+  color: var(--qd-color-text-primary) !important;
+}
+
+[data-theme="dark"] .el-table th {
+  background-color: var(--qd-color-bg-dark) !important;
+  color: var(--qd-color-text-primary) !important;
+}
+
+/* 表格行悬停样式 */
+.el-table--enable-row-hover .el-table__body tr:hover>td.el-table__cell {
+  background-color: var(--qd-color-active) !important;
+}
+
+.el-table--enable-row-hover .el-table__body tr.el-table__row--striped:hover>td.el-table__cell {
+  background-color: var(--qd-color-primary) !important;
+  color: var(--qd-color-bg-light) !important;
+} 

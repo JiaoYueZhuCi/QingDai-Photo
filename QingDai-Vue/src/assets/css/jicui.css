@@ -1,0 +1,92 @@
+:root {
+  /* Light主题色阶 */
+  --qd-color-light-1: #108b96;  /* 最深 */
+  --qd-color-light-2: #2a9ba6;
+  --qd-color-light-3: #44abb6;
+  --qd-color-light-4: #5ebbc6;
+  --qd-color-light-5: #78cbd6;
+  --qd-color-light-6: #92dbe6;
+  --qd-color-light-7: #acebf6;
+  --qd-color-light-8: #c6fbf6;
+  --qd-color-light-9: #ecfffb;
+  --qd-color-light-10: #f5fbf6; /* 最浅 */
+  
+  /* Dark主题色阶 */
+  --qd-color-dark-1: #acebf6;   /* 最浅 */
+  --qd-color-dark-2: #92dbe6;
+  --qd-color-dark-3: #78cbd6;
+  --qd-color-dark-4: #5ebbc6;
+  --qd-color-dark-5: #44abb6;
+  --qd-color-dark-6: #2a9ba6;
+  --qd-color-dark-7: #108b96;
+  --qd-color-dark-8: #0c6b76;
+  --qd-color-dark-9: #084b56;
+  --qd-color-dark-10: #042b36;  /* 最深 */
+  
+ /* 主色调 */
+ --qd-color-primary: var(--qd-color-light-1);
+  
+ /* 功能性变量 */
+ /* 文字颜色 */
+ --qd-color-text-primary: var(--qd-color-light-1);
+ --qd-color-text-regular: var(--qd-color-light-2);
+ --qd-color-text-secondary: var(--qd-color-light-3);
+ 
+ /* 背景颜色 */
+ --qd-color-bg: var(--qd-color-light-9);
+ --qd-color-bg-light: var(--qd-color-light-10);
+ --qd-color-bg-dark: var(--qd-color-light-8);
+ 
+ /* 边框颜色 */
+ --qd-color-border-light: var(--qd-color-light-7);
+ --qd-color-border: var(--qd-color-light-6);
+ 
+ /* 组件颜色 */
+ --qd-color-hover: var(--qd-color-light-8);
+ --qd-color-active: var(--qd-color-light-6);
+ 
+ /* Element Plus颜色变量 */
+ --el-text-color-primary: var(--qd-color-text-primary);
+ --el-border-color: var(--qd-color-border);
+ --el-bg-color: var(--qd-color-bg-dark);
+ --el-fill-color: var(--qd-color-bg);
+ --el-color-primary: var(--qd-color-primary);
+ --el-color-white: var(--qd-color-bg-light);
+ --el-text-color-regular: var(--qd-color-text-regular);
+ --el-border-color-light: var(--qd-color-border-light);
+}
+
+/* 定义暗色主题下使用的变量 */
+[data-theme="dark"] {
+ /* 主色调 */
+ --qd-color-primary: var(--qd-color-dark-1);
+ 
+ /* 功能性变量映射 */
+ /* 文字颜色 */
+ --qd-color-text-primary: var(--qd-color-dark-3);
+ --qd-color-text-regular: var(--qd-color-dark-2);
+ --qd-color-text-secondary: var(--qd-color-dark-1);
+ 
+ /* 背景颜色 */
+ --qd-color-bg: var(--qd-color-dark-9);
+ --qd-color-bg-light: var(--qd-color-dark-10);
+ --qd-color-bg-dark: var(--qd-color-dark-8);
+ 
+ /* 边框颜色 */
+ --qd-color-border-light: var(--qd-color-dark-7);
+ --qd-color-border: var(--qd-color-dark-6);
+ 
+ /* 组件颜色 */
+ --qd-color-hover: var(--qd-color-dark-8);
+ --qd-color-active: var(--qd-color-dark-6);
+ 
+ /* 覆盖Element Plus颜色变量 */
+ --el-text-color-primary: var(--qd-color-text-primary);
+ --el-border-color: var(--qd-color-border);
+ --el-bg-color: var(--qd-color-bg-dark);
+ --el-fill-color: var(--qd-color-bg);
+ --el-color-primary: var(--qd-color-primary);
+ --el-color-white: var(--qd-color-text-primary);
+ --el-text-color-regular: var(--qd-color-text-regular);
+ --el-border-color-light: var(--qd-color-border-light);
+} 

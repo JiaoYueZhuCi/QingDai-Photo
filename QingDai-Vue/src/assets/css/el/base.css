@@ -1,0 +1,21 @@
+/* 基础样式文件，引入所有Element Plus组件样式 */
+@import './header.css';
+@import './tag.css';
+@import './button.css';
+@import './tabs.css';
+@import './descriptions.css';
+@import './menu.css';
+@import './dialog.css';
+@import './timeline.css';
+@import './statistic.css';
+@import './image-viewer.css';
+@import './input.css';
+@import './loading.css';
+@import './switch.css';
+@import './input-number.css';
+@import './popper.css';
+@import './select.css';
+@import './card.css';
+@import './table.css';
+@import './pagination.css'; 
+@import './upload.css'; 

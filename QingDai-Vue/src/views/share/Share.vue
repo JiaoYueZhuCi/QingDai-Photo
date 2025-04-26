@@ -1,4 +1,16 @@
 <template>
+    <FilmPreview v-model="previewVisible" :photo-id="currentPhotoId" :photo-ids="photoIds" 
+        @close="handlePreviewClose" 
+        @image-click="handleImageClick"
+        @navigate="handleNavigate" />
+
+    <!-- 添加 PhotoViewer 组件 -->
+    <PhotoViewer v-model="viewerVisible" :photo-id="currentPhotoId" :initial-index="currentIndex"
+        :use-direct-render="true" @close="handleViewerClose" />
+
+    <!-- 页面内容 -->
+    <Header />
+    
     <div class="share-container">
         <!-- 添加装饰性元素 -->
         <div class="decorative-elements">
@@ -38,15 +50,6 @@
                 <div class="box-side box-side-back"></div>
             </div>
         </div>
-
-        <FilmPreview v-model="previewVisible" :photo-id="currentPhotoId" :photo-ids="photoIds" 
-            @close="handlePreviewClose" 
-            @image-click="handleImageClick"
-            @navigate="handleNavigate" />
-
-        <!-- 添加 PhotoViewer 组件 -->
-        <PhotoViewer v-model="viewerVisible" :photo-id="currentPhotoId" :initial-index="currentIndex"
-            :use-direct-render="true" @close="handleViewerClose" />
     </div>
 
     <!-- 添加Footer组件 -->
@@ -64,6 +67,7 @@ import type { EnhancedWaterfallItem } from '@/utils/photo';
 import FilmPreview from '@/components/photo/FilmPreview.vue';
 import PhotoViewer from '@/components/photo/PhotoViewer.vue';
 import Footer from '@/components/common/Footer.vue';
+import Header from '@/components/common/Header.vue';
 
 const route = useRoute();
 const shareId = route.query.id as string;
@@ -168,10 +172,16 @@ onMounted(() => {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    background: linear-gradient(135deg, var(--qd-color-primary-light-9) 0%, var(--qd-color-primary-light-8) 100%);
+    background: linear-gradient(135deg, var(--qd-color-light-9) 0%, var(--qd-color-light-8) 100%);
     perspective: 1200px;
     position: relative;
     overflow: hidden;
+}
+
+/* 夜间模式适配 */
+[data-theme="dark"] .share-container {
+    background: linear-gradient(135deg, var(--qd-color-dark-9) 0%, var(--qd-color-dark-8) 100%);
+    color: var(--qd-color-light-8);
 }
 
 /* 装饰性元素 */
@@ -194,6 +204,12 @@ onMounted(() => {
     opacity: 0.7;
     transform-style: preserve-3d;
     animation: floatPaper 10s ease-in-out infinite;
+}
+
+/* 夜间模式悬浮纸张 */
+[data-theme="dark"] .floating-paper {
+    background-color: var(--qd-color-dark-6);
+    opacity: 0.3;
 }
 
 .floating-paper:nth-child(1) {
@@ -258,6 +274,11 @@ onMounted(() => {
     border-radius: 50%;
 }
 
+/* 夜间模式盒子阴影 */
+[data-theme="dark"] .box-shadow {
+    background: radial-gradient(ellipse at center, rgba(255,255,255,0.1) 0%,rgba(255,255,255,0) 70%);
+}
+
 .share-box {
     position: relative;
     width: 90vw;
@@ -270,6 +291,12 @@ onMounted(() => {
     transform-style: preserve-3d;
     z-index: 2;
     animation: arriveBox 1s ease-out;
+}
+
+/* 夜间模式分享盒子 */
+[data-theme="dark"] .share-box {
+    background-color: var(--qd-color-dark-8);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
 }
 
 @keyframes arriveBox {
@@ -289,16 +316,24 @@ onMounted(() => {
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg, var(--qd-color-primary) 0%, var(--qd-color-primary-light-3) 100%);
+    background: linear-gradient(135deg, var(--qd-color-primary) 0%, var(--qd-color-light-3) 100%);
     cursor: pointer;
     transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
     transform-origin: top;
-    z-index: 3;
+    z-index: 10;
     display: flex;
     justify-content: center;
     align-items: center;
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
     border-radius: 12px;
+    transform-style: preserve-3d;
+    backface-visibility: visible;
+}
+
+/* 夜间模式盒盖 */
+[data-theme="dark"] .box-lid {
+    background: linear-gradient(135deg, var(--qd-color-dark-3) 0%, var(--qd-color-dark-5) 100%);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
 }
 
 .lid-decoration {
@@ -366,6 +401,23 @@ onMounted(() => {
 
 .box-open .box-lid {
     transform: rotateX(170deg);
+    z-index: 10;
+}
+
+/* 添加一个额外的遮罩层用于打开状态下 */
+.box-lid::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: inherit;
+    border-radius: inherit;
+    backface-visibility: hidden;
+    z-index: 9;
+    transform: rotateX(180deg);
+    opacity: 0.95;
 }
 
 .box-content {
@@ -375,7 +427,14 @@ onMounted(() => {
     background: linear-gradient(135deg, #f5f7fa 0%, #e4e7ed 100%);
     animation: fadeIn 0.8s ease-out;
     position: relative;
-    z-index: 2;
+    z-index: 1;
+}
+
+/* 夜间模式盒子内容 */
+[data-theme="dark"] .box-content {
+    background-color: var(--qd-color-dark-9);
+    background-image: none;
+    color: var(--qd-color-light-8);
 }
 
 /* 添加盒子侧面 */
@@ -388,8 +447,14 @@ onMounted(() => {
 
 .box-side {
     position: absolute;
-    background: linear-gradient(to bottom, var(--qd-color-primary-light-6), var(--qd-color-primary-light-4));
+    background: linear-gradient(to bottom, var(--qd-color-light-6), var(--qd-color-light-4));
     opacity: 0.7;
+}
+
+/* 夜间模式盒子侧面 */
+[data-theme="dark"] .box-side {
+    background: linear-gradient(to bottom, var(--qd-color-dark-6), var(--qd-color-dark-4));
+    opacity: 0.8;
 }
 
 .box-side-left {
@@ -483,11 +548,17 @@ onMounted(() => {
     display: flex;
     justify-content: center;
     align-items: center;
-    background-color: var(--qd-color-primary-light-9);
+    background-color: var(--qd-color-light-9);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     transform: translateY(0);
     animation: popIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     animation-fill-mode: both;
+}
+
+/* 夜间模式照片项目 */
+[data-theme="dark"] .photo-item {
+    background-color: var(--qd-color-dark-7);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
 }
 
 .photo-item:nth-child(3n) {
@@ -522,6 +593,11 @@ onMounted(() => {
     z-index: 1;
 }
 
+/* 夜间模式照片悬停效果 */
+[data-theme="dark"] .photo-item:hover {
+    box-shadow: 0 12px 20px rgba(0, 0, 0, 0.5);
+}
+
 .photo-item .el-image {
     width: 100%;
     height: 100%;
@@ -546,6 +622,11 @@ onMounted(() => {
     background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%);
     opacity: 0;
     transition: opacity 0.3s ease;
+}
+
+/* 夜间模式照片悬停渐变效果 */
+[data-theme="dark"] .photo-item::after {
+    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
 }
 
 .photo-item:hover::after {

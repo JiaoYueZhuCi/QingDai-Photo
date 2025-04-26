@@ -407,18 +407,20 @@ const adjustTableHeight = () => {
     position: fixed;
     right: 20px;
     bottom: 80px;
-    z-index: 2000;
+    z-index: 100;
 }
 
-.pagination-wrapper {
+/* .pagination-wrapper {
     position: fixed;
-    z-index: 100;
+    z-index: 99;
     left: 50%;
     transform: translateX(-50%);
-    bottom: 10px;
-    background-color: rgb(240, 240, 240);
+    bottom: 60px;
+    background-color: var(--qd-color-bg-light);
     padding: 5px;
-}
+    border-radius: 4px;
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+} */
 
 .el-button {
     margin: 0 2px;
@@ -427,13 +429,15 @@ const adjustTableHeight = () => {
 .refresh-button {
     position: fixed;
     right: 20px;
-    top: 15px;
+    top: 70px;
+    z-index: 99;
 }
 
 .no-metadata-button {
     position: fixed;
     right: 150px;
-    top: 15px;
+    top: 70px;
+    z-index: 99;
 }
 
 .params {

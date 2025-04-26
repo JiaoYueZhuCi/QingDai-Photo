@@ -1,0 +1,74 @@
+/* 上传组件样式 */
+
+/* 上传组件夜间模式 */
+[data-theme="dark"] .el-upload-dragger {
+  background-color: var(--qd-color-dark-7);
+  border-color: var(--qd-color-dark-6);
+}
+
+[data-theme="dark"] .el-upload-dragger:hover {
+  border-color: var(--qd-color-primary);
+  background-color: var(--qd-color-dark-6);
+}
+
+[data-theme="dark"] .el-upload-dragger .el-icon {
+  color: var(--qd-color-dark-3);
+}
+
+[data-theme="dark"] .el-upload-dragger .el-upload__text {
+  color: var(--qd-color-dark-2);
+}
+
+[data-theme="dark"] .el-upload-dragger .el-upload__text em {
+  color: var(--qd-color-primary);
+}
+
+/* 上传列表样式 */
+[data-theme="dark"] .el-upload-list {
+  background-color: transparent;
+}
+
+[data-theme="dark"] .el-upload-list__item {
+  color: var(--qd-color-dark-2);
+  background-color: var(--qd-color-dark-8);
+  border-color: var(--qd-color-dark-6);
+}
+
+[data-theme="dark"] .el-upload-list__item:hover {
+  background-color: var(--qd-color-dark-7);
+}
+
+[data-theme="dark"] .el-upload-list__item .el-icon {
+  color: var(--qd-color-dark-3);
+}
+
+[data-theme="dark"] .el-upload-list__item .el-icon:hover {
+  color: var(--qd-color-dark-1);
+}
+
+[data-theme="dark"] .el-upload-list__item-name {
+  color: var(--qd-color-dark-2);
+}
+
+/* 上传进度条 */
+[data-theme="dark"] .el-progress-bar__outer {
+  background-color: var(--qd-color-dark-6);
+}
+
+[data-theme="dark"] .el-upload-list__item-status-label {
+  color: var(--qd-color-dark-2);
+}
+
+/* 上传成功/失败状态 */
+[data-theme="dark"] .el-upload-list__item.is-success .el-upload-list__item-status-label {
+  color: #67c23a;
+}
+
+[data-theme="dark"] .el-upload-list__item.is-success:hover .el-upload-list__item-status-label {
+  color: #67c23a;
+}
+
+[data-theme="dark"] .el-upload-list__item.is-fail {
+  color: #f56c6c;
+  border-color: #f56c6c;
+} 

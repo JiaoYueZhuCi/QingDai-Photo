@@ -1,0 +1,19 @@
+/* input-number样式 */
+.el-input-number__decrease:hover,
+.el-input-number__increase:hover {
+  background-color: var(--qd-color-hover) !important;
+  color: var(--qd-color-primary) !important;
+}
+
+.el-input-number__decrease:hover:not(.is-disabled) i,
+.el-input-number__increase:hover:not(.is-disabled) i {
+  color: var(--qd-color-primary) !important;
+}
+
+.el-input-number:hover .el-input__wrapper {
+  box-shadow: 0 0 0 1px var(--qd-color-primary) !important;
+}
+
+.el-input-number .el-input__wrapper.is-focus {
+  box-shadow: 0 0 0 1px var(--qd-color-primary) !important;
+} 

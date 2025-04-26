@@ -12,7 +12,7 @@ const router = createRouter({
       children: [
         {
           path: '',
-          redirect: '/show'
+          redirect: '/home'
         },
         {
           path: '/show',
@@ -24,7 +24,7 @@ const router = createRouter({
         },
         {
           path: '/test',
-          component: () => import('@/views/photo/Test.vue').catch(() => errorPage),
+          component: () => import('@/views/test/Test.vue').catch(() => errorPage),
         },
         {
           path: '/home',

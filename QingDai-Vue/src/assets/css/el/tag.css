@@ -1,0 +1,13 @@
+/* 标签样式 */
+.el-tag--primary {
+  --el-tag-bg-color: var(--qd-color-hover) !important;
+  color: var(--qd-color-text-primary);
+  border: 1px solid transparent !important;
+  box-sizing: border-box;
+}
+
+.el-tag:hover {
+  --el-tag-bg-color: var(--qd-color-hover) !important;
+  color: var(--qd-color-text-primary);
+  border: 1px solid var(--qd-color-primary) !important;
+} 

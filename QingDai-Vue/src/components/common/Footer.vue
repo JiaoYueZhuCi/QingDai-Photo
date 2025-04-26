@@ -75,4 +75,9 @@ const currentYear = ref(new Date().getFullYear());
 .beian-link:hover::after {
   width: 100%;
 }
+
+/* 添加从main.css移除的样式 */
+footer {
+  color: var(--qd-color-text-primary) !important;
+}
 </style> 

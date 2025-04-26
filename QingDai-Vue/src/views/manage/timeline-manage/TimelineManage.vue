@@ -201,16 +201,6 @@ const handleDelete = async (row: any) => {
     z-index: 2000;
 }
 
-.pagination-wrapper {
-    position: fixed;
-    z-index: 100;
-    left: 50%;
-    transform: translateX(-50%);
-    bottom: 10px;
-    background-color: rgb(240, 240, 240);
-    padding: 5px;
-}
-
 :global(.el-image-viewer__wrapper) {
     z-index: 2000 !important;
 }
@@ -222,7 +212,8 @@ const handleDelete = async (row: any) => {
 .refresh-button {
     position: fixed;
     right: 20px;
-    top: 15px;
+    top: 70px;
+    z-index: 100;
 }
 
 </style>

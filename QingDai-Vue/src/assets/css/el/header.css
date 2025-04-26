@@ -1,0 +1,11 @@
+.el-header {
+  padding: 0 !important;
+  background-color: var(--qd-color-bg) !important;
+  transition: background-color 0.3s ease;
+}
+
+/* 夜间模式下的header样式 */
+[data-theme="dark"] .el-header,
+.dark .el-header {
+  background-color: var(--qd-color-bg) !important;
+} 

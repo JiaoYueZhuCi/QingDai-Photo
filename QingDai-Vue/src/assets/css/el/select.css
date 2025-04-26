@@ -1,0 +1,76 @@
+.el-select-dropdown {
+  background-color: var(--qd-color-bg) !important;
+  border-color: var(--qd-color-border) !important;
+}
+
+/* 夜间模式下的下拉菜单样式 */
+[data-theme="dark"] .el-select-dropdown,
+.dark .el-select-dropdown {
+  background-color: var(--qd-color-bg-dark) !important;
+  border-color: var(--qd-color-border) !important;
+}
+
+.el-select-dropdown__item {
+  color: var(--qd-color-text-primary) !important;
+}
+
+/* 夜间模式下的下拉菜单项样式 */
+[data-theme="dark"] .el-select-dropdown__item,
+.dark .el-select-dropdown__item {
+  color: var(--qd-color-text-primary) !important;
+  background-color: var(--qd-color-bg) !important;
+}
+
+.el-select-dropdown__item.hover,
+.el-select-dropdown__item:hover {
+  background-color: var(--qd-color-hover) !important;
+}
+
+/* 夜间模式下的下拉菜单项悬停样式 */
+[data-theme="dark"] .el-select-dropdown__item.hover,
+[data-theme="dark"] .el-select-dropdown__item:hover,
+.dark .el-select-dropdown__item.hover,
+.dark .el-select-dropdown__item:hover {
+  background-color: var(--qd-color-dark-primary-6) !important;
+}
+
+.el-select-dropdown__item.selected {
+  color: var(--qd-color-primary) !important;
+  background-color: var(--qd-color-border-light) !important;
+}
+
+/* 夜间模式下的选中下拉菜单项样式 */
+[data-theme="dark"] .el-select-dropdown__item.selected,
+.dark .el-select-dropdown__item.selected {
+  color: var(--qd-color-dark-primary-2) !important;
+  background-color: var(--qd-color-dark-primary-7) !important;
+}
+
+/* Element Plus Select下拉框样式 */
+.el-select {
+  background-color: var(--qd-color-bg-light) !important;
+}
+
+.el-select__wrapper {
+  background-color: var(--qd-color-bg-light) !important;
+}
+
+.el-select-dropdown__item.is-hovering {
+  background-color: var(--qd-color-hover) !important;
+}
+
+/* 夜间模式下的Select输入框样式 */
+[data-theme="dark"] .el-select,
+.dark .el-select {
+  background-color: var(--qd-color-bg-dark) !important;
+}
+
+[data-theme="dark"] .el-select__wrapper,
+.dark .el-select__wrapper {
+  background-color: var(--qd-color-bg) !important;
+}
+
+[data-theme="dark"] .el-select-dropdown__item,
+.dark .el-select-dropdown__item {
+  background-color: var(--qd-color-bg) !important;
+} 

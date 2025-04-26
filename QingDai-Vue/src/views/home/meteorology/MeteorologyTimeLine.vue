@@ -196,7 +196,7 @@ onUnmounted(() => {
     width: 100%;
     margin: 0 auto;
     min-height: 500px;
-    background-color: rgb(12, 12, 12);
+    background-color: var(--qd-color-bg-dark);
 }
 
 .loading {
@@ -217,7 +217,7 @@ onUnmounted(() => {
     height: 50px;
     border: 5px solid var(--qd-color-primary);
     border-radius: 50%;
-    border-top-color: var(--qd-color-primary-light-5);
+    border-top-color: var(--qd-color-text-secondary);
     animation: spin 1s ease-in-out infinite;
     margin-bottom: 15px;
 }
@@ -232,8 +232,6 @@ onUnmounted(() => {
     text-align: center;
     margin-bottom: 40px;
 }
-
-
 
 .timeline-container {
     position: relative;
@@ -251,7 +249,6 @@ onUnmounted(() => {
 .timeline-item {
     position: relative;
     width: 240px;
-    /* 固定宽度 */
     margin: 15px;
 }
 
@@ -259,7 +256,7 @@ onUnmounted(() => {
     position: absolute;
     width: 20px;
     height: 20px;
-    background-color: var(--qd-color-primary-light-6);
+    background-color: var(--qd-color-border);
     border-radius: 50%;
     left:25px;
     top: -10px;
@@ -273,7 +270,7 @@ onUnmounted(() => {
     font-size: 15px;
     color: var(--qd-color-primary);
     z-index: 3;
-    background-color: var(--qd-color-primary-light-9);
+    background-color: var(--qd-color-bg);
     padding: 2px 6px;
     border-radius: 4px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -284,7 +281,7 @@ onUnmounted(() => {
 
 .timeline-card {
     padding: 5px;
-    background-color: var(--qd-color-primary-light-9);
+    background-color: var(--qd-color-bg);
     border-radius: 6px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease;
@@ -299,9 +296,7 @@ onUnmounted(() => {
 .photo-container {
     width: 100%;
     overflow: hidden;
-    /* border-radius: 4px; */
     cursor: pointer;
-    /* 添加鼠标指针样式，提示可点击 */
 }
 
 .photo-container img {
@@ -319,7 +314,7 @@ onUnmounted(() => {
 .photo-placeholder {
     width: 100%;
     height: 200px;
-    background-color: #f0f0f0;
+    background-color: var(--qd-color-bg-light);
     border-radius: 4px;
 }
 
@@ -331,9 +326,7 @@ onUnmounted(() => {
     }
 
     .timeline-item {
-        width: 280px;
-        /* 移动端稍微窄一点 */
-        margin-bottom: 30px;
+        width: 320px;
     }
 
     .timeline-line {
@@ -360,7 +353,7 @@ onUnmounted(() => {
 .stats-container {
     text-align: center;
     padding: 10px 0 0 0;
-    color: var(--qd-color-primary-light-7);
+    color: var(--qd-color-text-primary) !important;
     font-size: 18px;
 }
 
@@ -368,6 +361,7 @@ onUnmounted(() => {
     font-weight: bold;
     font-size: 22px;
     margin: 0 5px;
+    color: var(--qd-color-primary) !important;
 }
 
 .sort-controls {
@@ -375,8 +369,8 @@ onUnmounted(() => {
 }
 
 .sort-btn {
-    background-color:var(--qd-color-primary-light-2);
-    color: var(--qd-color-primary-light-9);
+    background-color: var(--qd-color-text-regular);
+    color: var(--qd-color-bg);
     border: none;
     padding: 8px 16px;
     border-radius: 4px;

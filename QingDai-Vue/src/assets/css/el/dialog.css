@@ -1,0 +1,12 @@
+/* dialog样式 */
+.el-dialog {
+  background-color: var(--qd-color-bg) !important;
+}
+
+.el-dialog__close {
+  color: var(--qd-color-text-secondary) !important;
+}
+
+.el-dialog__close:hover {
+  color: var(--qd-color-primary) !important;
+} 

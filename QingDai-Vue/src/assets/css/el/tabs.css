@@ -1,0 +1,93 @@
+/* tabs样式 */
+.el-tabs {
+  border: none !important;
+}
+
+.el-tabs__nav-scroll {
+  background-color: var(--qd-color-bg-light) !important;
+}
+
+.el-tabs__item {
+  color: var(--qd-color-text-regular) !important;
+  background-color: var(--qd-color-hover) !important;
+}
+
+.el-tabs__item.is-active {
+  color: var(--qd-color-text-primary) !important;
+  background-color: var(--qd-color-active) !important;
+}
+
+.el-tabs__active-bar {
+  background-color: var(--qd-color-primary) !important;
+}
+
+.el-tabs__item:hover {
+  color: var(--qd-color-text-regular) !important;
+}
+
+.el-tabs__header {
+  margin: 0 !important;
+}
+
+.el-tabs__nav-next,
+.el-tabs__nav-prev {
+  position: absolute;
+  cursor: pointer;
+  line-height: 44px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  transition: all 0.3s ease;
+  background-color: var(--qd-color-light-7);
+  padding: 0 8px;
+}
+
+[data-theme="dark"] .el-tabs__nav-next,
+[data-theme="dark"] .el-tabs__nav-prev,
+.dark .el-tabs__nav-next,
+.dark .el-tabs__nav-prev {
+  color: var(--qd-color-dark-6);
+  background-color: var(--qd-color-dark-7);
+}
+
+.el-tabs__nav-next .el-icon{
+  left: 8px;
+}
+
+.el-tabs__nav-prev .el-icon{
+  right: 8px;
+}
+
+.el-tabs__nav-next .el-icon,
+.el-tabs__nav-prev .el-icon{
+  color: var(--qd-color-dark-7);
+}
+
+[data-theme="dark"] .el-tabs__nav-next .el-icon,
+[data-theme="dark"] .el-tabs__nav-prev .el-icon{
+  color: var(--qd-color-light-9);
+}
+
+.el-tabs__nav-next:hover,
+.el-tabs__nav-prev:hover {
+  color: var(--el-text-color-primary);
+}
+
+[data-theme="dark"] .el-tabs__nav-next:hover,
+[data-theme="dark"] .el-tabs__nav-prev:hover,
+.dark .el-tabs__nav-next:hover,
+.dark .el-tabs__nav-prev:hover {
+  color: var(--qd-color-dark-2);
+}
+
+.el-tabs__nav-next.is-disabled,
+.el-tabs__nav-prev.is-disabled {
+  cursor: not-allowed;
+  color: var(--el-text-color-placeholder);
+}
+
+[data-theme="dark"] .el-tabs__nav-next.is-disabled,
+[data-theme="dark"] .el-tabs__nav-prev.is-disabled,
+.dark .el-tabs__nav-next.is-disabled,
+.dark .el-tabs__nav-prev.is-disabled {
+  color: var(--qd-color-dark-6);
+} 

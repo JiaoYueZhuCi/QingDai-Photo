@@ -346,15 +346,14 @@ const calculateLayout = () => {
     width: 100%;
     margin: 0 0;
     padding: 0 0;
-    background-color: black;
+    background-color: var(--qd-color-bg-dark);
 }
-
 
 .image-item {
     position: relative;
     overflow: hidden;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    background: #fff;
+    background: var(--qd-color-bg-light);
     transition: transform 0.3s;
     cursor: pointer;
 }
@@ -363,7 +362,6 @@ const calculateLayout = () => {
     transform: translateY(-5px);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
 }
-
 
 .image-item:hover .fullscreen-icon {
     background: rgba(0, 0, 0, 0.7);
@@ -402,7 +400,7 @@ const calculateLayout = () => {
     width: 100%;
     height: 100%;
     background: var(--el-fill-color-light);
-    color: var(--el-text-color-secondary);
+    color: var(--qd-color-text-secondary);
     font-size: 30px;
 }
 
@@ -423,7 +421,5 @@ const calculateLayout = () => {
     .container-in {
         padding: 4px 0;
     }
-
 }
-
 </style>

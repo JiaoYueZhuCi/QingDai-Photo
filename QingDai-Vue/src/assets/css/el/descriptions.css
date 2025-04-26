@@ -1,0 +1,20 @@
+/* descriptions样式 */
+.el-descriptions {
+  --el-descriptions-item-bordered-label-background: var(--qd-color-border-light) !important;
+}
+
+.el-descriptions__cell {
+  border: none !important;
+}
+
+.el-descriptions__label {
+  color: var(--qd-color-text-primary) !important;
+}
+
+.el-descriptions__content {
+  background-color: var(--qd-color-bg-light) !important;
+}
+
+.el-descriptions__title {
+  color: var(--qd-color-text-primary) !important;
+} 

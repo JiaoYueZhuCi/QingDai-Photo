@@ -159,6 +159,7 @@ const submitGuestForm = async () => {
 
 <style scoped>
 .user-info-container {
+  background-color: var(--qd-color-bg-dark);
   padding: 20px;
   /* min-height: 80vh; */
   display: grid;

@@ -1,0 +1,12 @@
+/* timeline样式 */
+.el-timeline-item__tail {
+  border-color: var(--qd-color-border-light) !important;
+}
+
+.el-timeline-item__node {
+  background-color: var(--qd-color-text-secondary) !important;
+}
+
+.el-timeline-item__timestamp {
+  color: var(--qd-color-text-primary) !important;
+} 

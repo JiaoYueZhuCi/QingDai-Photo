@@ -255,182 +255,141 @@ const submitForm = async () => {
 
 <style scoped>
 .photo-editor-dialog {
-  --el-dialog-padding-primary: 10px;
-}
-
-.photo-editor-dialog :deep(.el-dialog) {
-  margin: 0 auto !important;
-  height: auto;
-  max-height: 90vh;
   display: flex;
   flex-direction: column;
 }
 
-.photo-editor-dialog :deep(.el-dialog__body) {
-  padding-top: 0;
-  flex: 1;
-  overflow: hidden;
+/* 添加夜间模式下的对话框样式 */
+.dark :deep(.el-dialog) {
+  background-color: var(--qd-color-primary-dark-9);
+  border: 1px solid var(--qd-color-primary-dark-7);
 }
 
-.photo-editor-dialog :deep(.el-dialog__header) {
-  padding-bottom: 10px;
-  margin-right: 0;
+.dark :deep(.el-dialog__title) {
+  color: var(--qd-color-primary-light-8);
+}
+
+.dark :deep(.el-dialog__body) {
+  color: var(--qd-color-primary-light-7);
 }
 
 .editor-container {
   display: flex;
-  flex-direction: column;
-  gap: 20px;
-  height: 100%;
+  max-height: 70vh;
   overflow: hidden;
-  border-radius: 8px;
+  gap: 20px;
 }
 
 .preview-image {
+  flex: 1;
   display: flex;
   justify-content: center;
-  background-color: var(--qd-color-primary-light-10);
-  padding: 10px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  position: relative;
+  align-items: center;
+  max-height: 70vh;
   overflow: hidden;
+  background-color: var(--qd-color-bg-light);
+  border-radius: 4px;
 }
 
-.preview-image::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(10px);
-  z-index: 0;
-}
-
-.preview-image :deep(.el-image) {
-  position: relative;
-  z-index: 1;
+/* 添加夜间模式下的预览区域样式 */
+.dark .preview-image {
+  background-color: var(--qd-color-primary-dark-8);
 }
 
 .image-error {
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
-  color: var(--qd-color-primary);
-  width: 100%;
-  height: 200px;
-  position: relative;
-  z-index: 1;
+  justify-content: center;
+  padding: 20px;
+  color: var(--qd-color-text-secondary);
 }
 
-.image-error .el-icon {
-  font-size: 48px;
-  margin-bottom: 10px;
-  color: var(--qd-color-primary-light-5);
+/* 添加夜间模式下的错误提示样式 */
+.dark .image-error {
+  color: var(--qd-color-primary-light-6);
 }
 
 .editor-form-container {
-  height: 70vh;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  position: relative;
-  overflow: hidden;
-}
-
-.editor-form-container::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(10px);
-  z-index: 0;
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 10px;
 }
 
 .editor-form {
-  padding: 20px;
-  position: relative;
-  z-index: 1;
+  width: 100%;
 }
 
-.divider {
-  height: 1px;
-  background-color: var(--qd-color-primary-light-7);
-  margin: 10px 0 15px 0;
+/* 添加夜间模式下的表单项样式 */
+.dark :deep(.el-form-item__label) {
+  color: var(--qd-color-primary-light-8);
+}
+
+.dark :deep(.el-input__inner) {
+  background-color: var(--qd-color-primary-dark-7);
+  border-color: var(--qd-color-primary-dark-6);
+  color: var(--qd-color-primary-light-8);
+}
+
+.dark :deep(.el-textarea__inner) {
+  background-color: var(--qd-color-primary-dark-7);
+  border-color: var(--qd-color-primary-dark-6);
+  color: var(--qd-color-primary-light-8);
+}
+
+.dark :deep(.el-select-dropdown) {
+  background-color: var(--qd-color-primary-dark-8);
+  border: 1px solid var(--qd-color-primary-dark-6);
+}
+
+.dark :deep(.el-select-dropdown__item) {
+  color: var(--qd-color-primary-light-8);
+}
+
+.dark :deep(.el-select-dropdown__item.hover), 
+.dark :deep(.el-select-dropdown__item:hover) {
+  background-color: var(--qd-color-primary-dark-6);
+}
+
+.dark :deep(.el-select-dropdown__item.selected) {
+  color: var(--qd-color-primary-light-8);
+  background-color: var(--qd-color-primary-dark-5);
 }
 
 .form-section-title {
   font-size: 16px;
-  font-weight: bold;
+  font-weight: 600;
+  margin: 10px 0;
   color: var(--qd-color-primary);
-  margin-bottom: 15px;
-  padding-left: 10px;
   border-left: 3px solid var(--qd-color-primary);
+  padding-left: 10px;
 }
 
-:deep(.el-form-item__label) {
-  color: var(--qd-color-primary-light-2);
-  font-weight: 500;
+/* 添加夜间模式下的表单标题样式 */
+.dark .form-section-title {
+  color: var(--qd-color-primary-light-8);
+  border-left: 3px solid var(--qd-color-primary-light-5);
 }
 
-:deep(.el-input__wrapper),
-:deep(.el-textarea__inner),
-:deep(.el-select) {
-  box-shadow: 0 0 0 1px var(--qd-color-primary-light-6) !important;
-  transition: all 0.3s;
+.divider {
+  height: 1px;
+  background-color: var(--qd-color-border-light);
+  margin: 15px 0;
 }
 
-:deep(.el-input__wrapper:hover),
-:deep(.el-textarea__inner:hover),
-:deep(.el-select:hover) {
-  box-shadow: 0 0 0 1px var(--qd-color-primary-light-4) !important;
+/* 添加夜间模式下的分隔线样式 */
+.dark .divider {
+  background-color: var(--qd-color-primary-dark-6);
 }
 
-:deep(.el-input__wrapper.is-focus),
-:deep(.el-textarea__inner:focus),
-:deep(.el-select.is-focus) {
-  box-shadow: 0 0 0 1px var(--qd-color-primary) !important;
-}
-
-@media (min-width: 768px) {
+/* 使对话框在移动设备上更友好 */
+@media (max-width: 768px) {
   .editor-container {
-    flex-direction: row;
+    flex-direction: column;
   }
-
+  
   .preview-image {
-    flex: 0 0 40%;
-    height: auto;
+    max-height: 40vh;
   }
-
-  .editor-form-container {
-    flex: 1;
-    overflow-y: auto;
-  }
-}
-
-.dialog-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-}
-
-:deep(.el-button) {
-  border-radius: 6px;
-  transition: all 0.3s;
-}
-
-:deep(.el-dialog__title) {
-  color: var(--qd-color-primary);
-  font-weight: bold;
-}
-
-:deep(.el-dialog__headerbtn:hover .el-dialog__close) {
-  color: var(--qd-color-primary);
 }
 </style>

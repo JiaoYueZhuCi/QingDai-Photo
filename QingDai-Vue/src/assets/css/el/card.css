@@ -1,0 +1,16 @@
+/* Element Plus卡片样式 */
+.el-card {
+  background-color: var(--qd-color-bg) !important;
+  border-color: var(--qd-color-border) !important;
+  color: var(--qd-color-text-primary) !important;
+  padding: 0 !important;
+}
+
+.el-card__header {
+  border-bottom: 1px solid var(--qd-color-border) !important;
+  color: var(--qd-color-text-primary) !important;
+}
+
+.el-card__body {
+  /* padding: 0 !important; */
+} 

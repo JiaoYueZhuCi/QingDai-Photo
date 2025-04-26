@@ -1,4 +1,6 @@
 <template>
+  <Header />
+  
   <div class="common-layout">
     <el-container>
       <el-header>
@@ -35,7 +37,7 @@
     </el-container>
   </div>
   
-  <!-- 添加Footer组件 -->
+  
   <Footer />
 </template>
 
@@ -52,6 +54,7 @@
 </style>
 
 <script setup>
+import Header from '@/components/common/Header.vue';
 import Footer from '@/components/common/Footer.vue';
 
 const handleLogout = () => {

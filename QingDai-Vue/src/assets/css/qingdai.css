@@ -1,0 +1,92 @@
+:root {
+  /* Light主题色阶 */
+  --qd-color-light-1: #45465E;  /* 最深 */
+  --qd-color-light-2: #5E5F7A;
+  --qd-color-light-3: #787A94;
+  --qd-color-light-4: #9294AE;
+  --qd-color-light-5: #ACAFCA;
+  --qd-color-light-6: #C2C5DF;
+  --qd-color-light-7: #E0E3F6;
+  --qd-color-light-8: #E8EBF7;
+  --qd-color-light-9: #F5F7FC;
+  --qd-color-light-10: #FAFBFF; /* 最浅 */
+  
+  /* Dark主题色阶 */
+  --qd-color-dark-1: #9294AE;   /* 最浅 */
+  --qd-color-dark-2: #ACAFCA;
+  --qd-color-dark-3: #C2C5DF;
+  --qd-color-dark-4: #5E5F7A;
+  --qd-color-dark-5: #494C64;
+  --qd-color-dark-6: #3E4057;
+  --qd-color-dark-7: #333549;
+  --qd-color-dark-8: #282A3E;
+  --qd-color-dark-9: #1E1F2E;
+  --qd-color-dark-10: #16172A;  /* 最深 */
+  
+  /* 主色调 */
+  --qd-color-primary: var(--qd-color-light-1);
+  
+  /* 功能性变量 */
+  /* 文字颜色 */
+  --qd-color-text-primary: var(--qd-color-light-1);
+  --qd-color-text-regular: var(--qd-color-light-2);
+  --qd-color-text-secondary: var(--qd-color-light-3);
+  
+  /* 背景颜色 */
+  --qd-color-bg: var(--qd-color-light-9);
+  --qd-color-bg-light: var(--qd-color-light-10);
+  --qd-color-bg-dark: var(--qd-color-light-8);
+  
+  /* 边框颜色 */
+  --qd-color-border-light: var(--qd-color-light-7);
+  --qd-color-border: var(--qd-color-light-6);
+  
+  /* 组件颜色 */
+  --qd-color-hover: var(--qd-color-light-8);
+  --qd-color-active: var(--qd-color-light-6);
+  
+  /* Element Plus颜色变量 */
+  --el-text-color-primary: var(--qd-color-text-primary);
+  --el-border-color: var(--qd-color-border);
+  --el-bg-color: var(--qd-color-bg-dark);
+  --el-fill-color: var(--qd-color-bg);
+  --el-color-primary: var(--qd-color-primary);
+  --el-color-white: var(--qd-color-bg-light);
+  --el-text-color-regular: var(--qd-color-text-regular);
+  --el-border-color-light: var(--qd-color-border-light);
+}
+
+/* 定义暗色主题下使用的变量 */
+[data-theme="dark"] {
+  /* 主色调 */
+  --qd-color-primary: var(--qd-color-dark-1);
+  
+  /* 功能性变量映射 */
+  /* 文字颜色 */
+  --qd-color-text-primary: var(--qd-color-dark-3);
+  --qd-color-text-regular: var(--qd-color-dark-2);
+  --qd-color-text-secondary: var(--qd-color-dark-1);
+  
+  /* 背景颜色 */
+  --qd-color-bg: var(--qd-color-dark-9);
+  --qd-color-bg-light: var(--qd-color-dark-10);
+  --qd-color-bg-dark: var(--qd-color-dark-8);
+  
+  /* 边框颜色 */
+  --qd-color-border-light: var(--qd-color-dark-7);
+  --qd-color-border: var(--qd-color-dark-6);
+  
+  /* 组件颜色 */
+  --qd-color-hover: var(--qd-color-dark-8);
+  --qd-color-active: var(--qd-color-dark-6);
+  
+  /* 覆盖Element Plus颜色变量 */
+  --el-text-color-primary: var(--qd-color-text-primary);
+  --el-border-color: var(--qd-color-border);
+  --el-bg-color: var(--qd-color-bg-dark);
+  --el-fill-color: var(--qd-color-bg);
+  --el-color-primary: var(--qd-color-primary);
+  --el-color-white: var(--qd-color-text-primary);
+  --el-text-color-regular: var(--qd-color-text-regular);
+  --el-border-color-light: var(--qd-color-border-light);
+} 

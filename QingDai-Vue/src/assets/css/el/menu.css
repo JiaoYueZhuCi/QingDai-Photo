@@ -1,0 +1,53 @@
+/* menu样式 */
+.el-menu {
+  --el-menu-active-color: var(--qd-color-primary) !important;
+  color: var(--qd-color-text-regular) !important;
+}
+
+/* 添加夜间模式下的菜单样式 */
+[data-theme="dark"] .el-menu,
+.dark .el-menu {
+  background-color: var(--qd-color-bg-dark) !important;
+  border-color: var(--qd-color-border) !important;
+}
+
+.el-menu-item {
+  color: var(--qd-color-text-secondary) !important;
+  background-color: var(--qd-color-bg);
+  border-right: none;
+}
+
+/* 添加夜间模式下的菜单项样式 */
+[data-theme="dark"] .el-menu-item,
+.dark .el-menu-item {
+  color: var(--qd-color-text-primary) !important;
+  background-color: var(--qd-color-bg) !important;
+}
+
+.el-menu-item:hover {
+  color: var(--qd-color-text-regular) !important;
+  background-color: var(--qd-color-hover) !important;
+}
+
+/* 添加夜间模式下的菜单项悬停样式 */
+[data-theme="dark"] .el-menu-item:hover,
+.dark .el-menu-item:hover {
+  color: var(--qd-color-text-regular) !important;
+  background-color: var(--qd-color-hover) !important;
+}
+
+.el-menu-item.is-active {
+  color: var(--qd-color-text-regular) !important;
+  background-color: var(--qd-color-active) !important;
+}
+
+/* 添加夜间模式下的激活菜单项样式 */
+[data-theme="dark"] .el-menu-item.is-active,
+.dark .el-menu-item.is-active {
+  color: var(--qd-color-text-regular) !important;
+  background-color: var(--qd-color-active) !important;
+}
+
+.el-menu-item:hover {
+  background-color: var(--qd-color-hover) !important;
+} 

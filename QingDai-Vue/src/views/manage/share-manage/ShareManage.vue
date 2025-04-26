@@ -178,6 +178,7 @@ const handleDelete = async (shareId) => {
 .refresh-button {
   position: fixed;
   right: 20px;
-  top: 15px;
+  top: 70px;
+  z-index: 100;
 }
 </style>

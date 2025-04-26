@@ -66,7 +66,7 @@ const initChart = async () => {
 
     // 配置项
     const option = {
-      backgroundColor: '#000000',
+      backgroundColor: 'transparent',
       title: {
         text: '',
         left: 'center',
@@ -97,7 +97,7 @@ const initChart = async () => {
             show: false // 不显示省份名称
           },
           itemStyle: {
-            areaColor: '#FAFBFF', 
+            areaColor: 'var(--qd-color-bg)', 
             borderColor: '#45465E',
             borderWidth: 1
           },
@@ -110,7 +110,7 @@ const initChart = async () => {
               fontSize: 14 // 悬浮时字体稍大
             },
             itemStyle: {
-              areaColor: '#c2c5df',
+              areaColor: 'var(--qd-color-hover)',
               shadowBlur: 10,
               shadowColor: 'rgba(0, 0, 0, 0.5)'
             }
@@ -172,7 +172,7 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .map-group {
-  background-color: #000000;
+  background-color: var(--qd-color-bg-dark);
   padding: 10px;
 }
 
@@ -189,30 +189,29 @@ onBeforeUnmount(() => {
 
 .mapCard {
   width: 80%;
-  /* height: 300px; */
-  background-color: #000000;
+  background-color: var(--qd-color-bg-dark);
   box-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
-  border: 1px solid var(--qd-color-primary-light-3);
+  border: 1px solid var(--qd-color-border);
   border-radius: 4px;
 }
 
 .province-list-card {
   width: 20%;
-  /* height: 300px; */
-  background-color: #000000;
+  background-color: var(--qd-color-bg-dark);
   box-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
-  border: 1px solid var(--qd-color-primary-light-3);
+  border: 1px solid var(--qd-color-border);
   border-radius: 4px;
   overflow-y: auto;
 }
 
 .province-list-title {
-  color: #fff;
+  color: var(--qd-color-text-primary);
   text-align: center;
   font-size: 18px;
   margin: 0;
   padding: 10px 0;
-  border-bottom: 1px solid #45465E;
+  border-bottom: 1px solid var(--qd-color-border);
+  background-color: var(--qd-color-light-10);
 }
 
 .province-list {
@@ -222,7 +221,7 @@ onBeforeUnmount(() => {
 }
 
 .province-item {
-  color: #fff;
+  color: var(--qd-color-text-secondary);
   padding: 8px 15px;
   border-bottom: 1px solid rgba(69, 70, 94, 0.2);
   font-size: 16px;
@@ -230,7 +229,7 @@ onBeforeUnmount(() => {
 }
 
 .province-item:hover {
-  background-color: rgba(69, 70, 94, 0.3);
+  background-color: var(--qd-color-hover);
 }
 
 @media (max-width: 768px) {
@@ -252,20 +251,7 @@ onBeforeUnmount(() => {
   
   .province-list-card {
     width: 100%;
-    height: 35vh;
-  }
-  
-  .province-list {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 5px;
-    padding: 10px;
-  }
-  
-  .province-item {
-    text-align: center;
-    padding: 8px 5px;
-    font-size: 14px;
+    max-height: 300px;
   }
 }
 </style>

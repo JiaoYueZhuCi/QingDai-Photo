@@ -1,0 +1,8 @@
+/* statistic样式 */
+.el-statistic__number {
+  color: var(--qd-color-primary) !important;
+}
+
+.el-backtop {
+  --el-backtop-text-color: var(--qd-color-primary) !important;
+} 

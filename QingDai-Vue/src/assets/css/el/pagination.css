@@ -1,0 +1,53 @@
+/* Element Plus分页样式 */
+.el-pagination {
+  color: var(--qd-color-text-regular) !important;
+  background-color: var(--qd-color-border-light) !important;
+}
+
+[data-theme="dark"] .el-pagination {
+  background-color: var(--qd-color-bg-light) !important;
+}
+
+.el-pagination .btn-prev,
+.el-pagination .btn-next,
+.el-pagination .el-pager li {
+  background-color: var(--qd-color-bg-light) !important;
+  color: var(--qd-color-text-regular) !important;
+}
+
+.el-pagination .el-pager li.is-active {
+  color: var(--qd-color-primary) !important;
+  background-color: var(--qd-color-border-light) !important;
+}
+
+.el-pagination .el-pager li:hover {
+  color: var(--qd-color-primary) !important;
+}
+
+.el-pagination__jump {
+  background-color: var(--qd-color-border-light) !important;
+}
+
+[data-theme="dark"] .el-pagination__jump {
+  background-color: var(--qd-color-bg-light) !important;
+}
+
+.pagination-wrapper {
+  background-color: var(--qd-color-border-light) !important;
+  position: fixed;
+  z-index: 2000 !important;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 10px;
+  background-color: var(--qd-color-bg-light);
+  padding: 5px;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: background-color 0.3s ease;
+}
+
+/* 夜间模式下的分页器包装容器样式 */
+[data-theme="dark"] .pagination-wrapper,
+.dark .pagination-wrapper {
+  background-color: var(--qd-color-bg-light) !important;
+} 

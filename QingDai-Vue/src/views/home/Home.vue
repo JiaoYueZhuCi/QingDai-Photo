@@ -1,4 +1,6 @@
 <template>
+    <Header />
+    
     <el-backtop :right="20" :bottom="70" />
 
     <Introduce />
@@ -34,6 +36,7 @@ import type { TabsPaneContext } from 'element-plus';
 import Introduce from '@/views/home/introduce/Introduce.vue';
 import ScrollReveal from '@/components/util/ScrollReveal.vue';
 import Footer from '@/components/common/Footer.vue';
+import Header from '@/components/common/Header.vue';
 import { useRouter, useRoute } from 'vue-router'
 
 const router = useRouter()

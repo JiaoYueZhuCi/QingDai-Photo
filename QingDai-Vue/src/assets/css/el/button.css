@@ -1,0 +1,19 @@
+/* 按钮样式 */
+.el-button:hover {
+  border: 1px solid var(--qd-color-primary) !important;
+  background-color: var(--qd-color-border-light) !important;
+  color: var(--qd-color-primary) !important;
+}
+
+.el-button--primary {
+  background-color: var(--qd-color-primary) !important;
+  border: 1px solid var(--qd-color-text-regular) !important;
+}
+
+.el-button--text {
+  color: var(--qd-color-text-secondary) !important;
+}
+
+.el-button--text:hover {
+  color: var(--qd-color-primary) !important;
+} 

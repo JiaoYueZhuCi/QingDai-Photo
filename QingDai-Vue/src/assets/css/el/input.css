@@ -1,0 +1,23 @@
+.el-input__wrapper.is-focus {
+  box-shadow: 0 0 0 1px var(--qd-color-primary) !important;
+}
+
+/* Element Plus表单样式 */
+.el-form-item__label {
+  color: var(--qd-color-text-primary) !important;
+}
+
+.el-input__wrapper {
+  background-color: var(--qd-color-bg-light) !important;
+  box-shadow: 0 0 0 1px var(--qd-color-border) !important;
+}
+
+.el-input__inner {
+  color: var(--qd-color-text-primary) !important;
+}
+
+.el-textarea__inner {
+  background-color: var(--qd-color-bg-light) !important;
+  border-color: var(--qd-color-border) !important;
+  color: var(--qd-color-text-primary) !important;
+} 

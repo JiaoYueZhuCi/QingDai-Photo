@@ -1,0 +1,18 @@
+/* image-viewer样式 */
+.el-image-viewer__close {
+  background-color: var(--qd-color-primary) !important;
+  color: var(--qd-color-bg) !important;
+}
+
+.el-image-viewer__close:hover {
+  background-color: var(--qd-color-text-regular) !important;
+}
+
+.el-image-viewer__actions {
+  background-color: var(--qd-color-primary) !important;
+  color: var(--qd-color-bg) !important;
+}
+
+.el-image-viewer__actions:hover {
+  background-color: var(--qd-color-text-regular) !important;
+} 

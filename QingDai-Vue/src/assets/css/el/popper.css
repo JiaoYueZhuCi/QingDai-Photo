@@ -1,0 +1,14 @@
+/* Element Plus popover样式 */
+.el-popper {
+  background-color: var(--qd-color-bg) !important;
+  border-color: var(--qd-color-border) !important;
+}
+
+.el-popper .el-popper__arrow::before {
+  background-color: var(--qd-color-bg) !important;
+  border-color: var(--qd-color-border) !important;
+}
+
+.el-popover__title {
+  color: var(--qd-color-text-primary) !important;
+} 

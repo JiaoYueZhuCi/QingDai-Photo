@@ -16,15 +16,28 @@
 import { ref, onMounted } from 'vue';
 import type { TimelineItem } from '@/types';
 import { getAllTimelines } from '@/api/timeline';
+import { ElLoading } from 'element-plus';
 
 const timelines = ref<TimelineItem[]>([]);
+const loading = ref(false);
 
 const fetchTimelines = async () => {
+  const loadingInstance = ElLoading.service({
+    lock: true,
+    text: '加载时间线中...',
+    background: 'rgba(0, 0, 0, 0.8)',
+    fullscreen: true
+  });
+  
   try {
+    loading.value = true;
     timelines.value = await getAllTimelines();
   } catch (error) {
     console.error('获取时间线失败:', error);
     timelines.value = [];
+  } finally {
+    loading.value = false;
+    loadingInstance.close();
   }
 };
 
@@ -38,52 +51,47 @@ onMounted(() => {
     padding: 0;
   }
 .timelineContainer {
-  background-color: var(--qd-color-primary-dark-10);
+  background-color: var(--qd-color-bg-dark);
   padding: 10px 20px 0 10px;
+  min-height: calc(100vh - 200px);
 }
 
 .timeline-card {
-  background-color: var(--qd-color-primary-dark-6);
+  background-color: var(--qd-color-bg);
   box-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
-  border: 1px solid var(--qd-color-primary-light-3);
+  border: 1px solid var(--qd-color-border);
   border-radius: 4px;
 }
 
 .timeline-title {
-  color: var(--qd-color-primary-light-9);
+  color: var(--qd-color-text-primary);
   margin: 0 0 10px 0;
 }
 
 .content-cell {
   word-break: break-word;
-  color: var(--qd-color-primary-light-7);
+  color: var(--qd-color-text-secondary);
   margin: 0;
 }
 
-:deep(.el-timeline-item__timestamp) {
-  color: var(--qd-color-primary-light-6);
+/* 自定义加载样式 */
+:deep(.el-loading-mask) {
+  z-index: 9999;
 }
 
-:deep(.el-timeline-item__node) {
-  background-color: var(--qd-color-primary-light-3);
+:deep(.el-loading-spinner .el-loading-text) {
+  color: #fff;
+  font-size: 16px;
+  margin-top: 10px;
 }
 
-:deep(.el-timeline-item__tail) {
-  border-left-color: var(--qd-color-primary-light-3);
-}
-
-:deep(.el-card__body) {
-  padding: 15px;
-}
-
-:deep(.el-empty__description) {
-  color: var(--qd-color-primary-light-6);
+:deep(.el-loading-spinner .path) {
+  stroke: #fff;
 }
 
 @media (max-width: 768px) {
   .timelineContainer {
     padding: 10px 10px 0 5px;
   }
-  
 }
 </style>

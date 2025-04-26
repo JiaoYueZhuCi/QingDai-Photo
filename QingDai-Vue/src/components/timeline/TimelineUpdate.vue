@@ -138,9 +138,30 @@ defineExpose({
     border-radius: 6px;
 }
 
+[data-theme="dark"] .preview-container {
+    background-color: var(--qd-color-dark-7);
+}
+
 h3 {
     margin-top: 0;
     margin-bottom: 15px;
     color: #606266;
+}
+
+[data-theme="dark"] h3 {
+    color: var(--qd-color-dark-2);
+}
+
+[data-theme="dark"] :deep(.el-card) {
+    background-color: var(--qd-color-dark-8);
+    border-color: var(--qd-color-dark-6);
+}
+
+[data-theme="dark"] :deep(.el-card) h4 {
+    color: var(--qd-color-dark-2);
+}
+
+[data-theme="dark"] :deep(.el-card) p {
+    color: var(--qd-color-dark-3);
 }
 </style> 

@@ -1,5 +1,10 @@
 <template>
     <div class="show-container" ref="containerRef">
+      <!-- 添加切换主题按钮 -->
+      <button class="theme-switch" @click="toggleTheme">
+        <el-icon><Sunny v-if="isDark" /><Moon v-else /></el-icon>
+      </button>
+      
       <div class="hero-section">
         <div class="title-box" ref="titleBoxRef">
           <h1 class="site-title">青黛影像</h1>
@@ -18,9 +23,6 @@
           <a href="https://gitee.com/liuziming33/qingdai-photo" target="_blank" class="nav-button secondary-button">
             <i class="el-icon-share"></i> 开源项目
           </a>
-          <router-link to="/login" class="nav-button login-button">
-            <i class="el-icon-user"></i> 登录
-          </router-link>
         </div>
   
         <!-- 功能卡片区域 -->
@@ -107,19 +109,23 @@
   </template>
   
   <script setup>
-  import { ref, onMounted, onUnmounted } from 'vue';
+  import { ref, onMounted, onUnmounted, computed } from 'vue';
   import gsap from 'gsap';
   import { showImages } from '@/data/imageUrls';
   import Footer from '@/components/common/Footer.vue';
+  import { useThemeStore } from '@/stores/theme';
+  import { Sunny, Moon } from '@element-plus/icons-vue';
+  
+  const themeStore = useThemeStore();
+  const isDark = computed(() => themeStore.theme === 'dark');
+  
+  const toggleTheme = () => {
+    themeStore.toggleTheme();
+  };
   
   const currentYear = ref(new Date().getFullYear());
-  
-  // 创建一个变量控制动画延迟时间
-  const animationDelay = 500; // 毫秒
-  // 创建一个变量控制轮播切换时间
-  const autoplayInterval = ref(3000); // 毫秒
-  
-  // 创建refs来引用DOM元素
+  const animationDelay = 500;
+  const autoplayInterval = ref(3000);
   const containerRef = ref(null);
   const titleBoxRef = ref(null);
   const underlineRef = ref(null);
@@ -130,25 +136,21 @@
   const circle1Ref = ref(null);
   const circle2Ref = ref(null);
   const circle3Ref = ref(null);
-  
   const activeTabIndex = ref(0);
   let autoplayTimer = null;
   
-  // 设置激活的Tab
   const setActiveTab = (index) => {
     activeTabIndex.value = index;
-    // 重置轮询计时器
     if (autoplayTimer) {
       clearInterval(autoplayTimer);
       startAutoplay();
     }
   };
   
-  // 开始自动轮询
   const startAutoplay = () => {
     autoplayTimer = setInterval(() => {
-      activeTabIndex.value = (activeTabIndex.value + 1) % showcaseTabs.length;
-    }, autoplayInterval.value); // 使用变量控制切换时间
+      activeTabIndex.value = (activeTabIndex.value + 1) % showImages.length;
+    }, autoplayInterval.value);
   };
   
   onMounted(() => {
@@ -401,6 +403,12 @@
     overflow: hidden;
   }
   
+  /* 添加夜间模式下的容器背景 */
+  [data-theme="dark"] .show-container,
+  .dark .show-container {
+    background: linear-gradient(135deg, var(--qd-color-dark-9) 0%, var(--qd-color-dark-7) 100%);
+  }
+  
   .hero-section {
     text-align: center;
     max-width: 800px;
@@ -486,15 +494,42 @@
     background: var(--qd-color-primary-light-9);
   }
   
-  .login-button {
-    background: var(--qd-color-primary-light-10);
-    color: var(--qd-color-primary-light-3);
-    border: 2px solid var(--qd-color-primary-light-6);
+  /* 优化夜间模式下的按钮样式 */
+  [data-theme="dark"] .primary-button,
+  .dark .primary-button {
+    background: linear-gradient(45deg, var(--qd-color-dark-1) 0%, var(--qd-color-dark-3) 100%);
+    color: var(--qd-color-dark-10);
   }
   
-  .login-button:hover {
-    box-shadow: 0 7px 20px rgba(69, 70, 94, 0.2);
-    background: var(--qd-color-primary-light-9);
+  [data-theme="dark"] .primary-button:hover,
+  .dark .primary-button:hover {
+    box-shadow: 0 7px 20px rgba(146, 148, 174, 0.4);
+  }
+  
+  [data-theme="dark"] .secondary-button,
+  .dark .secondary-button {
+    background: var(--qd-color-dark-10);
+    color: var(--qd-color-dark-3);
+    border: 2px solid var(--qd-color-dark-5);
+  }
+  
+  [data-theme="dark"] .secondary-button:hover,
+  .dark .secondary-button:hover {
+    box-shadow: 0 7px 20px rgba(146, 148, 174, 0.3);
+    background: var(--qd-color-dark-9);
+  }
+  
+  [data-theme="dark"] .login-button,
+  .dark .login-button {
+    background: var(--qd-color-dark-10);
+    color: var(--qd-color-dark-4);
+    border: 2px solid var(--qd-color-dark-6);
+  }
+  
+  [data-theme="dark"] .login-button:hover,
+  .dark .login-button:hover {
+    box-shadow: 0 7px 20px rgba(146, 148, 174, 0.3);
+    background: var(--qd-color-dark-9);
   }
   
   /* 功能卡片区域样式 */
@@ -553,6 +588,13 @@
     transform: translateY(30px);
   }
   
+  /* 优化夜间模式下的功能卡片样式 */
+  [data-theme="dark"] .feature-card,
+  .dark .feature-card {
+    background-color: var(--qd-color-dark-8);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+  }
+  
   .feature-card::before {
     content: '';
     position: absolute;
@@ -565,6 +607,12 @@
     opacity: 0.6;
   }
   
+  /* 优化夜间模式下的功能卡片样式 */
+  [data-theme="dark"] .feature-card::before,
+  .dark .feature-card::before {
+    background: linear-gradient(135deg, var(--qd-color-dark-7) 0%, transparent 70%);
+  }
+  
   .card-icon {
     margin-bottom: 1.5rem;
   }
@@ -575,6 +623,12 @@
     transition: all 0.3s ease;
   }
   
+  /* 优化夜间模式下的功能卡片样式 */
+  [data-theme="dark"] .card-icon i,
+  .dark .card-icon i {
+    color: var(--qd-color-dark-4);
+  }
+  
   .card-title {
     font-size: 1.4rem;
     font-weight: 600;
@@ -582,11 +636,24 @@
     margin: 0 0 1rem 0;
   }
   
+  /* 优化夜间模式下的功能卡片样式 */
+  [data-theme="dark"] .card-title,
+  .dark .card-title {
+    color: var(--qd-color-dark-3);
+  }
+  
   .card-description {
     font-size: 1rem;
     color: var(--qd-color-primary-light-2);
     line-height: 1.5;
     flex-grow: 1;
+  }
+  
+  /* 优化夜间模式下的功能卡片样式 */
+  [data-theme="dark"] .card-description,
+  .dark .card-description {
+    color: var(--qd-color-dark-2);
+    font-weight: 500;
   }
   
   /* 页面展示区域 */
@@ -629,12 +696,25 @@
     position: relative; /* 确保定位正确 */
   }
   
+  /* 优化夜间模式下的展示区域样式 */
+  [data-theme="dark"] .showcase-container,
+  .dark .showcase-container {
+    background-color: var(--qd-color-dark-8);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+  }
+  
   .showcase-tabs {
     width: 200px;
     background-color: var(--qd-color-primary-light-8);
     display: flex;
     flex-direction: column;
     padding: 2rem 0;
+  }
+  
+  /* 优化夜间模式下的展示区域样式 */
+  [data-theme="dark"] .showcase-tabs,
+  .dark .showcase-tabs {
+    background-color: var(--qd-color-dark-7);
   }
   
   .showcase-tab {
@@ -647,9 +727,22 @@
     border-left: 4px solid transparent;
   }
   
+  /* 优化夜间模式下的展示区域样式 */
+  [data-theme="dark"] .showcase-tab,
+  .dark .showcase-tab {
+    color: var(--qd-color-dark-4);
+  }
+  
   .showcase-tab:hover {
     background-color: var(--qd-color-primary-light-7);
     color: var(--qd-color-primary);
+  }
+  
+  /* 优化夜间模式下的展示区域样式 */
+  [data-theme="dark"] .showcase-tab:hover,
+  .dark .showcase-tab:hover {
+    background-color: var(--qd-color-dark-6);
+    color: var(--qd-color-dark-2);
   }
   
   .showcase-tab.active {
@@ -659,10 +752,24 @@
     font-weight: 600;
   }
   
+  /* 优化夜间模式下的展示区域样式 */
+  [data-theme="dark"] .showcase-tab.active,
+  .dark .showcase-tab.active {
+    background-color: var(--qd-color-dark-6);
+    color: var(--qd-color-dark-2);
+    border-left: 4px solid var(--qd-color-dark-3);
+  }
+  
   .showcase-content {
     flex: 1;
     position: relative;
     background-color: var(--qd-color-primary-light-9);
+  }
+  
+  /* 优化夜间模式下的展示区域样式 */
+  [data-theme="dark"] .showcase-content,
+  .dark .showcase-content {
+    background-color: var(--qd-color-dark-7);
   }
   
   .showcase-image-container {
@@ -676,6 +783,12 @@
     background-color: var(--qd-color-primary-light-8);
   }
   
+  /* 优化夜间模式下的展示区域样式 */
+  [data-theme="dark"] .showcase-image-container,
+  .dark .showcase-image-container {
+    background-color: var(--qd-color-dark-7);
+  }
+  
   .showcase-image {
     flex: 1;
     width: 100%;
@@ -687,10 +800,22 @@
     background-color: var(--qd-color-primary-light-8);
   }
   
+  /* 优化夜间模式下的展示区域样式 */
+  [data-theme="dark"] .showcase-image,
+  .dark .showcase-image {
+    background-color: var(--qd-color-dark-7);
+  }
+  
   .showcase-description {
     background-color: var(--qd-color-primary-light-8);
     padding: 1rem 2rem;
     height: 80px;
+  }
+  
+  /* 优化夜间模式下的展示区域样式 */
+  [data-theme="dark"] .showcase-description,
+  .dark .showcase-description {
+    background-color: var(--qd-color-dark-6);
   }
   
   .showcase-description h3 {
@@ -699,10 +824,23 @@
     color: var(--qd-color-primary);
   }
   
+  /* 优化夜间模式下的展示区域样式 */
+  [data-theme="dark"] .showcase-description h3,
+  .dark .showcase-description h3 {
+    color: var(--qd-color-dark-3);
+  }
+  
   .showcase-description p {
     font-size: 1rem;
     margin: 0;
     color: var(--qd-color-primary-light-2);
+  }
+  
+  /* 优化夜间模式下的展示区域样式 */
+  [data-theme="dark"] .showcase-description p,
+  .dark .showcase-description p {
+    color: var(--qd-color-dark-2);
+    font-weight: 500;
   }
   
   /* 过渡动画 */
@@ -731,6 +869,13 @@
     background: linear-gradient(45deg, rgba(69, 70, 94, 0.2) 0%, rgba(172, 175, 202, 0.2) 100%);
     box-shadow: 0 15px 40px rgba(69, 70, 94, 0.15); /* 增强阴影效果 */
     backdrop-filter: blur(5px); /* 添加模糊效果 */
+  }
+  
+  /* 优化夜间模式下的装饰元素 */
+  [data-theme="dark"] .floating-circle,
+  .dark .floating-circle {
+    background: linear-gradient(45deg, rgba(146, 148, 174, 0.3) 0%, rgba(194, 197, 223, 0.2) 100%);
+    box-shadow: 0 15px 40px rgba(146, 148, 174, 0.25);
   }
   
   .circle-1 {
@@ -767,6 +912,14 @@
     border-radius: 50%;
     background: linear-gradient(135deg, rgba(69, 70, 94, 0.1) 0%, rgba(172, 175, 202, 0.05) 100%);
     z-index: 1;
+  }
+  
+  /* 优化夜间模式下的装饰元素 */
+  [data-theme="dark"] .show-container::before,
+  [data-theme="dark"] .show-container::after,
+  .dark .show-container::before,
+  .dark .show-container::after {
+    background: linear-gradient(135deg, rgba(146, 148, 174, 0.2) 0%, rgba(194, 197, 223, 0.1) 100%);
   }
   
   .show-container::before {
@@ -884,4 +1037,101 @@
     }
   }
   
+  /* 添加从main.css移除的样式 */
+  .photo-card {
+    background-color: var(--qd-color-bg-light) !important;
+    color: var(--qd-color-text-primary) !important;
+  }
+  
+  .photo-card-title {
+    color: var(--qd-color-primary) !important;
+  }
+  
+  .photo-card-text {
+    color: var(--qd-color-text-regular) !important;
+  }
+  
+  /* 优化夜间模式下的标题和描述文本 */
+  [data-theme="dark"] .site-title,
+  .dark .site-title {
+    color: var(--qd-color-dark-3);
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
+  }
+  
+  [data-theme="dark"] .site-description,
+  .dark .site-description {
+    color: var(--qd-color-dark-4);
+  }
+  
+  [data-theme="dark"] .features-title,
+  .dark .features-title {
+    color: var(--qd-color-dark-3);
+  }
+  
+  [data-theme="dark"] .showcase-title,
+  .dark .showcase-title {
+    color: var(--qd-color-dark-3);
+  }
+  
+  [data-theme="dark"] .features-title::after,
+  [data-theme="dark"] .showcase-title::after,
+  .dark .features-title::after,
+  .dark .showcase-title::after {
+    background: linear-gradient(90deg, var(--qd-color-dark-3) 0%, var(--qd-color-dark-5) 100%);
+  }
+  
+  /* 优化夜间模式下的下划线 */
+  [data-theme="dark"] .underline,
+  .dark .underline {
+    background: linear-gradient(90deg, var(--qd-color-dark-3) 0%, var(--qd-color-dark-5) 100%);
+  }
+  
+  /* 添加切换日夜模式按钮 */
+  .theme-switch {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    background: var(--qd-color-primary-light-10);
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+  }
+  
+  .theme-switch i {
+    font-size: 20px;
+    color: var(--qd-color-primary);
+    transition: all 0.3s ease;
+  }
+  
+  [data-theme="dark"] .theme-switch,
+  .dark .theme-switch {
+    background: var(--qd-color-dark-8);
+  }
+  
+  [data-theme="dark"] .theme-switch i,
+  .dark .theme-switch i {
+    color: var(--qd-color-dark-2);
+  }
+  
+  .theme-switch:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  }
+  
+  [data-theme="dark"] .theme-switch:hover,
+  .dark .theme-switch:hover {
+    box-shadow: 0 4px 15px rgba(146, 148, 174, 0.3);
+  }
+  
+  .theme-switch:hover i {
+    transform: rotate(180deg);
+  }
   </style>
