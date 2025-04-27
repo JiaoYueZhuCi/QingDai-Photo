@@ -1,4 +1,4 @@
-# QingDai青黛摄影主页
+# QingDai青黛摄影
 
 [English Documentation](README-en.md)     
 [中文文档](README.md)
@@ -58,6 +58,7 @@
   - Three.js 3D渲染
   - GSAP 动画库
   - Axios 网络请求
+  - vue-verification-code   
 
 - **目录结构**：
   ```  
@@ -104,6 +105,7 @@
   - Redis 缓存
   - JWT 认证
   - Swagger/OpenAPI 文档
+  - kaptcha
 
 - **目录结构**：
   ```
