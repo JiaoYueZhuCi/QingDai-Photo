@@ -42,9 +42,11 @@ const checkCenter = () => {
             ease: "expo.out",
             onComplete: () => {
                 // 动画完成后移除 will-change
-                gsap.set(containerRef.value, {
-                    willChange: 'auto'
-                });
+                if (containerRef.value) {
+                    gsap.set(containerRef.value, {
+                        willChange: 'auto'
+                    });
+                }
             }
         });
 

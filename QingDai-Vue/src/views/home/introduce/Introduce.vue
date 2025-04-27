@@ -17,9 +17,9 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import PhotoViewer from '@/components/photo/PhotoViewer.vue'
-import ProfileInfo from '@/components/introduce/ProfileInfo.vue'
-import UserDescription from '@/components/introduce/UserDescription.vue'
+import PhotoViewer from '@/components/photo/photo-viewer/PhotoViewer.vue'
+import ProfileInfo from '@/views/home/introduce/profile-info/ProfileInfo.vue'
+import UserDescription from '@/views/home/introduce/user-description/UserDescription.vue'
 import { homeImages } from '@/data/imageUrls'
 import { useThemeStore } from '@/stores/theme'
 

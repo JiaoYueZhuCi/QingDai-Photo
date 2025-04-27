@@ -13,7 +13,7 @@
 
 <script setup lang="ts">
 import { defineProps, defineEmits } from 'vue';
-import TimelinePhotoItem from './TimelinePhotoItem.vue';
+import TimelinePhotoItem from '@/views/home/meteorology/timeline-photos/timeline-photo-item/TimelinePhotoItem.vue';
 import type { EnhancedWaterfallItem } from '@/utils/photo';
 
 const props = defineProps<{

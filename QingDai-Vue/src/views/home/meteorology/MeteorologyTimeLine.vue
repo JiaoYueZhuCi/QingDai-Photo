@@ -25,13 +25,14 @@ import { ref, onMounted, onUnmounted, computed, watch} from 'vue'
 import { getGroupPhoto } from '@/api/groupPhoto'
 import { getPhotosByIds } from '@/api/photo'
 import type { GroupPhotoDTO } from '@/types/groupPhoto'
+import type { WaterfallItem } from '@/types'
 import { ElMessage } from 'element-plus'
-import GroupFilmPreview from '@/components/group-photos/GroupFilmPreview.vue'
+import GroupFilmPreview from '@/components/group-photos/group-film-preview/GroupFilmPreview.vue'
 import { get100KPhotos, processPhotoData, type EnhancedWaterfallItem } from '@/utils/photo'
-import PhotoStats from '@/components/meteorology/PhotoStats.vue'
-import SortControl from '@/components/meteorology/SortControl.vue'
-import TimelinePhotos from '@/components/meteorology/TimelinePhotos.vue'
-import { getMeteorologyTypeName, sortPhotosByTime } from '@/utils/meteorologyUtils'
+import PhotoStats from '@/views/home/meteorology/photo-stats/PhotoStats.vue'
+import SortControl from '@/views/home/meteorology/sort-control/SortControl.vue'
+import TimelinePhotos from '@/views/home/meteorology/timeline-photos/TimelinePhotos.vue'
+import { getMeteorologyTypeName, sortPhotosByTime } from '@/views/home/meteorology/meteorologyUtils'
 
 const groupPhoto = ref<GroupPhotoDTO | null>(null)
 const photos = ref<EnhancedWaterfallItem[]>([])
@@ -103,7 +104,7 @@ const loadGroupPhotos = async () => {
             const photoIds = groupPhoto.value.photoIds;
             
             // 批量获取照片基础信息
-            const photoDataResponse = await getPhotosByIds(photoIds);
+            const photoDataResponse: WaterfallItem[] = await getPhotosByIds(photoIds);
 
             // 处理照片数据
             const processedPhotos = photoDataResponse.map(processPhotoData);

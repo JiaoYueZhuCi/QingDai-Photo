@@ -112,7 +112,7 @@ import {
     Message,
     CopyDocument
 } from '@element-plus/icons-vue'
-import ScrollReveal from '@/components/util/ScrollReveal.vue'
+import ScrollReveal from '@/components/util/scroll-reveal/ScrollReveal.vue'
 import { userInfo } from '@/data/userInfo'
 
 // 添加计算属性来动态设置列数

@@ -54,8 +54,8 @@
 </style>
 
 <script setup>
-import Header from '@/components/common/Header.vue';
-import Footer from '@/components/common/Footer.vue';
+import Header from '@/components/common/header/Header.vue';
+import Footer from '@/components/common/footer/Footer.vue';
 
 const handleLogout = () => {
   localStorage.clear('token');

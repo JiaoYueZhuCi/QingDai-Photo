@@ -74,8 +74,8 @@ import { ElMessage, ElMessageBox, ElLoading } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { getAllGroupPhotos, deleteGroupPhoto } from '@/api/groupPhoto'
 import type { GroupPhotoDTO } from '@/types/groupPhoto'
-import GroupPhotoUpdate from '@/components/group-photos/GroupPhotosUpdate.vue'
-import GroupPhotoPreview from '@/components/group-photos/GroupPhotosPreview.vue'
+import GroupPhotoUpdate from '@/views/manage/group-photos-manage/group-photos-update/GroupPhotosUpdate.vue'
+import GroupPhotoPreview from '@/views/manage/group-photos-manage/group-photo-preview/GroupPhotosPreview.vue'
 import { get100KPhotos, type EnhancedWaterfallItem } from '@/utils/photo'
 
 const groupPhotoDialogVisible = ref(false)

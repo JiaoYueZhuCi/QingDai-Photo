@@ -64,10 +64,10 @@ import { Close, ArrowDown } from '@element-plus/icons-vue';
 import { getSharePhotos, validateShareLink } from '@/api/share';
 import { getPhotosByIdsWithThumbnail, processPhotoData } from '@/utils/photo';
 import type { EnhancedWaterfallItem } from '@/utils/photo';
-import FilmPreview from '@/components/photo/FilmPreview.vue';
-import PhotoViewer from '@/components/photo/PhotoViewer.vue';
-import Footer from '@/components/common/Footer.vue';
-import Header from '@/components/common/Header.vue';
+import FilmPreview from '@/components/photo/file-preview/FilmPreview.vue';
+import PhotoViewer from '@/components/photo/photo-viewer/PhotoViewer.vue';
+import Footer from '@/components/common/footer/Footer.vue';
+import Header from '@/components/common/header/Header.vue';
 
 const route = useRoute();
 const shareId = route.query.id as string;

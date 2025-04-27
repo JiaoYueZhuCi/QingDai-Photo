@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import errorPage from '@/components/common/Error.vue'
+import errorPage from '@/components/common/error/Error.vue'
 import { getRolesPermissions } from '@/api/user.ts';
 import { ElMessage } from 'element-plus';
 
@@ -20,7 +20,7 @@ const router = createRouter({
         },
         {
           path: '/login',
-          component: () => import('@/components/common/Login.vue').catch(() => errorPage),
+          component: () => import('@/components/common/login/Login.vue').catch(() => errorPage),
         },
         {
           path: '/test',
@@ -140,7 +140,7 @@ const router = createRouter({
         },
         {
           path: '/:pathMatch(.*)*',
-          component: () => import('@/components/common/Error.vue')
+          component: () => import('@/components/common/error/Error.vue')
         }
       ]
     },

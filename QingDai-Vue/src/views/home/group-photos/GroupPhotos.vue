@@ -30,11 +30,11 @@ import { getPhotosByIds } from '@/api/photo';
 import { getAllGroupPhotos } from '@/api/groupPhoto';
 import { debounce } from 'lodash';
 import type { GroupPhotoDTO } from '@/types/groupPhoto';
-import GroupFilmPreview from '@/components/group-photos/GroupFilmPreview.vue';
-import PhotoWaterfall from '@/components/photo/PhotoWaterfall.vue';
+import GroupFilmPreview from '@/components/group-photos/group-film-preview/GroupFilmPreview.vue';
+import PhotoWaterfall from '@/components/photo/photo-waterfall/PhotoWaterfall.vue';
 import { get100KPhotos, processPhotoData } from '@/utils/photo';
 import { useRouter, useRoute } from 'vue-router';
-import type { WaterfallLayoutOptions } from '@/composables/useWaterfallLayout';
+import type { WaterfallLayoutOptions } from '@/components/photo/photo-viewer/useWaterfallLayout';
 
 // 添加路由
 const router = useRouter();

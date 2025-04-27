@@ -56,12 +56,12 @@ import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import { ElMessage } from 'element-plus';
 import { getVisiblePhotosByPage, getStartPhotosByPage, getHiddenPhotosByPage, getMeteorologyPhotosByPage } from '@/api/photo';
 import { debounce } from 'lodash';
-import FilmPreview from "@/components/photo/FilmPreview.vue";
-import PhotoViewer from "@/components/photo/PhotoViewer.vue";
-import PhotoEditor from "@/components/photo/PhotoEditor.vue";
-import PhotoWaterfall from "@/components/photo/PhotoWaterfall.vue";
-import PhotoActions from "@/components/photo/PhotoActions.vue";
-import PhotoShare from "@/components/photo/PhotoShare.vue";
+import FilmPreview from "@/components/photo/file-preview/FilmPreview.vue";
+import PhotoViewer from "@/components/photo/photo-viewer/PhotoViewer.vue";
+import PhotoEditor from "@/views/home/photo/photo-editor/PhotoEditor.vue";
+import PhotoWaterfall from "@/components/photo/photo-waterfall/PhotoWaterfall.vue";
+import PhotoActions from "@/views/home/photo/photo-actions/PhotoActions.vue";
+import PhotoShare from "@/views/home/photo/photo-share/PhotoShare.vue";
 import { get100KPhotos, processPhotoData, type EnhancedWaterfallItem } from '@/utils/photo';
 import { useRouter, useRoute } from 'vue-router';
 

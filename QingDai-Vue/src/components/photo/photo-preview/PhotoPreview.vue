@@ -56,7 +56,7 @@
 import { ref, watch, onUnmounted, onMounted } from 'vue'
 import { ElDialog, ElImage, ElDescriptions, ElDescriptionsItem, ElTag } from 'element-plus'
 import { get1000KPhoto, getPhotoDetailInfo, type EnhancedWaterfallItem } from '@/utils/photo'
-import PhotoViewer from '@/components/photo/PhotoViewer.vue'
+import PhotoViewer from '@/components/photo/photo-viewer/PhotoViewer.vue'
 
 const props = defineProps<{
     photoId: string,

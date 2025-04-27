@@ -34,9 +34,9 @@
 import { watch, ref } from 'vue';
 import type { TabsPaneContext } from 'element-plus';
 import Introduce from '@/views/home/introduce/Introduce.vue';
-import ScrollReveal from '@/components/util/ScrollReveal.vue';
-import Footer from '@/components/common/Footer.vue';
-import Header from '@/components/common/Header.vue';
+import ScrollReveal from '@/components/util/scroll-reveal/ScrollReveal.vue';
+import Footer from '@/components/common/footer/Footer.vue';
+import Header from '@/components/common/header/Header.vue';
 import { useRouter, useRoute } from 'vue-router'
 
 const router = useRouter()

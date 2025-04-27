@@ -49,8 +49,8 @@
 import { ref, watch, onMounted } from 'vue'
 import { ElIcon } from 'element-plus'
 import { ArrowDown, ArrowUp } from '@element-plus/icons-vue'
-import FilmPreview from '@/components/photo/FilmPreview.vue'
-import PhotoViewer from '@/components/photo/PhotoViewer.vue'
+import FilmPreview from '@/components/photo/file-preview/FilmPreview.vue'
+import PhotoViewer from '@/components/photo/photo-viewer/PhotoViewer.vue'
 import { getGroupPhoto } from '@/api/groupPhoto'
 import { useRouter, useRoute } from 'vue-router'
 

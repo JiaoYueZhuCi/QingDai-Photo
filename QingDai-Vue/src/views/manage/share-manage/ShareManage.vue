@@ -10,7 +10,7 @@
           <div class="photo-ids-container">
             <div>
               <span class="photo-count">{{ scope.row.photoIds ? scope.row.photoIds.length : 0 }} 张</span>
-              <el-button type="text" @click="togglePhotoIds(scope.row.id)">
+              <el-button link @click="togglePhotoIds(scope.row.id)">
                 {{ expandedRows.includes(scope.row.id) ? '收起' : '展开' }}
               </el-button>
             </div>

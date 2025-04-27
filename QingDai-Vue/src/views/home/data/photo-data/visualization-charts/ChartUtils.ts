@@ -54,4 +54,4 @@ export const colorList = [
 // 获取柱状图通用配色函数
 export const getBarColors = (index: number) => {
   return colorList[index % colorList.length];
-}; 
+};
