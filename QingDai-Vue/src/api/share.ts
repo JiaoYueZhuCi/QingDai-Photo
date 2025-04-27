@@ -15,12 +15,27 @@ export interface CreateShareLinkResponse {
 }
 
 // 分享信息接口
-export interface ShareInfo {
+export interface Share {
     id: string;
     photoIds: string[];
     createTime: string;
     expireTime: string;
     isExpired: boolean;
+}
+
+// 分页查询参数
+export interface ShareQueryParams {
+    page: number;
+    pageSize: number;
+}
+
+// 分页响应接口
+export interface SharePageResponse {
+    records: Share[];
+    total: number;
+    size: number;
+    current: number;
+    pages: number;
 }
 
 // 创建分享链接
@@ -43,7 +58,13 @@ export const validateShareLink = async (shareId: string): Promise<any> => {
 
 // 获取所有分享
 export const getAllShares = async (): Promise<any> => {
-    const response = await request.get<ShareInfo[]>(`${BASE_URL}`);
+    const response = await request.get<Share[]>(`${BASE_URL}`);
+    return response;
+};
+
+// 分页获取分享
+export const getSharesByPage = async (params: ShareQueryParams): Promise<any> => {
+    const response = await request.get<SharePageResponse>(`${BASE_URL}/page`, { params });
     return response;
 };
 

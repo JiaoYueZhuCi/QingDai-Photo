@@ -72,7 +72,7 @@
 import { ref, watchEffect } from 'vue'
 import { ElMessage, ElMessageBox, ElLoading } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
-import { getAllGroupPhotos, deleteGroupPhoto } from '@/api/groupPhoto'
+import { getAllGroupPhotos, deleteGroupPhoto, getGroupPhotosByPage } from '@/api/groupPhoto'
 import type { GroupPhotoDTO } from '@/types/groupPhoto'
 import GroupPhotoUpdate from '@/views/manage/group-photos-manage/group-photos-update/GroupPhotosUpdate.vue'
 import GroupPhotoPreview from '@/views/manage/group-photos-manage/group-photo-preview/GroupPhotosPreview.vue'
@@ -135,14 +135,19 @@ const fetchData = async () => {
   });
   
   try {
-    const response = await getAllGroupPhotos();
+    const response = await getGroupPhotosByPage({
+      page: currentPage.value,
+      pageSize: pageSize.value
+    });
     
-    if (response && Array.isArray(response)) {
-      tableData.value = response.map((item: GroupPhotoDTO) => ({
+    if (response && response.records) {
+      tableData.value = response.records.map((item: GroupPhotoDTO) => ({
         ...item,
         isEditing: false,
         coverImage: '',
       }));
+      
+      total.value = response.total;
 
       // 获取所有封面图ID对应的项
       const coverItems: EnhancedWaterfallItem[] = tableData.value
@@ -179,8 +184,6 @@ const fetchData = async () => {
           };
         });
       }
-
-      total.value = response.length;
     }
   } catch (error) {
     console.error('获取组图数据失败:', error);
@@ -192,10 +195,12 @@ const fetchData = async () => {
 
 const handleCurrentChange = (val: number) => {
     currentPage.value = val
+    fetchData();
 }
 
 const handleSizeChange = (val: number) => {
     pageSize.value = val
+    fetchData();
 }
 
 watchEffect(() => {
@@ -225,9 +230,6 @@ const handleDelete = async (row: any) => {
         }
     }
 }
-
-
-
 
 </script>
 

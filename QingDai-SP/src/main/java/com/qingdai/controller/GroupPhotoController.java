@@ -18,6 +18,8 @@ import java.util.List;
 
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.access.prepost.PreAuthorize;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 
 /**
  * <p>
@@ -76,6 +78,28 @@ public class GroupPhotoController {
         } catch (Exception e) {
             log.error("获取组图列表时发生异常: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @Operation(summary = "分页获取组图", description = "分页获取组图列表数据")
+    @GetMapping("/page")
+    @PreAuthorize("permitAll()")
+    public ResponseEntity<Page<GroupPhotoDTO>> getGroupPhotosByPage(
+            @RequestParam int page,
+            @RequestParam int pageSize) {
+        try {
+            if (page < 1) {
+                page = 1;
+                log.warn("页码小于1，已自动调整为1");
+            }
+            
+            Page<GroupPhotoDTO> groupPhotoPage = groupPhotoService.getGroupPhotoDTOsByPage(page, pageSize);
+            
+            log.info("成功获取组图分页信息，总记录数: {}, 总页数: {}", groupPhotoPage.getTotal(), groupPhotoPage.getPages());
+            return ResponseEntity.ok().body(groupPhotoPage);
+        } catch (Exception e) {
+            log.error("获取组图分页信息时发生错误，页码: {}, 每页大小: {}, 错误: {}", page, pageSize, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 
@@ -179,30 +203,6 @@ public class GroupPhotoController {
                     .body("服务器内部错误: " + e.getMessage());
         }
     }
-
-    // @Operation(summary = "获取组图预览列表", description = "获取所有组图的预览信息（含封面图）")
-    // @GetMapping("/previews")
-    // public ResponseEntity<List<GroupPhotoDTO>> getAllGroupPhotoPreviews() {
-    //     try {
-    //         log.info("开始获取组图预览列表");
-    //         List<GroupPhoto> groupPhotos = groupPhotoService.list();
-
-    //         if (groupPhotos == null || groupPhotos.isEmpty()) {
-    //             log.warn("当前没有组图记录");
-    //             return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-    //         }
-
-    //         List<GroupPhotoDTO> dtos = groupPhotos.stream()
-    //                 .map(groupPhotoService::convertToDTO)
-    //                 .collect(Collectors.toList());
-
-    //         log.info("成功获取{}条组图预览记录", dtos.size());
-    //         return ResponseEntity.ok(dtos);
-    //     } catch (Exception e) {
-    //         log.error("获取组图预览列表时发生异常: {}", e.getMessage(), e);
-    //         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-    //     }
-    // }
 
     @Operation(summary = "获取组图照片数量", description = "根据ID获取组图中照片的数量")
     @GetMapping("/{id}/photos/count")

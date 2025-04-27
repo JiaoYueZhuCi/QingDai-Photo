@@ -1,5 +1,6 @@
 package com.qingdai.controller;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.qingdai.service.SharePhotoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -85,6 +86,22 @@ public class SharePhotoController {
             return ResponseEntity.ok(shares);
         } catch (Exception e) {
             log.error("获取所有分享时发生错误: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+    
+    @GetMapping("/page")
+    @Operation(summary = "分页获取分享", description = "分页获取分享的列表")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VIEWER')")
+    public ResponseEntity<Page<Map<String, Object>>> getSharesByPage(
+            @Parameter(description = "页码") @RequestParam int page,
+            @Parameter(description = "每页大小") @RequestParam int pageSize) {
+        try {
+            Page<Map<String, Object>> sharesPage = sharePhotoService.getSharesByPage(page, pageSize);
+            log.info("成功获取分享分页信息，总记录数: {}, 总页数: {}", sharesPage.getTotal(), sharesPage.getPages());
+            return ResponseEntity.ok(sharesPage);
+        } catch (Exception e) {
+            log.error("获取分享分页信息时发生错误，页码: {}, 每页大小: {}, 错误: {}", page, pageSize, e.getMessage(), e);
             return ResponseEntity.internalServerError().build();
         }
     }

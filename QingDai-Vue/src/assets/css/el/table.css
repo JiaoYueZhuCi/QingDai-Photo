@@ -51,3 +51,7 @@
   background-color: var(--qd-color-primary) !important;
   color: var(--qd-color-bg-light) !important;
 } 
+
+.photo-ids-expanded{
+  border-left: 4px solid var(--qd-color-primary) !important;
+}

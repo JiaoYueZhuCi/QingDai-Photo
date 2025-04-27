@@ -1,5 +1,6 @@
 package com.qingdai.service;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import java.util.List;
 import java.util.Map;
 
@@ -31,6 +32,14 @@ public interface SharePhotoService {
      * @return 所有分享信息的列表
      */
     List<Map<String, Object>> getAllShares();
+    
+    /**
+     * 分页获取分享
+     * @param page 页码
+     * @param pageSize 每页大小
+     * @return 分页结果
+     */
+    Page<Map<String, Object>> getSharesByPage(int page, int pageSize);
     
     /**
      * 删除分享

@@ -11,9 +11,29 @@ export interface TimelineDTO {
   text: string;
 }
 
+// 分页查询参数
+export interface TimelineQueryParams {
+  page: number;
+  pageSize: number;
+}
+
+// 分页响应接口
+export interface TimelinePageResponse {
+  records: TimelineItem[];
+  total: number;
+  size: number;
+  current: number;
+  pages: number;
+}
+
 // 获取所有时间轴数据
 export const getAllTimelines = async (): Promise<any> => {
   return await request.get<TimelineItem[]>(`${BASE_URL}`);
+};
+
+// 分页获取时间轴数据
+export const getTimelinesByPage = async (params: TimelineQueryParams): Promise<any> => {
+  return await request.get<TimelinePageResponse>(`${BASE_URL}/page`, { params });
 };
 
 // 添加时间轴

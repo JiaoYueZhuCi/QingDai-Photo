@@ -27,7 +27,7 @@ import { ref, onMounted, onUnmounted, watch } from 'vue';
 import type { WaterfallItem } from '@/types';
 import { ElMessage } from 'element-plus';
 import { getPhotosByIds } from '@/api/photo';
-import { getAllGroupPhotos } from '@/api/groupPhoto';
+import { getGroupPhotosByPage } from '@/api/groupPhoto';
 import { debounce } from 'lodash';
 import type { GroupPhotoDTO } from '@/types/groupPhoto';
 import GroupFilmPreview from '@/components/group-photos/group-film-preview/GroupFilmPreview.vue';
@@ -123,71 +123,95 @@ const props = defineProps({
 //// 照片流数据
 const images = ref<WaterfallItem[]>([]);
 const currentPage = ref(1);
+const pageSize = ref(10); // 每页加载的组图数量
 const hasMore = ref(true);
 const containerRef = ref<HTMLElement | null>(null);
+const loading = ref(false);
 
 // 获取组图照片
 const getPhotos = async () => {
-    if (!hasMore.value) return;
+    if (!hasMore.value || loading.value) return;
+    
+    loading.value = true;
 
     try {
-        const response = await getAllGroupPhotos();
-        // 获取所有封面图ID
-        const coverPhotoIds = response.map((item: GroupPhotoDTO) => item.groupPhoto.coverPhotoId).filter(Boolean);
-
-        // 批量获取封面图信息
-        let coverPhotos: WaterfallItem[] = [];
-        if (coverPhotoIds.length > 0) {
-            const coverResponse = await getPhotosByIds(coverPhotoIds);
-            coverPhotos = coverResponse;
-        }
+        const response = await getGroupPhotosByPage({
+            page: currentPage.value,
+            pageSize: pageSize.value
+        });
         
-        // 预处理数据
-        const processedData = response.map((item: GroupPhotoDTO) => {
-            const groupPhoto = item.groupPhoto;
-            const coverPhoto = coverPhotos.find(p => p.id === groupPhoto.coverPhotoId);
-            if (!coverPhoto) {
-                console.error('未找到封面图');
-                return null;
+        // 处理分页数据
+        if (response && response.records) {
+            // 获取所有封面图ID
+            const coverPhotoIds = response.records
+                .map((item: GroupPhotoDTO) => item.groupPhoto.coverPhotoId)
+                .filter(Boolean);
+
+            // 批量获取封面图信息
+            let coverPhotos: WaterfallItem[] = [];
+            if (coverPhotoIds.length > 0) {
+                const coverResponse = await getPhotosByIds(coverPhotoIds);
+                coverPhotos = coverResponse;
             }
             
-            return processPhotoData({
-                ...coverPhoto,
-                title: groupPhoto.title || '',
-                introduce: groupPhoto.introduce || '',
-                groupId: groupPhoto.id
-            });
-        }).filter(Boolean);
+            // 预处理数据
+            const processedData = response.records.map((item: GroupPhotoDTO) => {
+                const groupPhoto = item.groupPhoto;
+                const coverPhoto = coverPhotos.find(p => p.id === groupPhoto.coverPhotoId);
+                if (!coverPhoto) {
+                    console.error('未找到封面图');
+                    return null;
+                }
+                
+                return processPhotoData({
+                    ...coverPhoto,
+                    title: groupPhoto.title || '',
+                    introduce: groupPhoto.introduce || '',
+                    groupId: groupPhoto.id
+                });
+            }).filter(Boolean);
 
-        // 更新数据时保留原有数据
-        images.value = [...images.value, ...processedData];
+            // 更新数据时保留原有数据
+            images.value = [...images.value, ...processedData];
 
-        const imgs = images.value.slice(images.value.length - processedData.length);
-        // 加载缩略图
-        await get100KPhotos(imgs);
+            // 获取新加载的图片并加载缩略图
+            const newImgs = images.value.slice(images.value.length - processedData.length);
+            await get100KPhotos(newImgs);
 
-        // 由于API一次性返回所有数据，设置hasMore为false
-        hasMore.value = false;
+            // 判断是否还有更多数据
+            hasMore.value = currentPage.value < response.pages;
+            
+            // 自动增加页码，为下次加载做准备
+            if (hasMore.value) {
+                currentPage.value++;
+            }
+        } else {
+            hasMore.value = false;
+        }
     } catch (error) {
         console.error('获取照片数据失败:', error);
         ElMessage.error('获取组图数据失败');
+    } finally {
+        loading.value = false;
     }
 };
 
-// 新增滚动事件处理
+// 滚动事件处理
 const handleScroll = debounce(() => {
     const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
     const scrollBottom = scrollHeight - (scrollTop + clientHeight);
 
-    // 当距离底部小于 50px
-    if (scrollBottom < 50 && hasMore.value) {
-        currentPage.value++;
+    // 当距离底部小于 50px 且还有更多数据时，加载更多
+    if (scrollBottom < 50 && hasMore.value && !loading.value) {
         getPhotos();
     }
 }, 200);
 
 // 在 onMounted 中添加滚动监听
 onMounted(async () => {
+    currentPage.value = 1;
+    images.value = [];
+    hasMore.value = true;
     await getPhotos();
     
     // 检查URL中是否有组图ID参数

@@ -1,5 +1,6 @@
 package com.qingdai.service.impl;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.qingdai.service.SharePhotoService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +13,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -154,6 +156,47 @@ public class SharePhotoServiceImpl implements SharePhotoService {
         }
         
         return result;
+    }
+    
+    @Override
+    public Page<Map<String, Object>> getSharesByPage(int page, int pageSize) {
+        // 获取所有分享信息
+        List<Map<String, Object>> allShares = getAllShares();
+        
+        // 创建分页对象
+        Page<Map<String, Object>> sharesPage = new Page<>(page, pageSize);
+        
+        // 计算总记录数
+        int total = allShares.size();
+        sharesPage.setTotal(total);
+        
+        // 计算总页数
+        int pages = (total + pageSize - 1) / pageSize;
+        sharesPage.setPages(pages);
+        
+        // 检查页码是否超出范围
+        if (page > pages && pages > 0) {
+            page = pages;
+            sharesPage.setCurrent(page);
+        }
+        
+        // 计算当前页的起始索引和结束索引
+        int fromIndex = (page - 1) * pageSize;
+        int toIndex = Math.min(fromIndex + pageSize, total);
+        
+        // 处理边界情况
+        if (fromIndex >= total) {
+            sharesPage.setRecords(Collections.emptyList());
+        } else {
+            // 提取当前页的数据
+            List<Map<String, Object>> pageRecords = allShares.subList(fromIndex, toIndex);
+            sharesPage.setRecords(pageRecords);
+        }
+        
+        log.info("成功分页获取分享信息，页码: {}, 每页大小: {}, 总记录数: {}, 总页数: {}", 
+                page, pageSize, sharesPage.getTotal(), sharesPage.getPages());
+        
+        return sharesPage;
     }
     
     @Override

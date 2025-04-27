@@ -2,7 +2,7 @@
     <div class="timeline-list-container">
         <el-button class="refresh-button" type="primary" @click="fetchData">刷新时间线列表</el-button>
         
-        <el-table v-loading="loading" :data="tableData" style="width: 100%" border stripe :max-height="tableHeight">
+        <el-table :data="tableData" style="width: 100%" border stripe :max-height="tableHeight">
             <el-table-column prop="time" label="时间" width="180">
                 <template #default="scope">
                     <el-input v-if="scope.row.isEditing" v-model="scope.row.time" />
@@ -70,16 +70,16 @@
 import TimelineUpdate from '@/views/manage/timeline-manage/timeline-update/TimelineUpdate.vue'
 import { ref, watchEffect } from 'vue'
 import type { TimelineItem } from '@/types'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox, ElLoading } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
-import { getAllTimelines, updateTimeline, deleteTimeline } from '@/api/timeline'
+import { getAllTimelines, updateTimeline, deleteTimeline, getTimelinesByPage } from '@/api/timeline'
 
 const timelineUpdateRef = ref()
 const timelineAddVisible = ref(false)
 const tableData = ref<TimelineItem[]>([])
 const editOriginData = ref<any>({})
 const currentPage = ref(1)
-const pageSize = ref(10)
+const pageSize = ref(50)
 const total = ref(0)
 const loading = ref(false)
 const tableHeight = ref(window.innerHeight - 65)
@@ -91,11 +91,22 @@ const showTimelineAdd = () => {
 const fetchData = async () => {
     try {
         loading.value = true
-        const response = await getAllTimelines()
+        
+        const loadingInstance = ElLoading.service({
+            lock: true,
+            text: '加载时间线数据中...',
+            background: 'rgba(0, 0, 0, 0.7)',
+            fullscreen: true
+        });
+        
+        const response = await getTimelinesByPage({
+            page: currentPage.value,
+            pageSize: pageSize.value
+        })
 
         // 处理响应数据
-        if (response && Array.isArray(response)) {
-            tableData.value = response.map((item: any) => ({
+        if (response && response.records) {
+            tableData.value = response.records.map((item: any) => ({
                 isEditing: false,
                 id: item.id,
                 time: item.time || '',
@@ -103,11 +114,13 @@ const fetchData = async () => {
                 text: item.text || ''
             }))
 
-            total.value = response.length
+            total.value = response.total
         } else {
             tableData.value = []
             total.value = 0
         }
+        
+        loadingInstance.close();
     } catch (error) {
         console.error('获取时间轴数据失败:', error)
         ElMessage.error('时间轴数据加载失败')
@@ -118,10 +131,12 @@ const fetchData = async () => {
 
 const handleCurrentChange = (val: number) => {
     currentPage.value = val
+    fetchData()
 }
 
 const handleSizeChange = (val: number) => {
     pageSize.value = val
+    fetchData()
 }
 
 watchEffect(() => {
@@ -142,6 +157,13 @@ const cancelEdit = (row: any) => {
 
 const submitEdit = async (row: any) => {
     try {
+        const loadingInstance = ElLoading.service({
+            lock: true,
+            text: '保存中...',
+            background: 'rgba(0, 0, 0, 0.7)',
+            fullscreen: true
+        });
+        
         await updateTimeline({
             id: row.id,
             time: row.time,
@@ -149,6 +171,7 @@ const submitEdit = async (row: any) => {
             text: row.text
         })
 
+        loadingInstance.close();
         ElMessage.success('更新成功')
         row.isEditing = false
         delete editOriginData.value[row.id]
@@ -172,12 +195,23 @@ const handleDelete = async (row: any) => {
             }
         )
 
+        const loadingInstance = ElLoading.service({
+            lock: true,
+            text: '删除中...',
+            background: 'rgba(0, 0, 0, 0.7)',
+            fullscreen: true
+        });
+        
         await deleteTimeline(row.id)
+        
+        loadingInstance.close();
         ElMessage.success('删除成功')
         await fetchData()
     } catch (error) {
         console.error('删除失败:', error)
-        ElMessage.error('取消删除')
+        if (error !== 'cancel') {
+            ElMessage.error('删除失败')
+        }
     }
 }
 </script>
@@ -216,4 +250,9 @@ const handleDelete = async (row: any) => {
     z-index: 100;
 }
 
+.pagination-wrapper {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+}
 </style>

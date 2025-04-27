@@ -1,6 +1,7 @@
 package com.qingdai.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.qingdai.entity.dto.TimelineDTO;
 import com.qingdai.entity.Timeline;
 import com.qingdai.service.TimelineService;
@@ -58,6 +59,29 @@ public class TimelineController {
 
         } catch (Exception e) {
             log.error("获取时间线信息时发生错误: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @GetMapping("/page")
+    @PreAuthorize("permitAll()")
+    @Operation(summary = "分页获取时间线信息(时间倒叙)", description = "从数据库分页获取时间线信息(时间倒叙)")
+    public ResponseEntity<Page<Timeline>> getTimelinesByPage(
+            @RequestParam int page,
+            @RequestParam int pageSize) {
+        try {
+            if (page < 1) {
+                page = 1;
+                log.warn("页码小于1，已自动调整为1");
+            }
+            Page<Timeline> timelinePage = new Page<>(page, pageSize);
+            timelineService.page(timelinePage, new LambdaQueryWrapper<Timeline>()
+                    .orderByDesc(Timeline::getTime));
+            
+            log.info("成功获取时间线分页信息，总记录数: {}, 总页数: {}", timelinePage.getTotal(), timelinePage.getPages());
+            return ResponseEntity.ok().body(timelinePage);
+        } catch (Exception e) {
+            log.error("获取时间线分页信息时发生错误，页码: {}, 每页大小: {}, 错误: {}", page, pageSize, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }

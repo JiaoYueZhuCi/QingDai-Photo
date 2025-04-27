@@ -14,6 +14,8 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import com.qingdai.service.GroupPhotoPhotoService;
 import java.util.stream.Collectors;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 
 /**
  * <p>
@@ -64,5 +66,32 @@ public class GroupPhotoServiceImpl extends BaseCachedServiceImpl<GroupPhotoMappe
                     return dto;
                 })
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public Page<GroupPhotoDTO> getGroupPhotoDTOsByPage(int page, int pageSize) {
+        // 先分页查询组图基本信息
+        Page<GroupPhoto> groupPhotoPage = new Page<>(page, pageSize);
+        page(groupPhotoPage);
+        
+        // 创建返回的DTO分页对象
+        Page<GroupPhotoDTO> dtoPage = new Page<>(page, pageSize, groupPhotoPage.getTotal());
+        
+        // 转换组图数据为DTO
+        List<GroupPhotoDTO> records = groupPhotoPage.getRecords().stream()
+            .map(groupPhoto -> {
+                GroupPhotoDTO dto = new GroupPhotoDTO();
+                dto.setGroupPhoto(groupPhoto);
+                
+                // 获取关联的照片ID列表
+                List<String> photoIds = groupPhotoPhotoService.getPhotoIdsByGroupPhotoId(groupPhoto.getId());
+                dto.setPhotoIds(photoIds);
+                
+                return dto;
+            })
+            .collect(Collectors.toList());
+        
+        dtoPage.setRecords(records);
+        return dtoPage;
     }
 }

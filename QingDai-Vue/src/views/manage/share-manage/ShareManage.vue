@@ -3,24 +3,24 @@
     <el-button class="refresh-button" type="primary" @click="refreshShares">刷新分享列表</el-button>
 
     <el-table :data="shareList" stripe style="width: 100%"
-      :empty-text="loading ? '加载中...' : '暂无分享数据'" :max-height="tableHeight">
-      <el-table-column prop="id" label="分享ID" width="150" fixed="left"></el-table-column>
-      <el-table-column label="照片" width="130">
-        <template #default="scope">
-          <div class="photo-ids-container">
-            <div>
-              <span class="photo-count">{{ scope.row.photoIds ? scope.row.photoIds.length : 0 }} 张</span>
-              <el-button link @click="togglePhotoIds(scope.row.id)">
-                {{ expandedRows.includes(scope.row.id) ? '收起' : '展开' }}
-              </el-button>
-            </div>
-            <div v-if="expandedRows.includes(scope.row.id)" class="photo-ids-list">
-              <el-tag v-for="photoId in scope.row.photoIds" :key="photoId" size="small"
+      :empty-text="'暂无分享数据'" :max-height="tableHeight">
+      <el-table-column type="expand">
+        <template #default="props">
+          <div class="photo-ids-expanded">
+            <p class="expanded-title">照片ID列表 ({{ props.row.photoIds ? props.row.photoIds.length : 0 }} 张)</p>
+            <div class="photo-ids-tags">
+              <el-tag v-for="photoId in props.row.photoIds" :key="photoId" size="small"
                 style="margin-right: 5px; margin-bottom: 5px;">
                 {{ photoId }}
               </el-tag>
             </div>
           </div>
+        </template>
+      </el-table-column>
+      <el-table-column prop="id" label="分享ID" width="150" fixed="left"></el-table-column>
+      <el-table-column label="照片数量" width="100">
+        <template #default="scope">
+          <span class="photo-count">{{ scope.row.photoIds ? scope.row.photoIds.length : 0 }} 张</span>
         </template>
       </el-table-column>
       <el-table-column prop="createTime" label="创建时间" width="170"></el-table-column>
@@ -51,46 +51,79 @@
         </template>
       </el-table-column>
     </el-table>
+
+    <div class="pagination-wrapper">
+      <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize"
+        :page-sizes="[10, 20, 50, 100]" layout="total, sizes, prev, pager, next, jumper" :total="total"
+        @current-change="handleCurrentChange" @size-change="handleSizeChange" />
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { ElMessage, ElLoading } from 'element-plus';
-import { getAllShares, deleteShare } from '@/api/share';
+import { getAllShares, deleteShare, getSharesByPage } from '@/api/share';
 
 // 数据状态
 const loading = ref(false);
 const shareList = ref([]);
-const expandedRows = ref([]);
-const tableHeight = ref(window.innerHeight - 65)
+const tableHeight = ref(window.innerHeight - 65);
+const currentPage = ref(1);
+const pageSize = ref(50);
+const total = ref(0);
 
 // 生命周期钩子
 onMounted(() => {
   fetchShares();
 });
 
-// 获取所有分享
+// 获取分享数据
 const fetchShares = async () => {
+  loading.value = true;
+  
   const loadingInstance = ElLoading.service({
     lock: true,
     text: '加载分享中...',
-    background: 'rgba(0, 0, 0, 0.7)'
+    background: 'rgba(0, 0, 0, 0.7)',
+    fullscreen: true
   });
   
   try {
-    const response = await getAllShares();
-    shareList.value = response || [];
+    const response = await getSharesByPage({
+      page: currentPage.value,
+      pageSize: pageSize.value
+    });
+    
+    if (response && response.records) {
+      shareList.value = response.records;
+      total.value = response.total;
+    } else {
+      shareList.value = [];
+      total.value = 0;
+    }
   } catch (error) {
     console.error('获取分享列表失败:', error);
     ElMessage.error('获取分享列表失败');
   } finally {
+    loading.value = false;
     loadingInstance.close();
   }
 };
 
 // 刷新分享列表
 const refreshShares = () => {
+  fetchShares();
+};
+
+// 分页事件处理
+const handleCurrentChange = (val) => {
+  currentPage.value = val;
+  fetchShares();
+};
+
+const handleSizeChange = (val) => {
+  pageSize.value = val;
   fetchShares();
 };
 
@@ -108,16 +141,6 @@ const copyShareLink = async (shareId) => {
   } catch (err) {
     console.error('复制失败:', err);
     ElMessage.error('复制失败，请手动复制');
-  }
-};
-
-// 切换展开/收起photoIds
-const togglePhotoIds = (shareId) => {
-  const index = expandedRows.value.indexOf(shareId);
-  if (index > -1) {
-    expandedRows.value.splice(index, 1);
-  } else {
-    expandedRows.value.push(shareId);
   }
 };
 
@@ -156,23 +179,29 @@ const handleDelete = async (shareId) => {
   margin-right: 10px;
 }
 
-.photo-ids-container {
-  display: flex;
-  flex-direction: column;
-}
-
 .photo-count {
-  margin-right: 10px;
+  font-weight: 500;
 }
 
-.photo-ids-list {
-  margin-top: 8px;
-  max-height: 150px;
-  overflow-y: auto;
-  padding: 5px;
-  border: 1px solid #ebeef5;
-  border-radius: 4px;
+.photo-ids-expanded {
+  margin: 0;
+  padding: 10px 20px;
   background-color: #f9fafc;
+  border-left: 4px solid #409eff;
+}
+
+.expanded-title {
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: #606266;
+}
+
+.photo-ids-tags {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 5px;
+  max-height: 200px;
+  overflow-y: auto;
 }
 
 .refresh-button {
@@ -180,5 +209,11 @@ const handleDelete = async (shareId) => {
   right: 20px;
   top: 70px;
   z-index: 100;
+}
+
+.pagination-wrapper {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
 }
 </style>
