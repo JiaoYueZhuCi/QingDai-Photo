@@ -2,7 +2,7 @@
   <header class="header-container" ref="headerRef">
     <div class="header-content">
       <div class="logo-container" ref="logoRef">
-        <router-link to="/show" class="logo-link">
+        <router-link to="/" class="logo-link">
           <img src="/logo.png" alt="青黛影像" class="logo-image" />
           <span class="logo-text">青黛影像</span>
         </router-link>
