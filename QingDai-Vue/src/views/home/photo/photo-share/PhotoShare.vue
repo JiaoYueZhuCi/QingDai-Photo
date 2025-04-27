@@ -30,9 +30,9 @@
             <div class="share-dialog-content">
                 <div class="share-options">
                     <el-radio-group v-model="shareExpireDays">
-                        <el-radio :label="1">1天</el-radio>
-                        <el-radio :label="3">3天</el-radio>
-                        <el-radio :label="7">7天</el-radio>
+                        <el-radio :value="1" label="1天" />
+                        <el-radio :value="3" label="3天" />
+                        <el-radio :value="7" label="7天" />
                     </el-radio-group>
                 </div>
                 <div class="selected-photos">
@@ -46,6 +46,7 @@
                         </div>
                     </div>
                 </div>
+                
                 <div class="share-link" v-if="shareLink">
                     <el-input v-model="shareLink" readonly>
                         <template #append>
@@ -57,13 +58,20 @@
             <template #footer>
                 <span class="dialog-footer">
                     <el-button @click="closeShareDialog">取消</el-button>
-                    <el-button type="primary" @click="generateShareLink"
+                    <el-button type="primary" @click="showVerificationDialog"
                         :disabled="selectedPhotos.length === 0 || isGenerating">
                         {{ isGenerating ? '生成中...' : '生成链接' }}
                     </el-button>
                 </span>
             </template>
         </el-dialog>
+
+        <!-- 添加独立的验证码对话框 -->
+        <VerificationCode 
+            v-model="verificationDialogVisible"
+            @verified="handleVerificationResult" 
+            @close="handleVerificationClose" 
+        />
     </div>
 </template>
 
@@ -73,6 +81,7 @@ import { ElIcon, ElDialog, ElRadio, ElRadioGroup, ElImage, ElInput, ElButton, El
 import { Select, Share, Close } from '@element-plus/icons-vue';
 import { createShareLink } from '@/api/share';
 import type { EnhancedWaterfallItem } from '@/utils/photo';
+import VerificationCode from '@/components/common/verification-code/VerificationCode.vue';
 
 const props = defineProps({
     selectedPhotos: {
@@ -89,9 +98,11 @@ const emit = defineEmits(['update:isShareMode', 'update:selectedPhotos', 'remove
 
 // 分享相关状态
 const shareDialogVisible = ref(false);
-const shareExpireDays = ref(7);
+const shareExpireDays = ref(1);
 const shareLink = ref('');
 const isGenerating = ref(false);
+const verificationPassed = ref(false);
+const verificationDialogVisible = ref(false);
 
 // 切换分享模式
 const toggleShareMode = () => {
@@ -101,6 +112,28 @@ const toggleShareMode = () => {
 // 打开分享对话框
 const openShareDialog = () => {
     shareDialogVisible.value = true;
+};
+
+// 显示验证码对话框
+const showVerificationDialog = () => {
+    verificationDialogVisible.value = true;
+};
+
+// 处理验证码验证结果
+const handleVerificationResult = (result: boolean) => {
+    verificationPassed.value = result;
+    if (result) {
+        // 验证成功后生成分享链接
+        generateShareLink();
+    }
+};
+
+// 验证码对话框关闭回调
+const handleVerificationClose = () => {
+    // 如果验证未通过，则重置验证状态
+    if (!verificationPassed.value) {
+        verificationPassed.value = false;
+    }
 };
 
 // 关闭分享对话框

@@ -41,8 +41,8 @@ public class SecurityConfig {
                 }))
                 // 配置会话管理策略
                 .sessionManagement(session -> {
-                    // 设置会话创建策略为无状态，即不使用会话来管理用户状态
-                    session.sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+                    // 更改为始终创建会话，以支持验证码功能
+                    session.sessionCreationPolicy(SessionCreationPolicy.ALWAYS);
                 })
                 .csrf(AbstractHttpConfigurer::disable);
         return http.build();

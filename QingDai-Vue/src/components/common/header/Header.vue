@@ -66,10 +66,6 @@ import { useRouter } from 'vue-router';
 import { useThemeStore } from '@/stores/theme';
 import { Sunny, Moon } from '@element-plus/icons-vue';
 import gsap from 'gsap';
-import { CSSPlugin } from 'gsap/CSSPlugin';
-
-// 注册 GSAP 插件
-gsap.registerPlugin(CSSPlugin);
 
 const router = useRouter();
 const themeStore = useThemeStore();
@@ -97,10 +93,12 @@ const toggleTheme = () => {
   themeStore.toggleTheme();
   if (themeRef.value) {
     gsap.to(themeRef.value, {
-      scale: 1.2,
       duration: 0.3,
       yoyo: true,
-      repeat: 1
+      repeat: 1,
+      css: {
+        scale: 1.2
+      }
     });
   }
 };
@@ -110,19 +108,23 @@ const handleNavHover = (event: MouseEvent, isEnter: boolean) => {
   const target = event.currentTarget as HTMLElement;
   if (isEnter) {
     gsap.to(target, {
-      opacity: 0.8,
-      scale: 1.05,
       y: -2,
       duration: 0.3,
-      ease: "power2.out"
+      ease: "power2.out",
+      css: {
+        opacity: 0.8,
+        scale: 1.05
+      }
     });
   } else {
     gsap.to(target, {
-      opacity: 1,
-      scale: 1,
       y: 0,
       duration: 0.3,
-      ease: "power2.out"
+      ease: "power2.out",
+      css: {
+        opacity: 1,
+        scale: 1
+      }
     });
   }
 };
@@ -159,32 +161,40 @@ onMounted(() => {
   // 设置初始状态
   if (logoRef.value && navRef.value && userRef.value) {
     gsap.set([logoRef.value, navRef.value, userRef.value], { 
-      opacity: 0,
-      y: -20,
-      scale: 0.8
+      css: {
+        opacity: 0,
+        y: -20,
+        scale: 0.8
+      }
     });
 
     // 添加动画序列
     tl.to(logoRef.value, { 
-      opacity: 1,
-      y: 0,
-      scale: 1,
       duration: 0.8,
-      ease: "elastic.out(1, 0.5)"
+      ease: "elastic.out(1, 0.5)",
+      css: {
+        opacity: 1,
+        y: 0,
+        scale: 1
+      }
     })
     .to(navRef.value, { 
-      opacity: 1,
-      y: 0,
-      scale: 1,
       duration: 0.8,
-      ease: "elastic.out(1, 0.5)"
+      ease: "elastic.out(1, 0.5)",
+      css: {
+        opacity: 1,
+        y: 0,
+        scale: 1
+      }
     }, "-=0.4")
     .to(userRef.value, { 
-      opacity: 1,
-      y: 0,
-      scale: 1,
       duration: 0.8,
-      ease: "elastic.out(1, 0.5)"
+      ease: "elastic.out(1, 0.5)",
+      css: {
+        opacity: 1,
+        y: 0,
+        scale: 1
+      }
     }, "-=0.4");
   }
 
@@ -193,16 +203,20 @@ onMounted(() => {
     // 创建脉冲动画
     const pulseTl = gsap.timeline({ repeat: -1 });
     pulseTl.to(homeRef.value, {
-      opacity: 0.8,
-      scale: 1.05,
       duration: 1,
-      ease: "power2.inOut"
+      ease: "power2.inOut",
+      css: {
+        opacity: 0.8,
+        scale: 1.05
+      }
     })
     .to(homeRef.value, {
-      opacity: 1,
-      scale: 1,
       duration: 1,
-      ease: "power2.inOut"
+      ease: "power2.inOut",
+      css: {
+        opacity: 1,
+        scale: 1
+      }
     });
   }
 

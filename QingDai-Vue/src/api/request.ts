@@ -7,7 +7,8 @@ const service: AxiosInstance = axios.create({
   timeout: 60000,
   headers: {
     'Content-Type': 'application/json;charset=utf-8'
-  }
+  },
+  withCredentials: true // 允许跨域请求携带凭证
 });
 
 // 请求拦截器

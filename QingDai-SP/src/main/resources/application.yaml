@@ -20,7 +20,7 @@ springdoc:
 
 spring:
   application:
-    name: QingDai-SP
+    name: QingDai-SP  
   security:
     user:
       name: disabled
@@ -59,7 +59,6 @@ spring:
           max-wait: -1
           max-idle: 8
           min-idle: 0
-
   cache:
     type: redis
     redis:
