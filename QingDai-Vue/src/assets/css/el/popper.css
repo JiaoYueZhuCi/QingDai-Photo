@@ -12,3 +12,43 @@
 .el-popover__title {
   color: var(--qd-color-text-primary) !important;
 } 
+
+/* 添加tooltip相关样式 */
+.el-tooltip__popper, .el-popper.is-dark {
+  /* 日间模式: 浅色背景, 深色文字 */
+  background-color: var(--qd-color-light-9) !important;
+  color: var(--qd-color-light-1) !important;
+  font-weight: 500;
+  border: 1px solid var(--qd-color-border) !important;
+}
+
+.el-tooltip__popper .el-popper__arrow::before, 
+.el-popper.is-dark .el-popper__arrow::before {
+  background-color: var(--qd-color-light-9) !important;
+  border-color: var(--qd-color-border) !important;
+}
+
+.el-tooltip__trigger .el-tooltip__popper,
+.el-tooltip__trigger + .el-popper {
+  background-color: var(--qd-color-light-9) !important;
+  color: var(--qd-color-light-1) !important;
+  font-weight: 500;
+  border: 1px solid var(--qd-color-border) !important;
+}
+
+/* 暗色模式下的tooltip样式 */
+[data-theme="dark"] .el-tooltip__popper,
+[data-theme="dark"] .el-popper.is-dark,
+[data-theme="dark"] .el-tooltip__trigger + .el-popper {
+  /* 夜间模式: 深色背景, 浅色文字 */
+  background-color: var(--qd-color-dark-9) !important;
+  color: var(--qd-color-dark-3) !important;
+  border: 1px solid var(--qd-color-border) !important;
+}
+
+[data-theme="dark"] .el-tooltip__popper .el-popper__arrow::before,
+[data-theme="dark"] .el-popper.is-dark .el-popper__arrow::before,
+[data-theme="dark"] .el-tooltip__trigger + .el-popper .el-popper__arrow::before {
+  background-color: var(--qd-color-dark-9) !important;
+  border-color: var(--qd-color-border) !important;
+}

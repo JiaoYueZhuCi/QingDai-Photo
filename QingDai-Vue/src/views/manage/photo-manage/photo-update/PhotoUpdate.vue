@@ -1,59 +1,64 @@
 <template>
-        <el-dialog v-model="visible" width="972px" @close="handleClose">
-            <div class="dialog-content" v-loading="uploadLoading" :loading-text="'上传中，请稍候...'"
-                element-loading-background="rgba(0, 0, 0, 0.8)">
-                <span class="uploadD">
-                    <el-upload class="upload" drag :auto-upload="false" :on-change="uploadFile"
-                        :disabled="uploadLoading" :show-file-list="false" multiple accept="image/jpeg, image/png">
-                        <el-icon class="el-icon--upload"><upload-filled /></el-icon>
-                        <div class="el-upload__text">
-                            点击或拖拽照片到此处上传
+    <el-dialog v-model="visible" width="972px" @close="handleClose">
+        <div class="dialog-content">
+            <span class="uploadD">
+                <el-upload class="upload" drag :auto-upload="false" :on-change="uploadFile" :disabled="uploadLoading"
+                    :show-file-list="false" multiple accept="image/jpeg, image/png">
+                    <el-icon class="el-icon--upload"><upload-filled /></el-icon>
+                    <div class="el-upload__text">
+                        点击或拖拽照片到此处上传
+                    </div>
+                    <template #tip>
+                        <div class="el-upload__tip">
+                            支持单次上传多个照片文件
                         </div>
-                        <template #tip>
-                            <div class="el-upload__tip">
-                                支持单次上传多个照片文件
-                            </div>
-                        </template>
-                    </el-upload>
-                </span>
+                    </template>
+                </el-upload>
+            </span>
 
-                <div class="file-preview-area">
-                    <div v-for="(file, index) in fileList" :key="file.name" class="preview-item">
-                        <el-image :src="previewUrls[index]" :preview-src-list="previewUrls" fit="cover"
-                            class="preview-image" />
-                        <div class="file-info">
-                            <span class="file-name">{{ file.name }}</span>
-                            <el-icon class="delete-icon" @click="handleRemove(index)">
-                                <Delete />
-                            </el-icon>
-                        </div>
+            <div class="file-preview-area">
+                <div v-for="(file, index) in fileList" :key="file.name" class="preview-item">
+                    <el-image :src="previewUrls[index]" :preview-src-list="previewUrls" fit="cover"
+                        class="preview-image" />
+                    <div class="file-info">
+                        <span class="file-name">{{ file.name }}</span>
+                        <el-icon class="delete-icon" @click="handleRemove(index)">
+                            <Delete />
+                        </el-icon>
                     </div>
                 </div>
-
-                <div class="submit-area">
-                    <el-select v-model="startValue" placeholder="选择照片级别" style="margin-right: 10px;">
-                        <el-option label="精选" :value="1">
-                            <el-tag :type="'warning'">精选</el-tag>
-                        </el-option>
-                        <el-option label="普通" :value="0">
-                            <el-tag :type="'success'">普通</el-tag>
-                        </el-option>
-                        <el-option label="私密" :value="-1">
-                            <el-tag :type="'info'">隐藏</el-tag>
-                        </el-option>
-                        <el-option label="气象" :value="2">
-                            <el-tag :type="'primary'">气象</el-tag>
-                        </el-option>
-                    </el-select>
-                    <el-button @click="clearFileList" :disabled="uploadLoading || !fileList.length">
-                        清空照片列表
-                    </el-button>
-                    <el-button type="primary" @click="handleSubmit" :disabled="uploadLoading || !fileList.length">
-                        提交全部照片
-                    </el-button>
-                </div>
             </div>
-        </el-dialog>
+
+            <!-- 上传进度组件 -->
+            <div class="progress-container">
+                <upload-progress :messageId="messageId" @close="showProgress = false"
+                    @complete="handleUploadComplete" />
+            </div>
+
+            <div class="submit-area">
+                <el-select v-model="startValue" placeholder="选择照片级别" style="margin-right: 10px;">
+                    <el-option label="精选" :value="1">
+                        <el-tag :type="'warning'">精选</el-tag>
+                    </el-option>
+                    <el-option label="普通" :value="0">
+                        <el-tag :type="'success'">普通</el-tag>
+                    </el-option>
+                    <el-option label="私密" :value="-1">
+                        <el-tag :type="'info'">隐藏</el-tag>
+                    </el-option>
+                    <el-option label="气象" :value="2">
+                        <el-tag :type="'primary'">气象</el-tag>
+                    </el-option>
+                </el-select>
+                <el-button @click="clearFileList" :disabled="uploadLoading || !fileList.length">
+                    清空照片列表
+                </el-button>
+                <el-button type="primary" @click="handleSubmit" :disabled="uploadLoading || !fileList.length">
+                    提交全部照片
+                </el-button>
+            </div>
+        </div>
+    </el-dialog>
 </template>
 
 <script setup lang="ts">
@@ -62,13 +67,14 @@ import { UploadFilled, Delete } from '@element-plus/icons-vue'
 import { ref, defineProps, defineEmits, watch, defineExpose, onMounted } from 'vue';
 import { processPhotosFromFrontend } from '@/api/photo';
 import { clearPhotoDB } from '@/utils/indexedDB';
+import UploadProgress from '../photo-upload-progress/UploadProgress.vue';
 
 const props = defineProps<{
     modelValue: boolean
 }>()
 
 const visible = ref(props.modelValue)
-const emit = defineEmits(['photo-uploaded','update:modelValue','close'])
+const emit = defineEmits(['photo-uploaded', 'update:modelValue', 'close'])
 
 // 监听 modelValue 变化
 watch(() => props.modelValue, (newVal) => {
@@ -77,10 +83,10 @@ watch(() => props.modelValue, (newVal) => {
 
 // 监听对话框可见性状态变化
 watch(() => visible.value, (newVal) => {
-  emit('update:modelValue', newVal);
-  if(newVal==false){
-    emit('close')
-  }
+    emit('update:modelValue', newVal);
+    if (newVal == false) {
+        emit('close')
+    }
 });
 
 // 组件挂载时设置初始值
@@ -88,11 +94,13 @@ onMounted(() => {
     visible.value = props.modelValue;
 });
 
-const startValue = ref(0); 
+const startValue = ref(0);
 
 const uploadLoading = ref(false);
 const previewUrls = ref<string[]>([]);
 const fileList = ref<any[]>([]);
+const messageId = ref('photo-upload-progress');
+const showProgress = ref(true);
 
 const handleRemove = (index: number) => {
     fileList.value.splice(index, 1);
@@ -128,6 +136,13 @@ const handleClose = () => {
     visible.value = false;
 };
 
+const handleUploadComplete = () => {
+    uploadLoading.value = false;
+    handleClose();
+    // 发送照片上传完成事件
+    emit('photo-uploaded');
+};
+
 const handleSubmit = async () => {
     if (!fileList.value.length) {
         ElMessage.warning('请先选择要上传的照片');
@@ -139,19 +154,23 @@ const handleSubmit = async () => {
         formData.append('files', file);
     });
     formData.append('start', startValue.value.toString());
+    formData.append('overwrite', 'true');
 
     try {
         uploadLoading.value = true;
-        await processPhotosFromFrontend(formData);
-        // 可能有图片被替换  清除照片缓存重新加载
-        await clearPhotoDB();
-        ElMessage.success(`成功上传照片`);
-        fileList.value = [];
-        emit('photo-uploaded');
+
+        // 发送上传请求
+        const response = await processPhotosFromFrontend(formData);
+
+        if (response) {
+            // 获取消息ID并显示进度条
+            messageId.value = response.messageId;
+            // 显示成功消息
+            ElMessage.success(`成功提交${response.files || 0}张照片任务,请等待处理完成`);
+        }
     } catch (error) {
         console.error('上传失败:', error);
         ElMessage.error('文件上传失败');
-    } finally {
         uploadLoading.value = false;
     }
 };
@@ -242,5 +261,9 @@ const handleSubmit = async () => {
 .el-upload__tip {
     display: flex;
     justify-content: center;
+}
+
+.progress-container {
+    margin: 20px 0;
 }
 </style>

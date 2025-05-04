@@ -69,7 +69,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watchEffect } from 'vue'
+import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, ElLoading } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { getAllGroupPhotos, deleteGroupPhoto, getGroupPhotosByPage } from '@/api/groupPhoto'
@@ -84,7 +84,7 @@ const currentEditData = ref<GroupPhotoDTO | null>(null)
 
 const tableData = ref<any[]>([])
 const currentPage = ref(1)
-const pageSize = ref(10)
+const pageSize = ref(50)
 const total = ref(0)
 const loading = ref(false)
 
@@ -203,7 +203,8 @@ const handleSizeChange = (val: number) => {
     fetchData();
 }
 
-watchEffect(() => {
+// 初始加载
+onMounted(() => {
     fetchData()
 })
 

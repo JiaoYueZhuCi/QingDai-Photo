@@ -10,7 +10,10 @@
             </el-form-item>
             <el-form-item label="选择照片" prop="photoIds">
                 <el-select v-model="form.photoIds" multiple filterable remote reserve-keyword placeholder="请选择照片"
-                    :remote-method="searchPhotos" :loading="loading" style="width: 100%">
+                    :remote-method="searchPhotos" :loading="loading" style="width: 100%"
+                    v-infinite-scroll="loadMorePhotos" infinite-scroll-disabled="infiniteDisabled" 
+                    infinite-scroll-distance="10" infinite-scroll-immediate="false"
+                    @focus="handleSelectFocus">
                     <el-option v-for="item in photoOptions" :key="item.id" :label="item.title || item.fileName"
                         :value="item.id">
                         <div style="display: flex; align-items: center;">
@@ -19,6 +22,7 @@
                             <span>{{ item.title || item.fileName }}</span>
                         </div>
                     </el-option>
+                    <div v-if="loading" class="loading-more">正在加载更多...</div>
                 </el-select>
             </el-form-item>
             <el-form-item label="封面照片" prop="cover">
@@ -74,10 +78,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch, defineProps, defineEmits, onMounted } from 'vue'
+import { ref, reactive, watch, defineProps, defineEmits, onMounted, computed } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
-import { getPhotosByPage } from '@/api/photo'
+import { getPhotosByPage, getPhotosByIds } from '@/api/photo'
 import { addGroupPhoto, updateGroupPhoto } from '@/api/groupPhoto'
 import type { WaterfallItem } from '@/types'
 import type { GroupPhotoDTO, GroupPhoto } from '@/types/groupPhoto'
@@ -116,6 +120,9 @@ watch(() => visible.value, (newVal) => {
     emit('update:modelValue', newVal);
     if (newVal == false) {
         emit('close')
+    } else if (newVal == true && props.editMode && props.editData) {
+        // 编辑模式下，需要加载选中照片的数据
+        loadSelectedPhotos();
     }
 });
 
@@ -197,6 +204,21 @@ interface PhotoOptionItem extends WaterfallItem {
 const photoOptions = ref<PhotoOptionItem[]>([]);
 const photoCache = ref<Map<string, PhotoOptionItem>>(new Map());
 const thumbnailUrlCache = ref<Map<string, string>>(new Map());
+const hasLoadedInitialPhotos = ref(false);
+
+// 处理select获得焦点
+const handleSelectFocus = () => {
+    // 只有在第一次获取焦点时加载照片数据
+    if (!hasLoadedInitialPhotos.value) {
+        fetchPhotos();
+        hasLoadedInitialPhotos.value = true;
+    }
+};
+
+// 无限滚动相关
+const currentPage = ref(1);
+const hasMore = ref(true);
+const infiniteDisabled = computed(() => loading.value || !hasMore.value);
 
 // 获取基础照片数据
 const fetchPhotos = async () => {
@@ -220,6 +242,10 @@ const fetchPhotos = async () => {
                     thumbnailUrlCache.value.set(photo.id, photo.thumbnailSrc);
                 }
             });
+            
+            // 更新分页信息
+            currentPage.value = 1;
+            hasMore.value = response.records.length === 50;
         }
     } catch (error) {
         console.error('获取照片列表失败:', error);
@@ -229,17 +255,71 @@ const fetchPhotos = async () => {
     }
 };
 
+// 加载更多照片
+const loadMorePhotos = async () => {
+    if (loading.value || !hasMore.value) return;
+    
+    loading.value = true;
+    try {
+        const nextPage = currentPage.value + 1;
+        const response = await getPhotosByPage({ page: nextPage, pageSize: 50 });
+        
+        if (response?.records && response.records.length > 0) {
+            // 处理照片数据
+            const newPhotos = response.records.map((item: any) => ({
+                ...processPhotoData(item),
+                thumbnailSrc: ''
+            }));
+            
+            // 获取缩略图
+            const updatedOptions = await get100KPhotos(newPhotos as any, 'thumbnailSrc');
+            
+            // 更新缓存和选项
+            updatedOptions.forEach(photo => {
+                photoCache.value.set(photo.id, photo as PhotoOptionItem);
+                if (photo.thumbnailSrc) {
+                    thumbnailUrlCache.value.set(photo.id, photo.thumbnailSrc);
+                }
+            });
+            
+            // 添加到现有选项
+            photoOptions.value = [...photoOptions.value, ...updatedOptions as PhotoOptionItem[]];
+            
+            // 更新分页信息
+            currentPage.value = nextPage;
+            hasMore.value = response.records.length === 50;
+        } else {
+            hasMore.value = false;
+        }
+    } catch (error) {
+        console.error('加载更多照片失败:', error);
+        ElMessage.error('加载更多照片失败');
+    } finally {
+        loading.value = false;
+    }
+};
+
 // 搜索照片
 const searchPhotos = async (query: string) => {
     loading.value = true;
+    currentPage.value = 1; // 重置分页
+    hasMore.value = true;
+    
     try {
-        const response = await getPhotosByPage({ page: 1, pageSize: 50 });
+        // 由于PhotoQueryParams只支持page, pageSize和id，不支持搜索参数
+        // 这里只获取所有照片后在前端过滤
+        const response = await getPhotosByPage({ 
+            page: 1, 
+            pageSize: 50
+        });
+        
         if (response && response.records) {
-            const filteredRecords = response.records.filter((item: WaterfallItem) => {
+            // 在前端进行过滤
+            const filteredRecords = query ? response.records.filter((item: WaterfallItem) => {
                 return (item.title && item.title.toLowerCase().includes(query.toLowerCase())) ||
                     (item.fileName && item.fileName.toLowerCase().includes(query.toLowerCase()));
-            });
-
+            }) : response.records;
+            
             // 处理照片数据
             photoOptions.value = filteredRecords.map((item: any) => ({
                 ...processPhotoData(item),
@@ -257,7 +337,12 @@ const searchPhotos = async (query: string) => {
                         thumbnailUrlCache.value.set(photo.id, photo.thumbnailSrc);
                     }
                 });
+                
+                photoOptions.value = updatedOptions as PhotoOptionItem[];
             }
+            
+            // 更新分页信息 - 注意这里使用过滤后的记录长度
+            hasMore.value = response.records.length === 50;
         }
     } catch (error) {
         console.error('搜索照片失败:', error);
@@ -359,8 +444,50 @@ const handleClose = () => {
 // 组件挂载时设置初始值
 onMounted(() => {
     visible.value = props.modelValue;
-    // 移除自动加载照片的逻辑
+    // 不要在挂载时加载照片数据，而是在对话框显示时加载
 });
+
+// 加载选中的照片数据
+const loadSelectedPhotos = async () => {
+    if (!props.editData || !props.editData.photoIds || props.editData.photoIds.length === 0) {
+        return;
+    }
+    
+    loading.value = true;
+    try {
+        // 获取已选照片的详细信息
+        const selectedPhotos = await getPhotosByIds(props.editData.photoIds);
+        if (selectedPhotos && selectedPhotos.length > 0) {
+            // 处理照片数据
+            const processedPhotos = selectedPhotos.map((item: any) => ({
+                ...processPhotoData(item),
+                thumbnailSrc: ''
+            }));
+            
+            // 获取缩略图
+            const updatedOptions = await get100KPhotos(processedPhotos as any, 'thumbnailSrc');
+            
+            // 更新缓存
+            updatedOptions.forEach(photo => {
+                photoCache.value.set(photo.id, photo as PhotoOptionItem);
+                if (photo.thumbnailSrc) {
+                    thumbnailUrlCache.value.set(photo.id, photo.thumbnailSrc);
+                }
+            });
+            
+            // 只添加已选的照片到选项中
+            photoOptions.value = updatedOptions as PhotoOptionItem[];
+            
+            // 标记为已加载初始照片
+            hasLoadedInitialPhotos.value = true;
+        }
+    } catch (error) {
+        console.error('加载选中照片失败:', error);
+        ElMessage.error('加载选中照片失败');
+    } finally {
+        loading.value = false;
+    }
+};
 
 </script>
 
@@ -429,5 +556,28 @@ h3 {
 
 .photo-preview-item:hover .photo-preview-actions {
     display: block;
+}
+
+.loading-more {
+    text-align: center;
+    padding: 10px;
+    color: #909399;
+    font-size: 14px;
+}
+
+.ghost-item {
+    opacity: 0.5;
+    background: #d4e8ff;
+}
+
+.drag-handle {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    padding: 3px;
+    cursor: move;
+    color: #909399;
+    background-color: rgba(255, 255, 255, 0.7);
+    border-top-left-radius: 4px;
 }
 </style>

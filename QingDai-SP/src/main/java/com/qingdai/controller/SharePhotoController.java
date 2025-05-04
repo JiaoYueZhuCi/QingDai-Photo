@@ -78,7 +78,7 @@ public class SharePhotoController {
     
     @GetMapping
     @Operation(summary = "获取所有分享", description = "获取所有分享的列表")
-    @PreAuthorize("hasAnyRole('ADMIN', 'VIEWER')")
+    @PreAuthorize("hasRole('ADMIN'")
     public ResponseEntity<List<Map<String, Object>>> getAllShares() {
         try {
             List<Map<String, Object>> shares = sharePhotoService.getAllShares();
@@ -92,7 +92,7 @@ public class SharePhotoController {
     
     @GetMapping("/page")
     @Operation(summary = "分页获取分享", description = "分页获取分享的列表")
-    @PreAuthorize("hasAnyRole('ADMIN', 'VIEWER')")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<Page<Map<String, Object>>> getSharesByPage(
             @Parameter(description = "页码") @RequestParam int page,
             @Parameter(description = "每页大小") @RequestParam int pageSize) {

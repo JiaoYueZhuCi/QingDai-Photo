@@ -258,4 +258,10 @@ const copyText = (text: string) => {
 .descriptions-wrapper:hover::before {
     transform: scaleX(1);
 }
+
+.cell-item {
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+}
 </style> 

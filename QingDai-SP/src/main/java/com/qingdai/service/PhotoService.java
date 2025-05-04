@@ -111,7 +111,7 @@ public interface PhotoService extends IService<Photo> {
      * 获取照片类型统计（精选/普通/气象/隐藏）
      * @return 包含各类型照片数量的Map
      */
-    Map<String, Long> getPhotoTypeCounts();
+    Map<String, Object> getPhotoTypeCounts();
     
     /**
      * 获取照片数量年月变化统计
@@ -123,7 +123,7 @@ public interface PhotoService extends IService<Photo> {
      * 获取拍摄主题统计（朝霞/晚霞/日出/日落）
      * @return 包含拍摄主题统计的Map
      */
-    Map<String, Long> getPhotoSubjectStats();
+    Map<String, Object> getPhotoSubjectStats();
     
     /**
      * 获取相机统计
@@ -251,6 +251,32 @@ public interface PhotoService extends IService<Photo> {
      * @return 是否所有文件都重命名成功
      */
     boolean renamePhotoFiles(String oldFileName, String newFileName);
+
+    /**
+     * MQ消息消费者处理图片
+     * @param fileNames 文件名数组
+     * @param tempDirPath 临时目录路径
+     * @param start 图片的start值
+     * @param overwrite 是否覆盖已存在的文件
+     * @return 处理结果
+     */
+    ProcessResult processPhotoFromMQ(String[] fileNames, String tempDirPath, Integer start, boolean overwrite);
+
+    /**
+     * 获取照片上传处理状态
+     * @param messageId 消息ID
+     * @return 包含处理状态的Map
+     */
+    Map<String, Object> getPhotoUploadStatus(String messageId);
+
+    /**
+     * 更新照片上传处理状态
+     * @param messageId 消息ID
+     * @param status 状态 (PROCESSING/COMPLETED/FAILED)
+     * @param progress 进度 (0-100)
+     * @param message 消息内容
+     */
+    void updatePhotoUploadStatus(String messageId, String status, int progress, String message);
 
     /**
      * 处理结果类

@@ -74,16 +74,13 @@
                             <p class="description">{{ previewData.introduce || '暂无介绍' }}</p>
                         </el-tooltip>
                         <div class="metadata">
+                            <span class="metadata-item">{{ previewData.time || '未知时间' }}</span>
                             <span class="metadata-item">{{ previewData.camera || '未知相机' }}</span>
                             <span class="metadata-item">{{ previewData.lens || '未知镜头' }}</span>
-                            <span class="metadata-item">{{ previewData.focalLength || '未知焦距' }}</span>
-                            <span class="metadata-item">{{ previewData.time || '未知时间' }}</span>
-                            <span class="metadata-item">
-                                <span v-if="previewData.aperture">光圈：{{ previewData.aperture }}</span>
-                                <span v-if="previewData.shutter"> 快门：{{ previewData.shutter }}</span>
-                                <span v-if="previewData.iso"> ISO：{{ previewData.iso }}</span>
-                                <span v-if="!previewData.aperture && !previewData.shutter && !previewData.iso">未知</span>
-                            </span>
+                            <span class="metadata-item">{{ previewData.focalLength || '未知' }}mm</span>
+                            <span class="metadata-item">F{{ previewData.aperture || '未知' }}</span>
+                            <span class="metadata-item">{{ previewData.shutter || '快门未知' }}</span>
+                            <span class="metadata-item">ISO{{ previewData.iso || '未知' }}</span>
                         </div>
                     </div>
                 </div>
@@ -835,7 +832,7 @@ onMounted(() => {
 }
 
 .title {
-    font-size: 18px;
+    font-size: calc(1.2vw + 0.6vh);
     margin: 0;
     color: #fff;
     white-space: nowrap;
@@ -850,7 +847,7 @@ onMounted(() => {
 }
 
 .description {
-    font-size: 14px;
+    font-size: calc(0.8vw + 0.4vh);
     margin: 0;
     color: #ccc;
     white-space: nowrap;
@@ -858,12 +855,13 @@ onMounted(() => {
     text-overflow: ellipsis;
 }
 
+
 .metadata {
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
     align-items: center;
-    font-size: 14px;
+    font-size: calc(0.8vw + 0.4vh);
     color: #888;
 }
 
@@ -915,18 +913,16 @@ onMounted(() => {
         height: 20vh;
     }
 
-    @media (max-width: 400px) {
-        .title {
-            font-size: 16px;
-        }
+    .title {
+        font-size: calc(2vw + 1vh);
+    }
 
-        .description {
-            font-size: 14px;
-        }
+    .description {
+        font-size: calc(1.5vw + 0.7vh);
+    }
 
-        .metadata {
-            font-size: 12px;
-        }
+    .metadata {
+        font-size: calc(1.4vw + 0.6vh);
     }
 }
 </style>

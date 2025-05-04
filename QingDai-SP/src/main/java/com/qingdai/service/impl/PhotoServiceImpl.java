@@ -54,6 +54,8 @@ import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import org.springframework.data.redis.core.RedisTemplate;
+import java.util.concurrent.TimeUnit;
 
 /**
  * <p>
@@ -82,6 +84,12 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
 
     @Autowired
     private GroupPhotoPhotoService groupPhotoPhotoService;
+
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
+    
+    // Redis中存储上传任务状态的键前缀
+    private static final String UPLOAD_STATUS_KEY_PREFIX = "photo:upload:status:";
 
     // 雪花算法生成器
     private final SnowflakeIdGenerator idGenerator = new SnowflakeIdGenerator(1, 1);
@@ -606,6 +614,84 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
     }
 
     @Override
+    public ProcessResult processPhotoFromMQ(String[] fileNames, String tempDirPath, Integer start, boolean overwrite) {
+        try {
+            if (fileNames == null || fileNames.length == 0) {
+                log.warn("没有接收到文件名");
+                return new ProcessResult(Collections.emptyList(), Collections.emptyList(), false);
+            }
+
+            File tempDir = new File(tempDirPath);
+            if (!tempDir.exists() || !tempDir.isDirectory()) {
+                log.warn("临时目录不存在或不是目录: {}", tempDirPath);
+                return new ProcessResult(Collections.emptyList(), Collections.emptyList(), false);
+            }
+
+            // 处理照片元数据
+            List<Photo> photos = new ArrayList<>();
+            for (String fileName : fileNames) {
+                File photoFile = new File(tempDir, fileName);
+                if (photoFile.exists() && fileIsSupportedPhoto(photoFile)) {
+                    Photo photo = getPhotoObjectByFile(photoFile);
+                    if (photo != null) {
+                        photos.add(photo);
+                    }
+                }
+            }
+
+            if (photos.isEmpty()) {
+                log.warn("没有有效的图片");
+                return new ProcessResult(Collections.emptyList(), Collections.emptyList(), false);
+            }
+
+            // 检查重复文件名
+            List<Photo> existingPhotos = new ArrayList<>();
+            List<Photo> newPhotos = new ArrayList<>();
+            
+            for (Photo photo : photos) {
+                Photo existingPhoto = getOne(
+                    new LambdaQueryWrapper<Photo>()
+                        .eq(Photo::getFileName, photo.getFileName())
+                );
+                
+                if (existingPhoto != null) {
+                    // 保留原有字段
+                    photo.setId(existingPhoto.getId());
+                    photo.setTitle(existingPhoto.getTitle());
+                    photo.setFileName(existingPhoto.getFileName());
+                    photo.setAuthor(existingPhoto.getAuthor());
+                    photo.setIntroduce(existingPhoto.getIntroduce());
+                    photo.setStart(existingPhoto.getStart());
+                    
+                    // 在MQ消费场景下不需要删除原有文件，因为文件已经被处理和替换
+                    
+                    existingPhotos.add(photo);
+                } else {
+                    // 设置新的start值
+                    photo.setStart(start);
+                    newPhotos.add(photo);
+                }
+            }
+
+            // 保存到数据库
+            boolean result = true;
+            if (!existingPhotos.isEmpty()) {
+                result = result && updateBatchById(existingPhotos);
+                log.info("图片信息更新数据库成功");
+            }
+            if (!newPhotos.isEmpty()) {
+                result = result && saveBatch(newPhotos);
+                log.info("新图片信息保存数据库成功");
+            }
+
+            return new ProcessResult(existingPhotos, newPhotos, result);
+        } catch (Exception e) {
+            log.error("处理来自MQ的图片时发生错误: {}", e.getMessage(), e);
+            return new ProcessResult(Collections.emptyList(), Collections.emptyList(), false);
+        }
+    }
+
+    @Override
     public Map<String, Object> validatePhotoExistence() {
         log.info("开始验证数据库照片在文件系统中的存在性");
         List<Photo> allPhotos = list();
@@ -929,8 +1015,8 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
     
     @Override
     @Cacheable(key = "'photoTypeCounts'")
-    public Map<String, Long> getPhotoTypeCounts() {
-        Map<String, Long> photoTypeCounts = new HashMap<>();
+    public Map<String, Object> getPhotoTypeCounts() {
+        Map<String, Object> photoTypeCounts = new HashMap<>();
         photoTypeCounts.put("starred", count(new LambdaQueryWrapper<Photo>().eq(Photo::getStart, 1)));
         photoTypeCounts.put("normal", count(new LambdaQueryWrapper<Photo>().eq(Photo::getStart, 0)));
         photoTypeCounts.put("meteorology", count(new LambdaQueryWrapper<Photo>().eq(Photo::getStart, 2)));
@@ -966,8 +1052,8 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
     
     @Override
     @Cacheable(key = "'photoSubjectStats'")
-    public Map<String, Long> getPhotoSubjectStats() {
-        Map<String, Long> subjectCounts = new HashMap<>();
+    public Map<String, Object> getPhotoSubjectStats() {
+        Map<String, Object> subjectCounts = new HashMap<>();
         // 查询ID为1的组（朝霞）的照片数量
         subjectCounts.put("morningGlow", 
                 groupPhotoPhotoService.count(new LambdaQueryWrapper<GroupPhotoPhoto>()
@@ -1431,5 +1517,53 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
                 );
         
         return page(photoPage, queryWrapper);
+    }
+
+    /**
+     * 更新照片上传处理状态
+     * @param messageId 消息ID
+     * @param status 状态 (PROCESSING/COMPLETED/FAILED)
+     * @param progress 进度 (0-100)
+     * @param message 消息内容
+     */
+    @Override
+    public void updatePhotoUploadStatus(String messageId, String status, int progress, String message) {
+        Map<String, Object> statusInfo = new HashMap<>();
+        statusInfo.put("messageId", messageId);
+        statusInfo.put("status", status);
+        statusInfo.put("progress", progress);
+        statusInfo.put("message", message);
+        statusInfo.put("updateTime", System.currentTimeMillis());
+        
+        // 存储到Redis，设置24小时过期
+        String key = UPLOAD_STATUS_KEY_PREFIX + messageId;
+        redisTemplate.opsForValue().set(key, statusInfo, 24, TimeUnit.HOURS);
+        log.debug("已更新消息ID: {} 的处理状态为: {}, 进度: {}%", messageId, status, progress);
+    }
+    
+    @Override
+    public Map<String, Object> getPhotoUploadStatus(String messageId) {
+        String key = UPLOAD_STATUS_KEY_PREFIX + messageId;
+        Object statusObj = redisTemplate.opsForValue().get(key);
+        
+        if (statusObj != null && statusObj instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> statusInfo = (Map<String, Object>) statusObj;
+            log.debug("获取到消息ID: {} 的处理状态: {}, 进度: {}%", 
+                    messageId, statusInfo.get("status"), statusInfo.get("progress"));
+            return statusInfo;
+        }
+        
+        // 如果没有找到状态信息，返回默认完成状态
+        // 在实际应用中，可能需要返回"未找到"或"过期"等状态
+        Map<String, Object> defaultStatus = new HashMap<>();
+        defaultStatus.put("messageId", messageId);
+        defaultStatus.put("status", "COMPLETED");
+        defaultStatus.put("progress", 100);
+        defaultStatus.put("message", "处理已完成或状态信息已过期");
+        defaultStatus.put("updateTime", System.currentTimeMillis());
+        
+        log.warn("未找到消息ID: {} 的处理状态，返回默认完成状态", messageId);
+        return defaultStatus;
     }
 }

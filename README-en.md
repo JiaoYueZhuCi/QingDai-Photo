@@ -99,8 +99,10 @@ This project consists of two main modules:
   - MyBatis-Plus
   - MySQL Database
   - Redis Cache
+  - RocketMQ Message Queue
   - JWT Authentication
   - Swagger/OpenAPI Documentation
+  - kaptcha
 
 - **Directory Structure**:
   ```
@@ -113,6 +115,9 @@ This project consists of two main modules:
             │   └── dto/                  # DTOs 
             ├── filter/                   # Filters   
             ├── mapper/                   # MyBatis interfaces
+            ├── mq/                       # RocketMQ related
+            │   ├── consumer/             # Message consumers
+            │   └── producer/             # Message producers
             ├── service/                  # Business logic
             │   └── impl/                 # Service implementations
             ├── utils/                    # Utility classes
@@ -130,7 +135,7 @@ This project consists of two main modules:
 ## System Requirements
 
 - **Frontend**: Node.js 16+, npm 8+
-- **Backend**: Java 17+, Maven 3.6+, MySQL 8+, Redis 6+
+- **Backend**: Java 17+, Maven 3.6+, MySQL 8+, Redis 6+, RocketMQ 4.8+
 
 ## Configuration Instructions
 
@@ -160,6 +165,21 @@ qingdai:
   thumbnail100KUrl: ?
   thumbnailSizeUrl: ?
   pendingUrl: ?
+
+rocketmq:
+  name-server: ?
+  producer:
+    group: qingdai-photo-group
+    send-message-timeout: 3000
+    retry-times-when-send-failed: 2
+    access-key: ?
+    secret-key: ?
+  consumer:
+    group: qingdai-photo-consumer
+    access-key: ?
+    secret-key: ?
+  topic:
+    photo: photo-topic
 ```
 - QingDai-Photo/QingDai-SP/src/main/resources/application.yml
 
@@ -196,165 +216,26 @@ export const beianInfo = {
 ### MySQL
 
 #### Table Structure
-```sql
-create table photo
-(
-    id           char(18)                           not null comment 'id'
-        primary key,
-    title        varchar(255)                       null comment 'title',
-    file_name    varchar(255)                       null comment 'original image path',
-    author       varchar(255)                       null comment 'author',
-    width        int                                null comment 'original width',
-    height       int                                null comment 'original height',
-    time         varchar(255)                       null comment 'shooting time',
-    aperture     varchar(255)                       null comment 'aperture',
-    shutter      varchar(255)                       null comment 'shutter',
-    ISO          varchar(255)                       null comment 'iso',
-    camera       varchar(255)                       null comment 'camera',
-    lens         varchar(255)                       null comment 'lens',
-    introduce    varchar(255)                       null comment 'photo description',
-    start        int                                null comment 'star rating',
-    created_time datetime default CURRENT_TIMESTAMP null comment 'created time',
-    updated_time datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment 'updated time',
-    focal_length varchar(255)                       null comment 'focal length'
-);
+Please check the [database/init.sql](database/init.sql) file, which contains the complete database structure and initialization data.
 
-create table group_photo
-(
-    id           char(18)                           not null comment 'id'
-        primary key,
-    title        varchar(255)                       null comment 'title',
-    introduce    varchar(255)                       null comment 'description',
-    coverPhotoId char(18)                           null comment 'cover photo id',
-    created_time datetime default CURRENT_TIMESTAMP null comment 'created time',
-    updated_time datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment 'updated time',
-    constraint group_photo_photo_id_fk
-        foreign key (coverPhotoId) references photo (id)
-);
-
-create table group_photo_photo
-(
-    groupPhotoId char(18)                           null comment 'photo set id',
-    photoId      char(18)                           null comment 'photo id',
-    created_time datetime default CURRENT_TIMESTAMP null comment 'created time',
-    updated_time datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment 'updated time',
-    constraint group_photo_photo_group_photo_id_fk
-        foreign key (groupPhotoId) references group_photo (id),
-    constraint group_photo_photo_photo_id_fk
-        foreign key (photoId) references photo (id)
-);
-
-create index photo_time_index
-    on photo (time desc);
-
-create table sys_permission
-(
-    id           char(18)                           not null
-        primary key,
-    code         varchar(100)                       not null,
-    name         varchar(50)                        not null,
-    description  varchar(200)                       null,
-    created_time datetime default CURRENT_TIMESTAMP null comment 'created time',
-    updated_time datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment 'updated time',
-    constraint code
-        unique (code)
-);
-
-create table sys_role
-(
-    id           char(18)                           not null
-        primary key,
-    name         varchar(50)                        not null,
-    description  varchar(200)                       null,
-    created_time datetime default CURRENT_TIMESTAMP null comment 'created time',
-    updated_time datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment 'updated time',
-    constraint name
-        unique (name)
-);
-
-create table sys_role_permission
-(
-    role_id       char(18)                           not null,
-    permission_id char(18)                           not null,
-    created_time  datetime default CURRENT_TIMESTAMP null comment 'created time',
-    updated_time  datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment 'updated time',
-    constraint sys_role_permission_sys_permission_id_fk
-        foreign key (permission_id) references sys_permission (id),
-    constraint sys_role_permission_sys_role_id_fk
-        foreign key (role_id) references sys_role (id)
-);
-
-create table sys_user
-(
-    id           char(18)                           not null
-        primary key,
-    username     varchar(50)                        not null,
-    password     varchar(100)                       not null,
-    status       tinyint  default 1                 null comment '0-disabled, 1-enabled',
-    created_time datetime default CURRENT_TIMESTAMP null comment 'created time',
-    updated_time datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment 'updated time',
-    constraint username
-        unique (username)
-);
-
-create table sys_user_role
-(
-    user_id      char(18)                           not null,
-    role_id      char(18)                           not null,
-    created_time datetime default CURRENT_TIMESTAMP null comment 'created time',
-    updated_time datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment 'updated time',
-    constraint sys_user_role_sys_role_id_fk
-        foreign key (role_id) references sys_role (id),
-    constraint sys_user_role_sys_user_id_fk
-        foreign key (user_id) references sys_user (id)
-);
-
-create table timeline
-(
-    id           char(18)                           not null comment 'id'
-        primary key,
-    time         varchar(255)                       null comment 'time',
-    title        varchar(255)                       null comment 'title',
-    text         varchar(255)                       null comment 'content',
-    created_time datetime default CURRENT_TIMESTAMP null comment 'created time',
-    updated_time datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment 'updated time'
-);
-
-create index timeline_time_index
-    on timeline (time desc);
-```
 #### User Data
 1. Roles and Permissions
-   - ADMIN (id=1) has permission "Photo Management"
-   - VIEWER (id=2) has permission "Original Image Viewing"
-   - Connected through sys_role_permission
+   - ADMIN (id=1) has permission for "Photo Management"
+   - VIEWER (id=2) has permission for "Original Photo Viewing"
+   - Associated through sys_role_permission
 
 2. Users and Roles
    - root user (id=1) has both ADMIN and VIEWER roles
-   - viewer user (id=2) has VIEWER role
-   - Connected through sys_user_role
+   - viewer user (id=2) has only VIEWER role
+   - Associated through sys_user_role
 
-3. Password Note:
-   - All user passwords are the BCrypt encryption result of the plaintext "123456": $2a$10$jndgC.sZFv0volqxQeXdk.NGN.K7Smrko/5UtP33pPVUcQdP0604a (Based on configuration file jwt.secret:QingDai)
+3. Password Notes:
+   - All user passwords are the BCrypt encryption result of plain text "123456": $2a$10$jndgC.sZFv0volqxQeXdk.NGN.K7Smrko/5UtP33pPVUcQdP0604a (based on configuration file jwt.secret:QingDai)
 
-```sql
-# Permissions
-INSERT INTO `qingdai-photo`.sys_permission (id, code, name, description, created_time, updated_time) VALUES ('1', '1', 'Photo Management', 'Photo Management', NOW(), NOW());
-INSERT INTO `qingdai-photo`.sys_permission (id, code, name, description, created_time, updated_time) VALUES ('2', '2', 'Original Image Viewing', 'Original Image Viewing', NOW(), NOW());
+## RocketMQ
 
-# Roles
-INSERT INTO `qingdai-photo`.sys_role (id, name, description, created_time, updated_time) VALUES ('1', 'ADMIN', 'Administrator', NOW(), NOW());
-INSERT INTO `qingdai-photo`.sys_role (id, name, description, created_time, updated_time) VALUES ('2', 'VIEWER', 'Visitor', NOW(), NOW());
-
-# Role-Permission
-INSERT INTO `qingdai-photo`.sys_role_permission (role_id, permission_id) VALUES ('1', '1');
-INSERT INTO `qingdai-photo`.sys_role_permission (role_id, permission_id) VALUES ('2', '2');
-
-# Users
-INSERT INTO `qingdai-photo`.sys_user (id, username, password, status, created_time, updated_time) VALUES ('1', 'root', '$2a$10$jndgC.sZFv0volqxQeXdk.NGN.K7Smrko/5UtP33pPVUcQdP0604a', 1, NOW(), NOW());
-INSERT INTO `qingdai-photo`.sys_user (id, username, password, status, created_time, updated_time) VALUES ('2', 'viewer', '$2a$10$jndgC.sZFv0volqxQeXdk.NGN.K7Smrko/5UtP33pPVUcQdP0604a', 1, NOW(), NOW());
-
-# User-Role
-INSERT INTO `qingdai-photo`.sys_user_role (user_id, role_id) VALUES ('1', '1');
-INSERT INTO `qingdai-photo`.sys_user_role (user_id, role_id) VALUES ('2', '2');
-``` 
+### Feature Description
+RocketMQ is primarily used in this project for handling asynchronous image processing workflows, including:
+- Compression of uploaded images
+- Metadata extraction and processing
+- Thumbnail generation

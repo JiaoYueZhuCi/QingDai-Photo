@@ -16,4 +16,34 @@
 
 .el-input-number .el-input__wrapper.is-focus {
   box-shadow: 0 0 0 1px var(--qd-color-primary) !important;
+}
+
+[data-theme="dark"] .el-input-number__decrease,
+[data-theme="dark"] .el-input-number__increase{
+  background-color: var(--qd-color-dark-8) !important;
+}
+
+[data-theme="dark"] .el-input-number__decrease:hover,
+[data-theme="dark"] .el-input-number__increase:hover,
+.dark .el-input-number__decrease:hover,
+.dark .el-input-number__increase:hover {
+  background-color: var(--qd-color-hover) !important;
+  color: var(--qd-color-primary) !important;
+}
+
+[data-theme="dark"] .el-input-number__decrease:hover:not(.is-disabled) i,
+[data-theme="dark"] .el-input-number__increase:hover:not(.is-disabled) i,
+.dark .el-input-number__decrease:hover:not(.is-disabled) i,
+.dark .el-input-number__increase:hover:not(.is-disabled) i {
+  color: var(--qd-color-primary) !important;
+}
+
+[data-theme="dark"] .el-input-number:hover .el-input__wrapper,
+.dark .el-input-number:hover .el-input__wrapper {
+  box-shadow: 0 0 0 1px var(--qd-color-primary) !important;
+}
+
+[data-theme="dark"] .el-input-number .el-input__wrapper.is-focus,
+.dark .el-input-number .el-input__wrapper.is-focus {
+  box-shadow: 0 0 0 1px var(--qd-color-primary) !important;
 } 

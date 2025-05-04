@@ -24,7 +24,7 @@
             用户信息设置
           </el-menu-item>
           <el-menu-item index="/manage/developer" style="width: 100px;">
-            开发者方法
+            其他
           </el-menu-item>
           <el-menu-item class="logout" style="width: 100px;" @click="handleLogout">
             注销

@@ -3,6 +3,10 @@ import type { WaterfallItem } from '@/types';
 
 // 基础路径
 const BASE_URL = '/api/QingDai/photos';
+const CDN_URL = import.meta.env.PROD ? 'https://img.qingdai.art/api/QingDai/photos' : BASE_URL;
+// const CDN_URL = 'https://img.qingdai.art/api/QingDai/photos';
+
+
 // 类型定义
 export interface PhotoQueryParams {
   page?: number;
@@ -24,44 +28,55 @@ export interface PhotoStatusUpdateParams {
 }
 
 export interface PhotoInfoUpdateParams extends WaterfallItem { }// 获取100K压缩照片(批量)
+
+
 export const getThumbnail100KPhotos = async (ids: string): Promise<any> => {
-  return await request.get(`${BASE_URL}/thumbnails/small`, {
+  // return await request.get(`${BASE_URL}/thumbnails/small`, {
+    return await request.get(`${CDN_URL}/cdn/thumbnails/small`, {
     params: { ids },
     responseType: 'arraybuffer'
   });
-
 };
 
 // 获取100K压缩照片(单张)
 export const getThumbnail100KPhoto = async (id: string): Promise<any> => {
-  return await request.get(`${BASE_URL}/${id}/thumbnail/small`, {
+  return await request.get(`${CDN_URL}/cdn/thumbnail/small`, {
+    params: { id },
     responseType: 'blob'
   });
 };
 
 // 获取1000K压缩照片
 export const getThumbnail1000KPhoto = async (id: string) => {
-  return await request.get(`${BASE_URL}/${id}/thumbnail/medium`, {
+  return await request.get(`${CDN_URL}/cdn/thumbnail/medium`, {
+    params: { id },
     responseType: 'blob'
   });
 };
 
 // 获取原图
 export const getFullSizePhoto = async (id: string) => {
-  return await request.get(`${BASE_URL}/${id}/original`, {
+  return await request.get(`${CDN_URL}/cdn/fullsize`, {
+    params: { id },
     responseType: 'blob'
   });
 };
 
 // 上传照片
-export const processPhotosFromFrontend = async (formData: FormData) => {
+export const processPhotosFromFrontend = async (formData: FormData): Promise<any> => {
   return await request.post(`${BASE_URL}`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data'
     },
-    timeout: 300000 // 设置5分钟超时时间
+    timeout: 30000 // 设置30秒超时时间，因为使用队列后上传接口会立即返回
   });
 };
+
+// 检查照片处理状态
+export const checkPhotoProcessStatus = async (messageId: string): Promise<any> => {
+  return await request.get(`${BASE_URL}/${messageId}/upload/status`);
+};
+
 // 获取照片分页数据
 export const getPhotosByPage = async (params: PhotoQueryParams): Promise<any> => {
   return await request.get<PhotoResponse>(`${BASE_URL}/page`, { params });
@@ -152,7 +167,6 @@ export const getPhotosByIds = async (ids: string[]): Promise<WaterfallItem[]> =>
   });
 };
 
-// 开发者方法-----------------------------------------------------------------------------------------
 // 原图导入数据库
 export const fullSizePhotoToMysql = async (): Promise<any> => {
   return await request.post(`${BASE_URL}/import-pending`);
@@ -232,7 +246,9 @@ export function getPhotoCountByCamera(camera: string): Promise<any> {
 
 // 获取指定镜头型号的照片数量
 export function getPhotoCountByLens(lens: string): Promise<any> {
-  return request.get<number>(`${BASE_URL}/count/by-lens/${encodeURI(lens)}`);
+  return request.get<number>(`${BASE_URL}/count/by-lens`, {
+    params: { lens }
+  });
 }
 
 // 更新焦距信息

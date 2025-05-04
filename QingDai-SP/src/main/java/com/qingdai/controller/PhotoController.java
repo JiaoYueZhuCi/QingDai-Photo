@@ -12,6 +12,7 @@ import com.qingdai.service.GroupPhotoPhotoService;
 import com.qingdai.service.GroupPhotoService;
 import com.qingdai.utils.FileUtils;
 import com.qingdai.utils.ValidationUtils;
+import com.qingdai.mq.producer.PhotoProcessor;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -62,9 +63,9 @@ public class PhotoController {
 
     @Autowired
     PhotoService photoService;
-
+    
     @Autowired
-    GroupPhotoPhotoService groupPhotoPhotoService;
+    private PhotoProcessor photoProcessor;
 
     @Value("${qingdai.fullSizeUrl}")
     private String fullSizeUrl;
@@ -76,6 +77,99 @@ public class PhotoController {
     private String thumbnail1000KUrl;
     @Value("${qingdai.thumbnail100KUrl}")
     private String thumbnail100KUrl;
+
+    @GetMapping("/cdn/thumbnails/small")
+    @PreAuthorize("permitAll()")
+    @Operation(summary = "批量获取压缩照片文件", description = "根据ID列表获取多个压缩照片文件")
+    public ResponseEntity<Resource> getThumbnail100KPhotosByIds(@RequestParam List<String> ids) {
+        try {
+            List<File> validFiles = new ArrayList<>();
+
+            for (String id : ids) {
+                try {
+                    String fileName = photoService.getFileNameById(id);
+                    if (fileName != null) {
+                        File file = new File(thumbnail100KUrl, fileName);
+                        if (file.exists()) {
+                            validFiles.add(file);
+                            log.debug("成功添加照片文件到列表，ID: {}, 文件名: {}", id, fileName);
+                        } else {
+                            log.warn("照片文件不存在，ID: {}, 文件名: {}", id, fileName);
+                        }
+                    } else {
+                        log.warn("未找到ID为{}的照片记录", id);
+                    }
+                } catch (NumberFormatException e) {
+                    log.warn("无效的ID格式: {}", id);
+                }
+            }
+
+            if (validFiles.isEmpty()) {
+                log.warn("未找到任何有效的照片文件");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
+
+            log.info("成功获取批量照片文件，共{}个文件", validFiles.size());
+            return FileUtils.getFilesResource(validFiles);
+        } catch (Exception e) {
+            log.error("批量获取照片文件时发生错误，ID列表: {}, 错误: {}", ids, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @GetMapping("/cdn/thumbnail/small")
+    @Operation(summary = "获取指定100K压缩照片文件", description = "根据接收到的的照片ID获取100K压缩照片文件并返回")
+    @PreAuthorize("permitAll()")
+    public ResponseEntity<Resource> getThumbnail100KPhotoById(@RequestParam String id) {
+        try {
+            String fileName = photoService.getFileNameById(id);
+            if (fileName == null) {
+                log.warn("未找到ID为{}的照片记录", id);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            }
+            log.info("成功获取100K压缩照片，文件名: {}", fileName);
+            return FileUtils.getFileResource(thumbnail100KUrl, fileName);
+        } catch (Exception e) {
+            log.error("获取100K压缩照片时发生错误，ID: {}, 错误: {}", id, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @GetMapping("/cdn/thumbnail/medium")
+    @Operation(summary = "获取指定1000K压缩照片文件", description = "根据接收到的的照片ID获取1000K压缩照片文件并返回")
+    @PreAuthorize("permitAll()")
+    public ResponseEntity<Resource> getThumbnail1000KPhotoById(@RequestParam String id) {
+        try {
+            String fileName = photoService.getFileNameById(id);
+            if (fileName == null) {
+                log.warn("未找到ID为{}的照片记录", id);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            }
+            log.info("成功获取1000K压缩照片，文件名: {}", fileName);
+            return FileUtils.getFileResource(thumbnail1000KUrl, fileName);
+        } catch (Exception e) {
+            log.error("获取1000K压缩照片时发生错误，ID: {}, 错误: {}", id, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @GetMapping("/cdn/fullsize")
+    @PreAuthorize("hasRole('VIEWER')")
+    @Operation(summary = "获取指定原图照片文件", description = "根据接收到的照片ID获取原图照片文件并返回")
+    public ResponseEntity<Resource> getFullSizePhotoById(@RequestParam String id) {
+        try {
+            String fileName = photoService.getFileNameById(id);
+            if (fileName == null) {
+                log.warn("未找到ID为{}的照片记录", id);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
+            log.info("成功获取原图照片，文件名: {}", fileName);
+            return FileUtils.getFileResource(fullSizeUrl, fileName);
+        } catch (Exception e) {
+            log.error("获取原图照片时发生错误，ID: {}, 错误: {}", id, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 
     @GetMapping
     @Operation(summary = "获取全部照片信息(时间倒叙)", description = "从数据库获取所有照片的详细信息(时间倒叙)")
@@ -127,7 +221,7 @@ public class PhotoController {
     @PostMapping("/import-pending")
     @Operation(summary = "pending目录所有图片信息自动入数据库", description = "pending目录所有图片信息自动入数据库")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<String> FullSizePhototoMysql() {
+    public ResponseEntity<String> FullSizePhotoToMysql() {
         File folder = FileUtils.validateFolder(pendingUrl);
         if (folder == null) {
             log.error("照片文件夹路径无效: {}", pendingUrl);
@@ -192,99 +286,6 @@ public class PhotoController {
         } catch (IllegalArgumentException e) {
             log.error("图片压缩参数验证失败: {}", e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-
-    @GetMapping("/{id}/thumbnail/small")
-    @Operation(summary = "获取指定100K压缩照片文件", description = "根据接收到的的照片ID获取100K压缩照片文件并返回")
-    @PreAuthorize("permitAll()")
-    public ResponseEntity<Resource> getThumbnail100KPhotoById(@PathVariable String id) {
-        try {
-            String fileName = photoService.getFileNameById(id);
-            if (fileName == null) {
-                log.warn("未找到ID为{}的照片记录", id);
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-            }
-            log.info("成功获取100K压缩照片，文件名: {}", fileName);
-            return FileUtils.getFileResource(thumbnail100KUrl, fileName);
-        } catch (Exception e) {
-            log.error("获取100K压缩照片时发生错误，ID: {}, 错误: {}", id, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-        }
-    }
-
-    @GetMapping("/{id}/thumbnail/medium")
-    @Operation(summary = "获取指定1000K压缩照片文件", description = "根据接收到的的照片ID获取1000K压缩照片文件并返回")
-    @PreAuthorize("permitAll()")
-    public ResponseEntity<Resource> getThumbnail1000KPhotoById(@PathVariable String id) {
-        try {
-            String fileName = photoService.getFileNameById(id);
-            if (fileName == null) {
-                log.warn("未找到ID为{}的照片记录", id);
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-            }
-            log.info("成功获取1000K压缩照片，文件名: {}", fileName);
-            return FileUtils.getFileResource(thumbnail1000KUrl, fileName);
-        } catch (Exception e) {
-            log.error("获取1000K压缩照片时发生错误，ID: {}, 错误: {}", id, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-        }
-    }
-
-    @GetMapping("/thumbnails/small")
-    @PreAuthorize("permitAll()")
-    @Operation(summary = "批量获取压缩照片文件", description = "根据ID列表获取多个压缩照片文件")
-    public ResponseEntity<Resource> getThumbnail100KPhotosByIds(@RequestParam List<String> ids) {
-        try {
-            List<File> validFiles = new ArrayList<>();
-
-            for (String id : ids) {
-                try {
-                    String fileName = photoService.getFileNameById(id);
-                    if (fileName != null) {
-                        File file = new File(thumbnail100KUrl, fileName);
-                        if (file.exists()) {
-                            validFiles.add(file);
-                            log.debug("成功添加照片文件到列表，ID: {}, 文件名: {}", id, fileName);
-                        } else {
-                            log.warn("照片文件不存在，ID: {}, 文件名: {}", id, fileName);
-                        }
-                    } else {
-                        log.warn("未找到ID为{}的照片记录", id);
-                    }
-                } catch (NumberFormatException e) {
-                    log.warn("无效的ID格式: {}", id);
-                }
-            }
-
-            if (validFiles.isEmpty()) {
-                log.warn("未找到任何有效的照片文件");
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-            }
-
-            log.info("成功获取批量照片文件，共{}个文件", validFiles.size());
-            return FileUtils.getFilesResource(validFiles);
-        } catch (Exception e) {
-            log.error("批量获取照片文件时发生错误，ID列表: {}, 错误: {}", ids, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-        }
-    }
-
-    @GetMapping("/{id}/original")
-    @PreAuthorize("hasRole('VIEWER')")
-    @Operation(summary = "获取指定原图照片文件", description = "根据接收到的照片ID获取原图照片文件并返回")
-    public ResponseEntity<Resource> getFullSizePhotoById(@PathVariable String id) {
-        try {
-            String fileName = photoService.getFileNameById(id);
-            if (fileName == null) {
-                log.warn("未找到ID为{}的照片记录", id);
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-            }
-            log.info("成功获取原图照片，文件名: {}", fileName);
-            return FileUtils.getFileResource(fullSizeUrl, fileName);
-        } catch (Exception e) {
-            log.error("获取原图照片时发生错误，ID: {}, 错误: {}", id, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
@@ -545,7 +546,7 @@ public class PhotoController {
     @Operation(summary = "上传图片", description = "将前端传入的图片添加到数据库，压缩到thumbnailSizeUrl，复制到fullSizeUrl")
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<String> processPhotosFromFrontend(
+    public ResponseEntity<Map<String, Object>> processPhotosFromFrontend(
             @RequestParam(defaultValue = "true") boolean overwrite,
             @RequestParam(defaultValue = "0") Integer start,
             @Parameter(description = "上传的图片文件数组", content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE, array = @ArraySchema(arraySchema = @Schema(type = "array", implementation = File.class), schema = @Schema(type = "string", format = "binary")))) @RequestParam("files") MultipartFile[] files) {
@@ -553,7 +554,7 @@ public class PhotoController {
         try {
             if (files == null || files.length == 0) {
                 log.warn("没有收到文件");
-                return ResponseEntity.badRequest().body("没有收到文件");
+                return ResponseEntity.badRequest().body(Collections.singletonMap("error", "没有收到文件"));
             }
 
             // 验证文件目录
@@ -564,7 +565,7 @@ public class PhotoController {
 
             if (pendingDir == null || fullSizeDir == null || thumbnail100KDir == null || thumbnail1000KDir == null) {
                 log.error("目录验证失败");
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("目录验证失败");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.singletonMap("error", "目录验证失败"));
             }
 
             // 创建随机名称的临时目录
@@ -575,50 +576,53 @@ public class PhotoController {
             log.info("创建临时目录: {}", tempDir.getAbsolutePath());
 
             // 保存到临时目录
-            for (MultipartFile file : files) {
+            String[] fileNames = new String[files.length];
+            for (int i = 0; i < files.length; i++) {
+                MultipartFile file = files[i];
                 FileUtils.saveFile(file, tempDir);
+                fileNames[i] = file.getOriginalFilename();
                 log.debug("图片：{},已保存文件到临时目录", file.getOriginalFilename());
             }
 
+            // 使用RocketMQ进行异步处理
             try {
-                // 处理图片压缩流程
-                photoService.processPhotoCompression(tempDir, thumbnail100KDir, thumbnail1000KDir, fullSizeDir,
-                        overwrite);
-            } catch (IOException e) {
-                log.error("处理文件时出错, 错误: {}", e.getMessage(), e);
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body("处理文件时出错: " + e.getMessage());
-            }
-
-            // 处理图片元数据和数据库操作
-            PhotoService.ProcessResult result = photoService.processPhotosFromFrontend(files, start, overwrite);
-
-            // 清理临时目录
-            FileUtils.clearFolder(tempDir, true);
-            log.info("已清理临时目录");
-
-            if (result.isSuccess()) {
+                // 创建消息ID
+                String messageId = String.valueOf(System.currentTimeMillis());
+                
+                // 创建图片处理消息
+                PhotoProcessor.PhotoMessage photoMessage = new PhotoProcessor.PhotoMessage(
+                        start, overwrite, fileNames, tempDir.getAbsolutePath());
+                // 设置消息ID
+                photoMessage.setMessageId(messageId);
+                
+                // 初始化任务状态
+                photoService.updatePhotoUploadStatus(messageId, "PROCESSING", 0, "已提交到处理队列");
+                
+                // 使用MQ发送消息
+                photoProcessor.sendPhotoProcessMessage(photoMessage);
+                
                 long endTime = System.currentTimeMillis();
                 long duration = endTime - startTime;
-                log.info("成功处理{}张图片，其中更新{}张，新增{}张，耗时{}毫秒",
-                        result.getExistingPhotos().size() + result.getNewPhotos().size(),
-                        result.getExistingPhotos().size(),
-                        result.getNewPhotos().size(),
-                        duration);
-                return ResponseEntity.ok("成功处理 " + (result.getExistingPhotos().size() + result.getNewPhotos().size()) +
-                        " 张图片，其中更新 " + result.getExistingPhotos().size() +
-                        " 张，新增 " + result.getNewPhotos().size() +
-                        " 张，耗时" + duration + "毫秒");
-            } else {
-                log.error("数据库保存失败");
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("数据库保存失败");
+                log.info("图片上传成功，已提交到队列进行异步处理，耗时{}毫秒", duration);
+                
+                // 返回消息ID，以便前端查询进度
+                Map<String, Object> response = new HashMap<>();
+                response.put("messageId", messageId);
+                response.put("message", "图片上传成功，已提交到队列进行异步处理，将在后台处理 " + files.length + " 张图片");
+                response.put("files", files.length);
+                
+                return ResponseEntity.ok(response);
+            } catch (Exception e) {
+                log.error("提交到消息队列时出错, 错误: {}", e.getMessage(), e);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(Collections.singletonMap("error", "提交到消息队列时出错: " + e.getMessage()));
             }
         } catch (Exception e) {
             long endTime = System.currentTimeMillis();
             long duration = endTime - startTime;
             log.error("处理图片时发生错误: {}, 耗时{}毫秒", e.getMessage(), duration, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("处理出错: " + e.getMessage() + "，耗时" + duration + "毫秒");
+                    .body(Collections.singletonMap("error", "处理出错: " + e.getMessage() + "，耗时" + duration + "毫秒"));
         }
     }
 
@@ -957,10 +961,10 @@ public class PhotoController {
         return ResponseEntity.ok(count);
     }
 
-    @GetMapping("/count/by-lens/{lens}")
+    @GetMapping("/count/by-lens")
     @Operation(summary = "获取指定镜头型号的照片数量", description = "获取使用指定镜头型号拍摄的照片数量")
     @PreAuthorize("permitAll()")
-    public ResponseEntity<Long> getPhotoCountByLens(@PathVariable String lens) {
+    public ResponseEntity<Long> getPhotoCountByLens(@RequestParam String lens) {
         log.info("获取镜头 {} 的照片数量", lens);
         long count = photoService.getPhotoCountByLens(lens);
         return ResponseEntity.ok(count);
@@ -1016,6 +1020,20 @@ public class PhotoController {
             return ResponseEntity.ok().body(photoPage);
         } catch (Exception e) {
             log.error("获取无元数据照片分页信息时发生错误，页码: {}, 每页大小: {}, 错误: {}", page, pageSize, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @GetMapping("/{id}/upload/status")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "查询照片上传状态", description = "根据消息ID查询异步上传照片的处理状态")
+    public ResponseEntity<Map<String, Object>> checkPhotoUploadStatus(@PathVariable String id) {
+        try {
+            Map<String, Object> statusInfo = photoService.getPhotoUploadStatus(id);
+            log.info("查询照片上传状态，消息ID: {}, 状态: {}", id, statusInfo.get("status"));
+            return ResponseEntity.ok(statusInfo);
+        } catch (Exception e) {
+            log.error("查询照片上传状态时发生错误，消息ID: {}, 错误: {}", id, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }

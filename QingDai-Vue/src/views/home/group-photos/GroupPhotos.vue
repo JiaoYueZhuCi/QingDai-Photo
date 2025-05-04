@@ -142,37 +142,37 @@ const getPhotos = async () => {
         
         // 处理分页数据
         if (response && response.records) {
-            // 获取所有封面图ID
+        // 获取所有封面图ID
             const coverPhotoIds = response.records
                 .map((item: GroupPhotoDTO) => item.groupPhoto.coverPhotoId)
                 .filter(Boolean);
 
-            // 批量获取封面图信息
-            let coverPhotos: WaterfallItem[] = [];
-            if (coverPhotoIds.length > 0) {
-                const coverResponse = await getPhotosByIds(coverPhotoIds);
-                coverPhotos = coverResponse;
+        // 批量获取封面图信息
+        let coverPhotos: WaterfallItem[] = [];
+        if (coverPhotoIds.length > 0) {
+            const coverResponse = await getPhotosByIds(coverPhotoIds);
+            coverPhotos = coverResponse;
+        }
+        
+        // 预处理数据
+            const processedData = response.records.map((item: GroupPhotoDTO) => {
+            const groupPhoto = item.groupPhoto;
+            const coverPhoto = coverPhotos.find(p => p.id === groupPhoto.coverPhotoId);
+            if (!coverPhoto) {
+                console.error('未找到封面图');
+                return null;
             }
             
-            // 预处理数据
-            const processedData = response.records.map((item: GroupPhotoDTO) => {
-                const groupPhoto = item.groupPhoto;
-                const coverPhoto = coverPhotos.find(p => p.id === groupPhoto.coverPhotoId);
-                if (!coverPhoto) {
-                    console.error('未找到封面图');
-                    return null;
-                }
-                
-                return processPhotoData({
-                    ...coverPhoto,
-                    title: groupPhoto.title || '',
-                    introduce: groupPhoto.introduce || '',
-                    groupId: groupPhoto.id
-                });
-            }).filter(Boolean);
+            return processPhotoData({
+                ...coverPhoto,
+                title: groupPhoto.title || '',
+                introduce: groupPhoto.introduce || '',
+                groupId: groupPhoto.id
+            });
+        }).filter(Boolean);
 
-            // 更新数据时保留原有数据
-            images.value = [...images.value, ...processedData];
+        // 更新数据时保留原有数据
+        images.value = [...images.value, ...processedData];
 
             // 获取新加载的图片并加载缩略图
             const newImgs = images.value.slice(images.value.length - processedData.length);
@@ -186,7 +186,7 @@ const getPhotos = async () => {
                 currentPage.value++;
             }
         } else {
-            hasMore.value = false;
+        hasMore.value = false;
         }
     } catch (error) {
         console.error('获取照片数据失败:', error);

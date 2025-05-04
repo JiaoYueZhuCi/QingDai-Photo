@@ -68,7 +68,7 @@
 
 <script setup lang="ts">
 import TimelineUpdate from '@/views/manage/timeline-manage/timeline-update/TimelineUpdate.vue'
-import { ref, watchEffect } from 'vue'
+import { ref, onMounted } from 'vue'
 import type { TimelineItem } from '@/types'
 import { ElMessage, ElMessageBox, ElLoading } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
@@ -139,7 +139,8 @@ const handleSizeChange = (val: number) => {
     fetchData()
 }
 
-watchEffect(() => {
+// 初始加载
+onMounted(() => {
     fetchData()
 })
 

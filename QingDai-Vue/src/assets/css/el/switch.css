@@ -1,7 +1,7 @@
 /* switch样式 */
 .el-switch {
   --el-switch-on-color: var(--qd-color-primary);
-  --el-switch-off-color: var(--qd-color-bg);
+  --el-switch-off-color: var(--qd-color-light-7);
 }
 
 .el-switch__label.is-active {
@@ -11,3 +11,4 @@
 .el-switch__label {
   color: var(--qd-color-text-secondary) !important;
 } 
+ 

@@ -16,10 +16,12 @@ public class WebMvcConfig implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
                 .allowedOriginPatterns(
-                    "http://localhost:[*]",      // 本地开发环境
-                    "http://127.0.0.1:[*]",      // 本地开发环境另一形式
-                    "https://qingdai.art",       // 主域名
-                    "https://*.qingdai.art"      // 所有子域名
+                        "http://localhost:[*]",      // 本地开发环境
+                        "http://127.0.0.1:[*]",      // 本地开发环境另一形式
+                        "https://qingdai.art",       // 主域名
+                        "https://*.qingdai.art",  // 所有子域名
+                        "http://qingdai.art",       // 主域名
+                        "http://*.qingdai.art"      // 所有子域名
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")  // 允许的 HTTP 方法
                 .allowedHeaders("*")  // 允许所有请求头

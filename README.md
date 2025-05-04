@@ -102,6 +102,7 @@
   - MyBatis-Plus
   - MySQL 数据库
   - Redis 缓存
+  - RocketMQ 消息队列
   - JWT 认证
   - Swagger/OpenAPI 文档
   - kaptcha
@@ -117,6 +118,9 @@
             │   └── dto/                  # DTO 
             ├── filter/                   # 过滤器   
             ├── mapper/                   # MyBatis接口
+            ├── mq/                       # RocketMQ相关
+            │   ├── consumer/             # 消息消费者
+            │   └── producer/             # 消息生产者
             ├── service/                  # 业务逻辑
             │   └── impl/                 # 服务实现
             ├── utils/                    # 工具类
@@ -134,7 +138,7 @@
 ## 系统要求
 
 - **前端**：Node.js 16+, npm 8+
-- **后端**：Java 17+, Maven 3.6+, MySQL 8+, Redis 6+
+- **后端**：Java 17+, Maven 3.6+, MySQL 8+, Redis 6+, RocketMQ 4.8+
 
 ## 配置说明
 
@@ -164,6 +168,21 @@ qingdai:
   thumbnail100KUrl: ?
   thumbnailSizeUrl: ?
   pendingUrl: ?
+
+rocketmq:
+  name-server: ?
+  producer:
+    group: qingdai-photo-group
+    send-message-timeout: 3000
+    retry-times-when-send-failed: 2
+    access-key: ?
+    secret-key: ?
+  consumer:
+    group: qingdai-photo-consumer
+    access-key: ?
+    secret-key: ?
+  topic:
+    photo: photo-topic  
 ```
 - QingDai-Photo/QingDai-SP/src/main/resources/application.yml
 
