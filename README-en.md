@@ -231,11 +231,3 @@ Please check the [database/init.sql](database/init.sql) file, which contains the
 
 3. Password Notes:
    - All user passwords are the BCrypt encryption result of plain text "123456": $2a$10$jndgC.sZFv0volqxQeXdk.NGN.K7Smrko/5UtP33pPVUcQdP0604a (based on configuration file jwt.secret:QingDai)
-
-## RocketMQ
-
-### Feature Description
-RocketMQ is primarily used in this project for handling asynchronous image processing workflows, including:
-- Compression of uploaded images
-- Metadata extraction and processing
-- Thumbnail generation
