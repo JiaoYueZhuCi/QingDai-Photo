@@ -87,9 +87,23 @@
     </div>
     <template #footer>
       <span class="dialog-footer">
+        <el-button type="danger" @click="showDeleteConfirm = true">删除</el-button>
         <el-button @click="handleClose">取消</el-button>
         <el-button type="primary" @click="submitForm" :loading="submitting">
           保存
+        </el-button>
+      </span>
+    </template>
+  </el-dialog>
+
+  <!-- 删除确认对话框 -->
+  <el-dialog v-model="showDeleteConfirm" title="确认删除" width="30%" :append-to-body="true">
+    <span>确定要删除这张照片吗？此操作不可恢复。</span>
+    <template #footer>
+      <span class="dialog-footer">
+        <el-button @click="showDeleteConfirm = false">取消</el-button>
+        <el-button type="danger" @click="handleDelete" :loading="submitting">
+          确认删除
         </el-button>
       </span>
     </template>
@@ -101,14 +115,14 @@ import { ref, watch, reactive, onMounted } from 'vue';
 import { ElMessage, ElDialog, ElButton, ElForm, ElFormItem, ElInput, ElSelect, ElOption, ElImage, ElIcon } from 'element-plus';
 import { Star, StarFilled, Picture } from '@element-plus/icons-vue';
 import { getPhotoDetailInfo, processPhotoData, type EnhancedWaterfallItem, get100KPhoto } from '@/utils/photo';
-import { updatePhotoInfo } from '@/api/photo';
+import { updatePhotoInfo, deletePhotoById } from '@/api/photo';
 
 const props = defineProps<{
   modelValue: boolean;
   photoId: string
 }>();
 
-const emit = defineEmits(['updated', 'update:modelValue', 'close']);
+const emit = defineEmits(['updated', 'update:modelValue', 'close', 'deleted']);
 
 // 内部对话框可见性状态
 const visible = ref(props.modelValue);
@@ -134,6 +148,7 @@ watch(() => visible.value, (newVal) => {
 const photoInfo = ref<EnhancedWaterfallItem>({} as EnhancedWaterfallItem);
 const submitting = ref(false);
 const imageLoading = ref(false);
+const showDeleteConfirm = ref(false);
 
 // 表单数据
 const form = reactive({
@@ -251,6 +266,25 @@ const submitForm = async () => {
     submitting.value = false;
   }
 };
+
+// 处理删除
+const handleDelete = async () => {
+  if (!props.photoId) return;
+
+  submitting.value = true;
+  try {
+    await deletePhotoById(props.photoId);
+    ElMessage.success('删除成功');
+    showDeleteConfirm.value = false;
+    handleClose();
+    emit('deleted', props.photoId);
+  } catch (error) {
+    console.error('删除失败:', error);
+    ElMessage.error('删除失败');
+  } finally {
+    submitting.value = false;
+  }
+};
 </script>
 
 <style scoped>
@@ -285,10 +319,13 @@ const submitForm = async () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  max-height: 70vh;
-  overflow: hidden;
   background-color: var(--qd-color-bg-light);
-  border-radius: 4px;
+}
+
+.preview-image :deep(.el-image) {
+  max-width: 100%;
+  height: 70vh;
+  object-fit: contain;
 }
 
 /* 添加夜间模式下的预览区域样式 */
@@ -389,6 +426,10 @@ const submitForm = async () => {
   }
   
   .preview-image {
+    max-height: 50vh;
+  }
+  
+  .preview-image :deep(.el-image) {
     max-height: 40vh;
   }
 }

@@ -304,4 +304,7 @@ public interface PhotoService extends IService<Photo> {
             return success;
         }
     }
+
+    // 添加删除照片的方法
+    boolean deletePhotoById(String id, String fullSizeUrl, String thumbnail100KUrl, String thumbnail1000KUrl);
 }

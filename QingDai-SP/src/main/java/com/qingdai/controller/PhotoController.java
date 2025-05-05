@@ -67,6 +67,9 @@ public class PhotoController {
     @Autowired
     private PhotoProcessor photoProcessor;
 
+    @Autowired
+    private GroupPhotoPhotoService groupPhotoPhotoService;
+
     @Value("${qingdai.fullSizeUrl}")
     private String fullSizeUrl;
     @Value("${qingdai.pendingUrl}")
@@ -542,7 +545,6 @@ public class PhotoController {
         }
     }
 
-    @Transactional
     @Operation(summary = "上传图片", description = "将前端传入的图片添加到数据库，压缩到thumbnailSizeUrl，复制到fullSizeUrl")
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
@@ -672,22 +674,12 @@ public class PhotoController {
     @Operation(summary = "根据ID删除照片", description = "根据ID删除数据库记录及对应的原图和压缩图文件")
     public ResponseEntity<String> deletePhotoById(@PathVariable String id) {
         try {
-            Long photoId = Long.valueOf(id);
-            Photo photo = photoService.getById(photoId);
-            if (photo == null) {
-                log.warn("未找到ID为{}的照片记录", id);
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("照片不存在");
-            }
-
-            photoService.deletePhotoFiles(fullSizeUrl, thumbnail100KUrl, thumbnail1000KUrl, photo.getFileName());
-            boolean result = photoService.removeById(photoId);
-
+            boolean result = photoService.deletePhotoById(id, fullSizeUrl, thumbnail100KUrl, thumbnail1000KUrl);
+            
             if (result) {
-                log.info("成功删除照片，ID: {}, 文件名: {}", id, photo.getFileName());
                 return ResponseEntity.ok("照片删除成功");
             } else {
-                log.error("删除照片记录失败，ID: {}", id);
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("照片删除失败");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("照片不存在");
             }
         } catch (Exception e) {
             log.error("删除照片时发生错误，ID: {}, 错误: {}", id, e.getMessage(), e);

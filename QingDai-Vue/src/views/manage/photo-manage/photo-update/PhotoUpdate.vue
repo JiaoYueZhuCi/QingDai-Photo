@@ -140,7 +140,7 @@ const handleUploadComplete = () => {
     uploadLoading.value = false;
     clearFileList();
     // 发送照片上传完成事件
-    emit('photo-uploaded');
+    // emit('photo-uploaded');
 };
 
 const handleSubmit = async () => {
@@ -160,8 +160,9 @@ const handleSubmit = async () => {
         uploadLoading.value = true;
 
         // 发送上传请求
+        ElMessage.success(`图片正在传输，请等待响应`);
         const response = await processPhotosFromFrontend(formData);
-
+        
         if (response) {
             // 获取消息ID并显示进度条
             messageId.value = response.messageId;

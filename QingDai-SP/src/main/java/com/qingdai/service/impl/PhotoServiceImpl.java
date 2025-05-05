@@ -56,6 +56,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.springframework.data.redis.core.RedisTemplate;
 import java.util.concurrent.TimeUnit;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * <p>
@@ -235,6 +236,7 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
      */
     private void compressPhoto(File fullSizeUrl, File thumbnailDir, int maxSizeKB, boolean overwrite) {
         try {
+            log.info("开始处理图片: {}", fullSizeUrl.getAbsolutePath());
             String fileName = fullSizeUrl.getName();
             String formatName = FileUtils.getFileExtension(fileName).toLowerCase();
             String baseName = FileUtils.getBaseName(fileName);
@@ -246,27 +248,39 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
             }
 
             File thumbnailUrl = new File(thumbnailDir, fileName);
+            log.info("目标文件路径: {}", thumbnailUrl.getAbsolutePath());
 
-            if (thumbnailUrl.exists() && !overwrite)
+            if (thumbnailUrl.exists() && !overwrite) {
+                log.info("文件已存在且不允许覆盖，跳过处理: {}", fileName);
                 return;
+            }
 
             long maxSizeBytes = maxSizeKB * 1024L;
             boolean sizeMet = false;
 
             // 优先调整质量参数
+            log.info("开始调整图片质量，目标大小: {}KB", maxSizeKB);
             sizeMet = adjustPhotoQuality(fullSizeUrl, thumbnailUrl, formatName, maxSizeBytes);
 
             // 若未达标，调整尺寸
             if (!sizeMet) {
+                log.info("质量调整未达标，开始调整图片尺寸");
                 sizeMet = scaleDownPhoto(fullSizeUrl, thumbnailUrl, formatName, maxSizeBytes);
             }
 
             if (!sizeMet) {
-                throw new IOException("无法压缩到指定大小: " + fullSizeUrl.getName());
+                String errorMsg = String.format("无法压缩到指定大小: %s (当前大小: %dKB, 目标大小: %dKB)", 
+                    fullSizeUrl.getName(), 
+                    fullSizeUrl.length() / 1024,
+                    maxSizeKB);
+                log.error(errorMsg);
+                throw new IOException(errorMsg);
             }
-            log.info("图片{}压缩成功",fullSizeUrl.getName());
+            log.info("图片{}压缩成功", fullSizeUrl.getName());
         } catch (IOException e) {
-            throw new RuntimeException("文件处理失败: " + fullSizeUrl.getName(), e);
+            String errorMsg = String.format("文件处理失败: %s, 原因: %s", fullSizeUrl.getName(), e.getMessage());
+            log.error(errorMsg, e);
+            throw new RuntimeException(errorMsg, e);
         }
     }
 
@@ -327,19 +341,30 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
         double step = 0.05;
 
         while (quality >= minQuality) {
-            Thumbnails.of(fullSizeUrl)
-                    .scale(1)
-                    .outputFormat(formatName)
-                    .outputQuality(quality)
-                    // 处理PNG透明背景
-                    .imageType(BufferedImage.TYPE_INT_RGB)
-                    .toFile(thumbnailUrl);
+            log.debug("尝试压缩质量: {}, 文件: {}", quality, fullSizeUrl.getName());
+            try {
+                Thumbnails.of(fullSizeUrl)
+                        .scale(1)
+                        .outputFormat(formatName)
+                        .outputQuality(quality)
+                        // 处理PNG透明背景
+                        .imageType(BufferedImage.TYPE_INT_RGB)
+                        .toFile(thumbnailUrl);
 
-            if (thumbnailUrl.length() <= maxSizeBytes) {
-                return true;
+                long currentSize = thumbnailUrl.length();
+                log.debug("压缩后大小: {}KB, 目标大小: {}KB", currentSize / 1024, maxSizeBytes / 1024);
+                
+                if (currentSize <= maxSizeBytes) {
+                    log.info("质量调整成功，最终质量: {}, 文件大小: {}KB", quality, currentSize / 1024);
+                    return true;
+                }
+            } catch (Exception e) {
+                log.error("调整质量时发生错误，质量: {}, 文件: {}, 错误: {}", quality, fullSizeUrl.getName(), e.getMessage());
+                throw e;
             }
             quality = BigDecimal.valueOf(quality).subtract(BigDecimal.valueOf(step)).doubleValue();
         }
+        log.warn("质量调整未达到目标大小，最低质量: {}, 文件: {}", minQuality, fullSizeUrl.getName());
         return false;
     }
 
@@ -350,18 +375,29 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
         double step = 0.1;
 
         while (scale >= 0.1) {
-            Thumbnails.of(fullSizeUrl)
-                    .scale(scale)
-                    .outputFormat(formatName)
-                    .outputQuality(0.7) // 适当质量值
-                    .imageType(BufferedImage.TYPE_INT_RGB)
-                    .toFile(thumbnailUrl);
+            log.debug("尝试缩放比例: {}, 文件: {}", scale, fullSizeUrl.getName());
+            try {
+                Thumbnails.of(fullSizeUrl)
+                        .scale(scale)
+                        .outputFormat(formatName)
+                        .outputQuality(0.7) // 适当质量值
+                        .imageType(BufferedImage.TYPE_INT_RGB)
+                        .toFile(thumbnailUrl);
 
-            if (thumbnailUrl.length() <= maxSizeBytes) {
-                return true;
+                long currentSize = thumbnailUrl.length();
+                log.debug("缩放后大小: {}KB, 目标大小: {}KB", currentSize / 1024, maxSizeBytes / 1024);
+                
+                if (currentSize <= maxSizeBytes) {
+                    log.info("缩放成功，最终比例: {}, 文件大小: {}KB", scale, currentSize / 1024);
+                    return true;
+                }
+            } catch (Exception e) {
+                log.error("缩放图片时发生错误，比例: {}, 文件: {}, 错误: {}", scale, fullSizeUrl.getName(), e.getMessage());
+                throw e;
             }
             scale -= step;
         }
+        log.warn("缩放未达到目标大小，最小比例: {}, 文件: {}", 0.1, fullSizeUrl.getName());
         return false;
     }
 
@@ -507,7 +543,7 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
         Rational focalLengthRational = exif.getRational(ExifSubIFDDirectory.TAG_FOCAL_LENGTH);
         if (focalLengthRational != null) {
             double focalLength = focalLengthRational.doubleValue();
-            photo.setFocalLength(String.format("%.0fmm", focalLength));
+            photo.setFocalLength(String.format("%.0f", focalLength));
         }
     }
 
@@ -1567,5 +1603,40 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
         
         log.warn("未找到消息ID: {} 的处理状态，返回默认完成状态", messageId);
         return defaultStatus;
+    }
+
+    @Override
+    @Transactional
+    public boolean deletePhotoById(String id, String fullSizeUrl, String thumbnail100KUrl, String thumbnail1000KUrl) {
+        try {
+            Long photoId = Long.valueOf(id);
+            Photo photo = this.getById(photoId);
+            if (photo == null) {
+                log.warn("未找到ID为{}的照片记录", id);
+                return false;
+            }
+
+            // 先删除照片在group_photo_photo表中的所有关联记录
+            LambdaQueryWrapper<GroupPhotoPhoto> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(GroupPhotoPhoto::getPhotoId, id);
+            groupPhotoPhotoService.remove(queryWrapper);
+
+            // 删除照片文件
+            this.deletePhotoFiles(fullSizeUrl, thumbnail100KUrl, thumbnail1000KUrl, photo.getFileName());
+            
+            // 删除照片记录
+            boolean result = this.removeById(photoId);
+
+            if (result) {
+                log.info("成功删除照片，ID: {}, 文件名: {}", id, photo.getFileName());
+                return true;
+            } else {
+                log.error("删除照片记录失败，ID: {}", id);
+                return false;
+            }
+        } catch (Exception e) {
+            log.error("删除照片时发生错误，ID: {}, 错误: {}", id, e.getMessage(), e);
+            throw new RuntimeException("删除照片失败: " + e.getMessage(), e);
+        }
     }
 }

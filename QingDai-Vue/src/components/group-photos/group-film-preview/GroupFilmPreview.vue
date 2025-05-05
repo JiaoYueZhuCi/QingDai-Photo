@@ -62,38 +62,12 @@ const props = defineProps<{
 
 const emit = defineEmits(['close', 'update:modelValue', 'navigate'])
 
-// 内部可见性状态
-const visible = ref(props.modelValue)
-
-// 监听 modelValue 变化
-watch(() => props.modelValue, (newVal) => {
-    visible.value = newVal
-    if (newVal) {
-        // 如果是显示组件，更新URL并加载数据
-        loadGroupData()
-        updateUrlWithGroupParams(true, props.groupId, photoId.value)
-    } else {
-        // 如果是隐藏组件，清除URL参数
-        updateUrlWithGroupParams(false)
-    }
-})
-
-// 监听内部状态变化
-watch(() => visible.value, (newVal) => {
-    emit('update:modelValue', newVal)
-    if (!newVal) {
-        updateUrlWithGroupParams(false)
-    }
-    if(newVal==false){
-        emit('close')
-    }
-})
-
 // 路由实例
 const router = useRouter()
 const route = useRoute()
 
 // 状态变量
+const visible = ref(props.modelValue)
 const photoId = ref(props.initialPhotoId || '')
 const photoIds = ref<string[]>([])
 const showGroupInfo = ref(false)
@@ -180,6 +154,36 @@ const loadGroupData = async () => {
     }
 }
 
+// 监听 modelValue 变化
+watch(() => props.modelValue, (newVal) => {
+    visible.value = newVal
+    if (newVal) {
+        // 如果是显示组件，只更新URL
+        updateUrlWithGroupParams(true, props.groupId, photoId.value)
+    } else {
+        // 如果是隐藏组件，清除URL参数
+        updateUrlWithGroupParams(false)
+    }
+}, { immediate: true })
+
+// 监听内部状态变化
+watch(() => visible.value, (newVal) => {
+    emit('update:modelValue', newVal)
+    if (!newVal) {
+        updateUrlWithGroupParams(false)
+    }
+    if(newVal==false){
+        emit('close')
+    }
+})
+
+// 监听 groupId 变化
+watch(() => props.groupId, () => {
+    if (props.modelValue) {
+        loadGroupData()
+    }
+}, { immediate: true })
+
 // 处理关闭事件
 const handleClose = () => {
     visible.value = false
@@ -194,10 +198,6 @@ const handleNavigate = (id: string) => {
     emit('navigate', id)
 }
 
-// 处理图片点击事件
-const handleImageClick = (id: string) => {
-    // 这里可以添加图片点击逻辑
-}
 
 // 添加打开全屏预览的方法
 const openFullScreen = (id: string) => {
@@ -222,24 +222,13 @@ const toggleGroupInfo = () => {
 
 // 组件挂载时加载数据
 onMounted(() => {
-    if (props.modelValue) {
-        loadGroupData()
-        
-        // 检查URL中是否有全屏查看的参数
-        if (route.query.groupViewerId) {
-            const viewerId = route.query.groupViewerId as string
-            if (viewerId) {
-                fullScreenPhotoId.value = viewerId
-                showFullScreen.value = true
-            }
+    // 检查URL中是否有全屏查看的参数
+    if (route.query.groupViewerId) {
+        const viewerId = route.query.groupViewerId as string
+        if (viewerId) {
+            fullScreenPhotoId.value = viewerId
+            showFullScreen.value = true
         }
-    }
-})
-
-// 监听 groupId 变化
-watch(() => props.groupId, () => {
-    if (props.modelValue) {
-        loadGroupData()
     }
 })
 </script>

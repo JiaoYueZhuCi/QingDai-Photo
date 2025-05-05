@@ -46,7 +46,8 @@
 <script setup lang="ts">
 import { ElImage, ElIcon, ElEmpty, ElCheckbox } from 'element-plus';
 import { Picture as IconPicture } from '@element-plus/icons-vue';
-import { computed, watch } from 'vue';
+import { computed, watch, ref, onMounted, onUnmounted } from 'vue';
+import { debounce } from 'lodash';
 import type { EnhancedWaterfallItem } from '@/utils/photo';
 import { useWaterfallLayout, type WaterfallLayoutOptions, type PhotoItem } from '@/components/photo/photo-viewer/useWaterfallLayout';
 
@@ -104,8 +105,30 @@ const {
     rowWidth, 
     sideMarginStyle,
     containerPadding, 
-    calculateLayout 
+    calculateLayout,
+    handleResize
 } = useWaterfallLayout(getLayoutOptions.value);
+
+// 处理窗口大小变化时重新计算布局的函数，使用debounce避免过于频繁的重新计算
+const handleResizeAndRecalculate = debounce(() => {
+    // 当有图片数据时，先更新布局参数，然后重新计算布局
+    if (props.images.length > 0) {
+        // 先调用handleResize更新布局参数
+        handleResize();
+        // 然后重新计算布局
+        calculateLayout(props.images);
+    }
+}, 200);
+
+// 在组件挂载时添加窗口大小变化事件监听
+onMounted(() => {
+    window.addEventListener('resize', handleResizeAndRecalculate);
+});
+
+// 在组件卸载时移除窗口大小变化事件监听
+onUnmounted(() => {
+    window.removeEventListener('resize', handleResizeAndRecalculate);
+});
 
 // 图片点击处理
 const handleImageClick = (item: PhotoItem, event: MouseEvent) => {
@@ -128,6 +151,11 @@ watch(() => props.images, (newImages) => {
         calculateLayout(newImages);
     }
 }, { deep: true, immediate: true });
+
+// 向外部暴露的方法
+defineExpose({
+    calculateLayout
+});
 </script>
 
 <style scoped>

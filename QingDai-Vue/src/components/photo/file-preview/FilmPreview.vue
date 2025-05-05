@@ -295,7 +295,7 @@ watch(() => props.modelValue, (newVal) => {
         // 锁定滚动
         document.body.style.overflow = 'hidden'
         // 预览变为可见时，确保至少有预览数据
-        // ensureDataLoaded()
+        ensureDataLoaded()
     }
 })
 
@@ -325,7 +325,7 @@ watch(() => props.photoId, (newVal, oldVal) => {
 const ensureDataLoaded = async () => {
     if (isLoading.value) {
         console.log('正在加载中，跳过重复加载')
-        return 
+        return
     }
     
     // 如果当前展示的照片ID与请求的相同，且已有数据，则无需重新加载
@@ -408,20 +408,36 @@ const handleOpen = async () => {
             previewData.value = photoInfo
         }
         
-        // 只加载核心照片（当前照片、前后1张）
-        const coreIds = [
-            props.photoId,          // 当前照片
-            prevPhotoId.value,      // 上一张
-            nextPhotoId.value,      // 下一张
-        ].filter(Boolean) as string[]
-        
-        // 逐个加载照片
-        for (const id of coreIds) {
-            await preloadImage(id)
-        }
+        // 先加载当前照片
+        await preloadImage(props.photoId)
 
         // 应用动画效果
         applyAnimations()
+
+        // 后台异步加载前后四张照片
+        setTimeout(async () => {
+            // 前一张和后一张的优先级高
+            const highPriorityIds = [
+                prevPhotoId.value,      // 上一张
+                nextPhotoId.value,      // 下一张
+            ].filter(Boolean) as string[]
+            
+            // 异步加载高优先级照片
+            for (const id of highPriorityIds) {
+                await preloadImage(id)
+            }
+            
+            // 前前一张和后后一张的优先级低
+            const lowPriorityIds = [
+                extremePrevPhotoId.value,  // 前前一张
+                extremeNextPhotoId.value,  // 后后一张
+            ].filter(Boolean) as string[]
+            
+            // 异步加载低优先级照片
+            for (const id of lowPriorityIds) {
+                await preloadImage(id)
+            }
+        }, 50)
     } catch (error) {
         console.error('数据加载失败:', error)
     } finally {
