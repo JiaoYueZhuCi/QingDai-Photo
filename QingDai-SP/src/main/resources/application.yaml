@@ -62,7 +62,7 @@ spring:
   cache:
     type: redis
     redis:
-      time-to-live: 43200000  # 12小时，单位毫秒
+      time-to-live: 86400000  # 默认24小时，单位毫秒（photo缓存会在CacheConfig中单独配置为永久）
       cache-null-values: false  # 不缓存null值
 
 # JMX 配置

@@ -993,7 +993,9 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
     }
 
     @Override
+    @Cacheable(key = "'dashboardStats'", unless = "#result == null")
     public Map<String, Object> getPhotoDashboardStats() {
+        log.warn("此次照片数据分析查询未使用缓存");
         Map<String, Object> stats = new HashMap<>();
         try {
             stats.put("typeStats", getPhotoTypeCounts());
@@ -1520,7 +1522,7 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
     }
 
     /**
-     * 更新照片上传处理状态
+     * 更新消息状态
      * @param messageId 消息ID
      * @param status 状态 (PROCESSING/COMPLETED/FAILED)
      * @param progress 进度 (0-100)

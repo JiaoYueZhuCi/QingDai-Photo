@@ -6,7 +6,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Role;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
+import org.springframework.beans.factory.config.BeanDefinition;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -14,7 +16,6 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 /**
  * RocketMQ配置类
- * 参考 {@link RocketMQAutoConfiguration} 的自动配置
  */
 @Configuration
 public class RocketMQConfig {

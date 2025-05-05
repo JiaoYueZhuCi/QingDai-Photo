@@ -138,7 +138,7 @@ const handleClose = () => {
 
 const handleUploadComplete = () => {
     uploadLoading.value = false;
-    handleClose();
+    clearFileList();
     // 发送照片上传完成事件
     emit('photo-uploaded');
 };

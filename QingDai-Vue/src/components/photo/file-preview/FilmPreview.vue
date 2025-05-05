@@ -221,12 +221,6 @@ const leftFilmRef = ref<HTMLElement | null>(null)
 const rightFilmRef = ref<HTMLElement | null>(null)
 const isAnimating = ref(false)
 
-// 获取动画移动距离
-const getAnimationDistance = () => {
-    // 检测是否为移动设备
-    return window.innerWidth <= 768 ? '81vw' : '71vw'
-}
-
 // 触摸相关状态
 const touchStartX = ref(0)
 const touchEndX = ref(0)
@@ -273,14 +267,35 @@ const extremeNextPhotoId = computed(() => {
 const isLoading = ref(false)
 const isInfoLoading = ref(false)  // 新增：专门用于控制信息加载状态
 
-// 图片和照片信息缓存系统
-const photoInfoCache = ref<Map<string, EnhancedWaterfallItem>>(new Map())
+// 预加载图片，并添加到预加载对象中
+const preloadImage = async (photoId: string | null): Promise<void> => {
+    if (!photoId) return
+
+    // 如果已经预加载过，就跳过
+    if (preloadedImages.value[photoId]) return
+
+    try {
+        const imageResult = await get1000KPhoto(photoId)
+        if (imageResult) {
+            // Vue的响应式系统不会自动检测到对象属性的添加
+            // 使用这种方式确保响应式更新
+            preloadedImages.value = { ...preloadedImages.value, [photoId]: imageResult.url }
+        }
+    } catch (error) {
+        console.error(`预加载图片 ${photoId} 失败:`, error)
+    }
+}
 
 // 监听 modelValue 变化
 watch(() => props.modelValue, (newVal) => {
     visible.value = newVal
+    
+    // 仅更新可见状态，不触发加载
     if (newVal) {
-        handleOpen()
+        // 锁定滚动
+        document.body.style.overflow = 'hidden'
+        // 预览变为可见时，确保至少有预览数据
+        // ensureDataLoaded()
     }
 })
 
@@ -301,50 +316,81 @@ watch(visible, (newVal) => {
 // 监听 photoId 变化
 watch(() => props.photoId, (newVal, oldVal) => {
     if (newVal !== oldVal && visible.value) {
-        handleOpen()
+        // 只有在预览已经打开的情况下，photoId变化才触发数据加载
+        ensureDataLoaded()
     }
 })
 
-// 预加载图片，并添加到预加载对象中
-const preloadImage = async (photoId: string | null): Promise<void> => {
-    if (!photoId) return
-
-    // 如果已经预加载过，就跳过
-    if (preloadedImages.value[photoId]) return
-
-    try {
-        const imageResult = await get1000KPhoto(photoId)
-        if (imageResult) {
-            // Vue的响应式系统不会自动检测到对象属性的添加
-            // 使用这种方式确保响应式更新
-            preloadedImages.value = { ...preloadedImages.value, [photoId]: imageResult.url }
-        }
-    } catch (error) {
-        console.error(`预加载图片 ${photoId} 失败:`, error)
+// 确保数据加载 - 统一的加载入口
+const ensureDataLoaded = async () => {
+    if (isLoading.value) {
+        console.log('正在加载中，跳过重复加载')
+        return 
     }
+    
+    // 如果当前展示的照片ID与请求的相同，且已有数据，则无需重新加载
+    if (previewData.value.id === props.photoId && previewData.value.title) {
+        console.log('已有当前照片数据，无需重新加载')
+        applyAnimations() // 只应用动画效果
+        return
+    }
+    
+    // 执行实际的数据加载
+    await handleOpen()
 }
 
-// 获取照片信息（从缓存或API）
-const getPhotoInfo = async (photoId: string | null): Promise<EnhancedWaterfallItem | null> => {
-    if (!photoId) return null
-
-    // 检查缓存中是否已有该照片信息
-    if (photoInfoCache.value.has(photoId)) {
-        return photoInfoCache.value.get(photoId)!
+// 应用动画效果
+const applyAnimations = () => {
+    // 卡片打开的动画效果
+    if (currentFilmRef.value) {
+        gsap.fromTo(currentFilmRef.value, 
+            {
+                scale: 0.8,
+                opacity: 0,
+                y: 50
+            },
+            {
+                scale: 1,
+                opacity: 1,
+                y: 0,
+                duration: 0.5,
+                ease: "back.out(1.7)"
+            }
+        )
     }
 
-    // 缓存中没有，需要加载
-    try {
-        const photoInfo = await getPhotoDetailInfo(photoId)
-        if (photoInfo) {
-            photoInfoCache.value.set(photoId, photoInfo)
-            return photoInfo
-        }
-    } catch (error) {
-        console.error(`加载照片信息 ${photoId} 失败:`, error)
+    // 左右两侧卡片的滑入动画
+    if (leftFilmRef.value) {
+        gsap.fromTo(leftFilmRef.value,
+            {
+                x: -100,
+                opacity: 0
+            },
+            {
+                x: 0,
+                opacity: 0.6,
+                duration: 0.5,
+                ease: "power2.out",
+                delay: 0.2
+            }
+        )
     }
 
-    return null
+    if (rightFilmRef.value) {
+        gsap.fromTo(rightFilmRef.value,
+            {
+                x: 100,
+                opacity: 0
+            },
+            {
+                x: 0,
+                opacity: 0.6,
+                duration: 0.5,
+                ease: "power2.out",
+                delay: 0.2
+            }
+        )
+    }
 }
 
 // 打开对话框时获取数据
@@ -356,93 +402,26 @@ const handleOpen = async () => {
     document.body.style.overflow = 'hidden'
 
     try {
-        // 获取照片详细信息
-        const photoInfo = await getPhotoInfo(props.photoId)
+        // 只获取一次照片详细信息
+        const photoInfo = await getPhotoDetailInfo(props.photoId)
         if (photoInfo) {
             previewData.value = photoInfo
         }
-
-        // 按优先级定义需要预加载的照片ID数组
-        const idsToPreload = [
-            props.photoId,           // 当前照片（最高优先级）
-            prevPhotoId.value,       // 上一张
-            nextPhotoId.value,       // 下一张
-            extremePrevPhotoId.value, // 极左
-            extremeNextPhotoId.value  // 极右
+        
+        // 只加载核心照片（当前照片、前后1张）
+        const coreIds = [
+            props.photoId,          // 当前照片
+            prevPhotoId.value,      // 上一张
+            nextPhotoId.value,      // 下一张
         ].filter(Boolean) as string[]
-
-        // 先加载当前照片
-        await preloadImage(props.photoId)
-
-        // 然后异步加载其他照片（不阻塞UI）
-        const otherIds = idsToPreload.filter(id => id !== props.photoId)
-        Promise.all(otherIds.map(id => preloadImage(id)))
-
-        // 获取当前索引的前后几张图片ID用于预加载
-        const startIdx = Math.max(0, currentIndex.value - 4)
-        const endIdx = Math.min(props.photoIds.length - 1, currentIndex.value + 4)
-
-        // 后台预加载更多照片
-        for (let i = startIdx; i <= endIdx; i++) {
-            const id = props.photoIds[i]
-            if (id && !idsToPreload.includes(id)) {
-                // 使用setTimeout避免同时发起太多请求
-                setTimeout(() => {
-                    preloadImage(id)
-                }, (i - startIdx) * 200) // 错开时间加载
-            }
+        
+        // 逐个加载照片
+        for (const id of coreIds) {
+            await preloadImage(id)
         }
 
-        // 卡片打开的动画效果
-        if (currentFilmRef.value) {
-            gsap.fromTo(currentFilmRef.value, 
-                {
-                    scale: 0.8,
-                    opacity: 0,
-                    y: 50
-                },
-                {
-                    scale: 1,
-                    opacity: 1,
-                    y: 0,
-                    duration: 0.5,
-                    ease: "back.out(1.7)"
-                }
-            )
-        }
-
-        // 左右两侧卡片的滑入动画
-        if (leftFilmRef.value) {
-            gsap.fromTo(leftFilmRef.value,
-                {
-                    x: -100,
-                    opacity: 0
-                },
-                {
-                    x: 0,
-                    opacity: 0.6,
-                    duration: 0.5,
-                    ease: "power2.out",
-                    delay: 0.2
-                }
-            )
-        }
-
-        if (rightFilmRef.value) {
-            gsap.fromTo(rightFilmRef.value,
-                {
-                    x: 100,
-                    opacity: 0
-                },
-                {
-                    x: 0,
-                    opacity: 0.6,
-                    duration: 0.5,
-                    ease: "power2.out",
-                    delay: 0.2
-                }
-            )
-        }
+        // 应用动画效果
+        applyAnimations()
     } catch (error) {
         console.error('数据加载失败:', error)
     } finally {
@@ -535,17 +514,6 @@ const animateToNext = () => {
     isAnimating.value = true
     isInfoLoading.value = true  // 添加信息加载状态
 
-    // 预先加载后续可能需要的照片
-    if (nextPhotoId.value) {
-        const nextIndex = currentIndex.value + 1
-        const nextNextId = nextIndex < props.photoIds.length - 1 ? props.photoIds[nextIndex + 1] : null
-        const extremeNextNextId = nextIndex < props.photoIds.length - 2 ? props.photoIds[nextIndex + 2] : null
-
-        // 预加载即将需要的照片
-        if (nextNextId) preloadImage(nextNextId)
-        if (extremeNextNextId) preloadImage(extremeNextNextId)
-    }
-
     gsap.to(filmStripRef.value, {
         x: `-${getAnimationDistance()}`,
         duration: 0.5,
@@ -553,21 +521,13 @@ const animateToNext = () => {
         onComplete: () => {
             // 动画完成后切换照片
             if (nextPhotoId.value) {
-                // 确保下一张照片的信息已加载
-                getPhotoInfo(nextPhotoId.value).then(info => {
-                    if (info) {
-                        // 使用导航事件通知父组件更新当前照片ID
-                        emit('navigate', nextPhotoId.value)
-                    }
-                    // 重置位置
-                    gsap.set(filmStripRef.value, { x: 0 })
-                    isAnimating.value = false
-                    isInfoLoading.value = false  // 重置信息加载状态
-                }).catch(() => {
-                    gsap.set(filmStripRef.value, { x: 0 })
-                    isAnimating.value = false
-                    isInfoLoading.value = false  // 重置信息加载状态
-                })
+                // 通知父组件更新当前照片ID
+                emit('navigate', nextPhotoId.value)
+                
+                // 重置位置
+                gsap.set(filmStripRef.value, { x: 0 })
+                isAnimating.value = false
+                isInfoLoading.value = false  // 重置信息加载状态
             } else {
                 gsap.set(filmStripRef.value, { x: 0 })
                 isAnimating.value = false
@@ -584,17 +544,6 @@ const animateToPrev = () => {
     isAnimating.value = true
     isInfoLoading.value = true  // 添加信息加载状态
 
-    // 预加载前面可能需要的照片
-    if (prevPhotoId.value) {
-        const prevIndex = currentIndex.value - 1
-        const prevPrevId = prevIndex > 0 ? props.photoIds[prevIndex - 1] : null
-        const extremePrevPrevId = prevIndex > 1 ? props.photoIds[prevIndex - 2] : null
-
-        // 预加载即将需要的照片
-        if (prevPrevId) preloadImage(prevPrevId)
-        if (extremePrevPrevId) preloadImage(extremePrevPrevId)
-    }
-
     gsap.to(filmStripRef.value, {
         x: getAnimationDistance(),
         duration: 0.5,
@@ -602,21 +551,13 @@ const animateToPrev = () => {
         onComplete: () => {
             // 动画完成后切换照片
             if (prevPhotoId.value) {
-                // 确保上一张照片的信息已加载
-                getPhotoInfo(prevPhotoId.value).then(info => {
-                    if (info) {
-                        // 使用导航事件通知父组件更新当前照片ID
-                        emit('navigate', prevPhotoId.value)
-                    }
-                    // 重置位置
-                    gsap.set(filmStripRef.value, { x: 0 })
-                    isAnimating.value = false
-                    isInfoLoading.value = false  // 重置信息加载状态
-                }).catch(() => {
-                    gsap.set(filmStripRef.value, { x: 0 })
-                    isAnimating.value = false
-                    isInfoLoading.value = false  // 重置信息加载状态
-                })
+                // 通知父组件更新当前照片ID
+                emit('navigate', prevPhotoId.value)
+                
+                // 重置位置
+                gsap.set(filmStripRef.value, { x: 0 })
+                isAnimating.value = false
+                isInfoLoading.value = false  // 重置信息加载状态
             } else {
                 gsap.set(filmStripRef.value, { x: 0 })
                 isAnimating.value = false
@@ -662,6 +603,12 @@ const navigateToExtremeNext = () => {
     }
 }
 
+// 获取动画移动距离
+const getAnimationDistance = () => {
+    // 检测是否为移动设备
+    return window.innerWidth <= 768 ? '81vw' : '71vw'
+}
+
 // 组件卸载时确保清理资源
 onUnmounted(() => {
     // 清理所有图片资源
@@ -673,13 +620,12 @@ onUnmounted(() => {
 
     // 清空状态
     preloadedImages.value = {}
-    photoInfoCache.value.clear()
 })
 
 // 组件挂载后初始化
 onMounted(() => {
     if (visible.value && props.photoId) {
-        handleOpen()
+        ensureDataLoaded()
     }
 })
 </script>

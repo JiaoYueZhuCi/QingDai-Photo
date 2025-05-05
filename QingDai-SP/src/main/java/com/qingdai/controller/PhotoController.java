@@ -1024,16 +1024,16 @@ public class PhotoController {
         }
     }
 
-    @GetMapping("/{id}/upload/status")
+    @GetMapping("/{messageId}/upload/status")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "查询照片上传状态", description = "根据消息ID查询异步上传照片的处理状态")
-    public ResponseEntity<Map<String, Object>> checkPhotoUploadStatus(@PathVariable String id) {
+    public ResponseEntity<Map<String, Object>> checkPhotoUploadStatus(@PathVariable String messageId) {
         try {
-            Map<String, Object> statusInfo = photoService.getPhotoUploadStatus(id);
-            log.info("查询照片上传状态，消息ID: {}, 状态: {}", id, statusInfo.get("status"));
+            Map<String, Object> statusInfo = photoService.getPhotoUploadStatus(messageId);
+            log.info("查询照片上传状态，消息ID: {}, 状态: {}", messageId, statusInfo.get("status"));
             return ResponseEntity.ok(statusInfo);
         } catch (Exception e) {
-            log.error("查询照片上传状态时发生错误，消息ID: {}, 错误: {}", id, e.getMessage(), e);
+            log.error("查询照片上传状态时发生错误，消息ID: {}, 错误: {}", messageId, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
