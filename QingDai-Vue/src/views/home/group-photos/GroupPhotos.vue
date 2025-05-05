@@ -9,7 +9,18 @@
             :layoutOptions="layoutOptions"
             @imageClick="openGroupPhotoPreview"
         >
-            <!-- 不需要提供操作按钮，所以actions插槽为空 -->
+            <!-- 添加编辑按钮 -->
+            <template #actions="{ item }">
+                <div class="image-actions">
+                    <div class="actions-container">
+                        <div class="action-icon" @click.stop="handleEdit(item)">
+                            <el-icon class="icon-color">
+                                <Edit />
+                            </el-icon>
+                        </div>
+                    </div>
+                </div>
+            </template>
         </PhotoWaterfall>
 
         <!-- 组图预览组件 -->
@@ -19,22 +30,33 @@
             :initial-photo-id="selectedPhotoId || undefined"
             @close="closeGroupPhotoPreview"
         />
+
+        <!-- 添加组图编辑组件 -->
+        <GroupPhotoUpdate
+            v-model="groupPhotoUpdateVisible"
+            :edit-mode="true"
+            :edit-data="currentEditData"
+            @group-photo-updated="handleGroupPhotoUpdated"
+            @close="closeGroupPhotoUpdate"
+        />
     </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch } from 'vue';
 import type { WaterfallItem } from '@/types';
-import { ElMessage } from 'element-plus';
+import { ElMessage, ElMessageBox } from 'element-plus';
 import { getPhotosByIds } from '@/api/photo';
-import { getGroupPhotosByPage } from '@/api/groupPhoto';
+import { getGroupPhotosByPage, getGroupPhoto } from '@/api/groupPhoto';
 import { debounce } from 'lodash';
 import type { GroupPhotoDTO } from '@/types/groupPhoto';
 import GroupFilmPreview from '@/components/group-photos/group-film-preview/GroupFilmPreview.vue';
+import GroupPhotoUpdate from '@/components/group-photos/group-photos-update/GroupPhotosUpdate.vue';
 import PhotoWaterfall from '@/components/photo/photo-waterfall/PhotoWaterfall.vue';
 import { get100KPhotos, processPhotoData } from '@/utils/photo';
 import { useRouter, useRoute } from 'vue-router';
 import type { WaterfallLayoutOptions } from '@/components/photo/photo-viewer/useWaterfallLayout';
+import { Edit } from '@element-plus/icons-vue';
 
 // 添加路由
 const router = useRouter();
@@ -56,6 +78,10 @@ const layoutOptions: WaterfallLayoutOptions = {
 const selectedGroupId = ref<string | null>(null);
 const selectedPhotoId = ref<string | null>(null);
 const groupFilmPreviewVisable = ref(false);
+
+// 添加组图编辑相关的状态
+const groupPhotoUpdateVisible = ref(false);
+const currentEditData = ref<GroupPhotoDTO | null>(null);
 
 // 更新URL中的组图ID和照片ID参数
 const updateUrlWithGroupId = (groupId: string | null, photoId: string | null = null) => {
@@ -242,6 +268,41 @@ watch(() => props.photoType, (newVal, oldVal) => {
         getPhotos();
     }
 });
+
+// 处理编辑按钮点击
+const handleEdit = async (item: WaterfallItem) => {
+    if (!item.groupId) return;
+    
+    try {
+        // 获取组图详细信息
+        const groupPhoto = await getGroupPhoto(item.groupId);
+        
+        if (groupPhoto) {
+            currentEditData.value = groupPhoto;
+            groupPhotoUpdateVisible.value = true;
+        } else {
+            ElMessage.error('未找到组图信息');
+        }
+    } catch (error) {
+        console.error('获取组图信息失败:', error);
+        ElMessage.error('获取组图信息失败');
+    }
+};
+
+// 处理组图更新完成
+const handleGroupPhotoUpdated = () => {
+    // 刷新数据
+    currentPage.value = 1;
+    images.value = [];
+    hasMore.value = true;
+    getPhotos();
+};
+
+// 关闭组图编辑
+const closeGroupPhotoUpdate = () => {
+    groupPhotoUpdateVisible.value = false;
+    currentEditData.value = null;
+};
 </script>
 
 <style>
@@ -251,6 +312,48 @@ watch(() => props.photoType, (newVal, oldVal) => {
 
 .body-no-scroll {
     overflow: hidden;
+}
+
+.image-actions {
+    position: absolute;
+    top: 8px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    padding: 0 8px;
+    z-index: 2;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.image-item:hover .image-actions {
+    opacity: 1;
+}
+
+.actions-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: left;
+    gap: 8px;
+    width: 100%;
+}
+
+.action-icon {
+    cursor: pointer;
+    border-radius: 4px;
+    padding: 4px;
+    transition: all 0.3s;
+    color: white;
+}
+
+.action-icon:hover {
+    background: rgba(0, 0, 0, 0.7);
+    transform: scale(1.1);
+}
+
+.icon-color {
+    color: var(--qd-color-border-light);
 }
 </style>
 

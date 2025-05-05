@@ -43,6 +43,14 @@
                 <el-button type="primary" @click="submitForm">{{ editMode ? '保存' : '提交' }}</el-button>
                 <el-button @click="resetForm">重置</el-button>
             </el-form-item>
+
+            <!-- 添加删除按钮 -->
+            <div v-if="editMode" class="delete-button-container">
+                <el-button type="danger" @click="handleDelete">
+                    <el-icon><Delete /></el-icon>
+                    删除组图
+                </el-button>
+            </div>
         </el-form>
 
         <!-- 预览区域 -->
@@ -80,12 +88,12 @@
 <script setup lang="ts">
 import { ref, reactive, watch, defineProps, defineEmits, onMounted, computed } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { getPhotosByPage, getPhotosByIds } from '@/api/photo'
-import { addGroupPhoto, updateGroupPhoto } from '@/api/groupPhoto'
+import { addGroupPhoto, updateGroupPhoto, deleteGroupPhoto } from '@/api/groupPhoto'
 import type { WaterfallItem } from '@/types'
 import type { GroupPhotoDTO, GroupPhoto } from '@/types/groupPhoto'
-import { DeleteFilled, Rank } from '@element-plus/icons-vue'
+import { DeleteFilled, Rank, Delete } from '@element-plus/icons-vue'
 import draggable from 'vuedraggable'
 import { get100KPhotos, processPhotoData } from '@/utils/photo'
 
@@ -489,6 +497,33 @@ const loadSelectedPhotos = async () => {
     }
 };
 
+// 添加删除组图的方法
+const handleDelete = async () => {
+    if (!props.editData?.groupPhoto.id) return;
+    
+    try {
+        await ElMessageBox.confirm(
+            '确定要删除这个组图吗？此操作不可恢复。',
+            '警告',
+            {
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+                type: 'warning',
+            }
+        );
+        
+        await deleteGroupPhoto(props.editData.groupPhoto.id);
+        ElMessage.success('删除成功');
+        emit('close');
+        emit('group-photo-updated');
+    } catch (error) {
+        if (error !== 'cancel') {
+            console.error('删除组图失败:', error);
+            ElMessage.error('删除失败');
+        }
+    }
+};
+
 </script>
 
 <style scoped>
@@ -579,5 +614,10 @@ h3 {
     color: #909399;
     background-color: rgba(255, 255, 255, 0.7);
     border-top-left-radius: 4px;
+}
+
+.delete-button-container {
+    margin-top: 20px;
+    text-align: center;
 }
 </style>
