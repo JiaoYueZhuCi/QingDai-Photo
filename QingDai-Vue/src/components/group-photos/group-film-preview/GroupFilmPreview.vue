@@ -156,14 +156,11 @@ const loadGroupData = async () => {
 // 监听 modelValue 变化
 watch(() => props.modelValue, async (newVal) => {
     if (newVal) {      
-        console.log('modelValue变化为true')
         updateUrlWithGroupParams(true, props.groupId, photoId.value)
         await loadGroupData()
     } else {
         updateUrlWithGroupParams(false)
     }
-    console.log(photoId.value)
-    console.log('打开组图预览')
     visible.value = newVal
 })
 
