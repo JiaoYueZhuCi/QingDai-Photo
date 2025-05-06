@@ -130,7 +130,6 @@ const updateUrlWithGroupParams = (showPreview: boolean, groupId: string | null =
 
 // 加载组图数据
 const loadGroupData = async () => {
-    
     try {
         // 获取组图数据
         const response = await getGroupPhoto(props.groupId)
@@ -155,16 +154,18 @@ const loadGroupData = async () => {
 }
 
 // 监听 modelValue 变化
-watch(() => props.modelValue, (newVal) => {
-    visible.value = newVal
+watch(() => props.modelValue, async (newVal) => {
     if (newVal) {      
         console.log('modelValue变化为true')
         updateUrlWithGroupParams(true, props.groupId, photoId.value)
-        loadGroupData()
+        await loadGroupData()
     } else {
         updateUrlWithGroupParams(false)
     }
-},{ immediate: true })
+    console.log(photoId.value)
+    console.log('打开组图预览')
+    visible.value = newVal
+})
 
 watch(visible, (newVal) => {
     emit('update:modelValue', newVal)
