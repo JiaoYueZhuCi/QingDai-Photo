@@ -76,6 +76,7 @@ const showGroupInfo = ref(false)
 const showFullScreen = ref(false)
 const fullScreenPhotoId = ref('')
 
+
 // 组图数据
 const groupPhotoData = ref({
     id: '',
@@ -129,16 +130,15 @@ const updateUrlWithGroupParams = (showPreview: boolean, groupId: string | null =
 
 // 加载组图数据
 const loadGroupData = async () => {
+    
     try {
         // 获取组图数据
         const response = await getGroupPhoto(props.groupId)
-
+        
         // 保存组图数据
         groupPhotoData.value = response.groupPhoto
-
         // 保存照片ID列表
         photoIds.value = response.photoIds
-
         // 设置初始照片ID
         if (props.initialPhotoId && photoIds.value.includes(props.initialPhotoId)) {
             photoId.value = props.initialPhotoId
@@ -150,39 +150,28 @@ const loadGroupData = async () => {
             updateUrlWithGroupParams(true, props.groupId, photoId.value)
         }
     } catch (error) {
-        console.error('组图数据加载失败:', error)
+        console.error('组图数据加载失败')
     }
 }
 
 // 监听 modelValue 变化
 watch(() => props.modelValue, (newVal) => {
     visible.value = newVal
-    if (newVal) {
-        // 如果是显示组件，只更新URL
+    if (newVal) {      
+        console.log('modelValue变化为true')
         updateUrlWithGroupParams(true, props.groupId, photoId.value)
+        loadGroupData()
     } else {
-        // 如果是隐藏组件，清除URL参数
         updateUrlWithGroupParams(false)
     }
-}, { immediate: true })
+},{ immediate: true })
 
-// 监听内部状态变化
-watch(() => visible.value, (newVal) => {
+watch(visible, (newVal) => {
     emit('update:modelValue', newVal)
-    if (!newVal) {
-        updateUrlWithGroupParams(false)
-    }
-    if(newVal==false){
+    if(!newVal){
         emit('close')
     }
 })
-
-// 监听 groupId 变化
-watch(() => props.groupId, () => {
-    if (props.modelValue) {
-        loadGroupData()
-    }
-}, { immediate: true })
 
 // 处理关闭事件
 const handleClose = () => {

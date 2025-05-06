@@ -180,7 +180,7 @@
 
 <script setup lang="ts">
 import { ref, watch, onUnmounted, computed, onMounted } from 'vue'
-import { ElImage, ElTag, ElTooltip, ElMessage } from 'element-plus'
+import { ElTag, ElTooltip, ElMessage } from 'element-plus'
 import { get1000KPhoto, getPhotoDetailInfo, type EnhancedWaterfallItem } from '@/utils/photo'
 import gsap from 'gsap'
 
@@ -289,7 +289,8 @@ const preloadImage = async (photoId: string | null): Promise<void> => {
 // 监听 modelValue 变化
 watch(() => props.modelValue, (newVal) => {
     visible.value = newVal
-    
+    console.log('filmPreview组件 modelValue变化')
+    console.log(props.photoId)
     // 仅更新可见状态，不触发加载
     if (newVal) {
         // 锁定滚动
@@ -303,21 +304,7 @@ watch(() => props.modelValue, (newVal) => {
 watch(visible, (newVal) => {
     emit('update:modelValue', newVal)
     if (!newVal) {
-        handleClose()
-    } else {
-        // 锁定滚动
-        document.body.style.overflow = 'hidden'
-    }
-    if(newVal==false){
         emit('close')
-    }
-})
-
-// 监听 photoId 变化
-watch(() => props.photoId, (newVal, oldVal) => {
-    if (newVal !== oldVal && visible.value) {
-        // 只有在预览已经打开的情况下，photoId变化才触发数据加载
-        ensureDataLoaded()
     }
 })
 

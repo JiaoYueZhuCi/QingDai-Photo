@@ -8,7 +8,7 @@
             <sort-control :is-ascending="isAscending" :opacity="opacity" @toggle="toggleSortOrder" />
             
             <!-- 照片列表 -->
-            <timeline-photos :photos="sortedPhotos" @photo-click="handleImageClick" />
+            <timeline-photos :photos="sortedPhotos" @photoClick="handleImageClick" />
         </div>
 
         <!-- 组图预览对话框 -->
@@ -16,7 +16,8 @@
             v-model="groupFilmPreviewVisable"
             :group-id="selectedGroupId"
             :initial-photo-id="selectedPhotoId || undefined" 
-            @close="closeGroupPhotoPreview" />
+            @close="closeGroupPhotoPreview"
+        />
     </div>
 </template>
 
@@ -33,6 +34,7 @@ import PhotoStats from '@/views/home/meteorology/photo-stats/PhotoStats.vue'
 import SortControl from '@/views/home/meteorology/sort-control/SortControl.vue'
 import TimelinePhotos from '@/views/home/meteorology/timeline-photos/TimelinePhotos.vue'
 import { getMeteorologyTypeName, sortPhotosByTime } from '@/views/home/meteorology/meteorologyUtils'
+import { useRoute, useRouter } from 'vue-router'
 
 const groupPhoto = ref<GroupPhotoDTO | null>(null)
 const photos = ref<EnhancedWaterfallItem[]>([])
@@ -42,19 +44,52 @@ const props = defineProps<{
     meteorologyType: string
 }>()
 const selectedGroupId = ref<string>(props.meteorologyType.toString())
-const selectedPhotoId = ref<string | undefined>(undefined)
+const selectedPhotoId = ref<string | null>(null)
 const groupFilmPreviewVisable = ref(false)
+
+// 更新URL中的组图ID和照片ID参数
+const updateUrlWithGroupId = (groupId: string | null, photoId: string | null = null) => {
+    // 构建新的查询参数对象
+    const query = { ...route.query };
+    
+    if (groupId) {
+        query.groupId = groupId;
+        if (photoId) {
+            query.groupPhotoId = photoId;
+        } else {
+            delete query.groupPhotoId;
+        }
+        
+        // 如果URL中有其他预览参数，清除它们
+        if (query.photoId) delete query.photoId;
+        if (query.viewerId) delete query.viewerId;
+    } else {
+        // 如果groupId为null，则删除相关参数
+        delete query.groupId;
+        delete query.groupPhotoId;
+    }
+    
+    // 更新路由，保留当前路径，仅修改查询参数
+    router.replace({
+        path: route.path,
+        query: query
+    });
+};
 
 // 打开照片预览
 const handleImageClick = (photo: EnhancedWaterfallItem) => {
-    selectedPhotoId.value = photo.id
-    groupFilmPreviewVisable.value = true
+    selectedPhotoId.value = photo.id;
+    groupFilmPreviewVisable.value = true;
+    // 更新URL
+    updateUrlWithGroupId(selectedGroupId.value, photo.id);
 }
 
 // 关闭组图预览
 const closeGroupPhotoPreview = () => {
-    selectedPhotoId.value = undefined
-    groupFilmPreviewVisable.value = false
+    selectedPhotoId.value = null;
+    groupFilmPreviewVisable.value = false;
+    // 清除URL参数
+    updateUrlWithGroupId(null);
 }
 
 // 滚动透明度控制
@@ -62,7 +97,7 @@ const opacity = ref(1)
 const scrollThreshold = 800
 
 // 排序控制
-const isAscending = ref(true) // 默认正序（时间从早到晚）
+const isAscending = ref(false) // 默认倒序（时间从晚到早）
 
 // 切换排序顺序
 const toggleSortOrder = () => {
@@ -127,9 +162,26 @@ watch(() => props.meteorologyType, (newVal: string) => {
     loadGroupPhotos();
 });
 
+// 获取路由实例
+const route = useRoute();
+const router = useRouter();
+
 // 组件挂载时加载数据
 onMounted(() => {
     loadGroupPhotos();
+    
+    // 检查URL中是否有组图ID参数
+    if (route.query.groupId) {
+        const groupIdFromUrl = route.query.groupId as string;
+        const photoIdFromUrl = route.query.groupPhotoId as string || undefined;
+        
+        // 设置当前预览的组图ID和照片ID，并打开预览
+        if (groupIdFromUrl === selectedGroupId.value) {
+            selectedPhotoId.value = photoIdFromUrl || null;
+            groupFilmPreviewVisable.value = true;
+        }
+    }
+    
     window.addEventListener('scroll', handleScroll);
 });
 
