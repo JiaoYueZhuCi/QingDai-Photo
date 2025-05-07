@@ -308,6 +308,10 @@ watch(visible, (newVal) => {
     }
 })
 
+watch(() => props.photoId, (newVal) => {
+    ensureDataLoaded()
+})
+
 // 确保数据加载 - 统一的加载入口
 const ensureDataLoaded = async () => {
     if (isLoading.value) {
