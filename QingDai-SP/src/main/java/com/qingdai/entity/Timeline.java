@@ -20,7 +20,7 @@ public class Timeline {
     @Schema(description = "id")
     @JsonSerialize(using = ToStringSerializer.class)
     private String id;
-    @TableField(value = "time")
+    @TableField(value = "record_time")
     @Schema(description = "时间")
     private String time;
     @TableField(value = "title")

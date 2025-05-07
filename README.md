@@ -1,7 +1,8 @@
 # QingDai青黛影像
 
-[English Documentation](README-en.md)     [中文文档](README.md)
+[English Documentation](README-en.md)   |  [中文文档](README.md)
 
+仓库：[Github](https://github.com/JiaoYueZhuCi/QingDai-Photo) | [Gitee](https://gitee.com/JiaoYueZhuCi/QingDai-Photo)
 ## 项目简介
 
 - QingDai青黛影像是一个基于Vue 3 + TypeScript + Spring Boot + MySQL + Redis的Web应用，主要用于展示和管理照片的摄影个人主页
