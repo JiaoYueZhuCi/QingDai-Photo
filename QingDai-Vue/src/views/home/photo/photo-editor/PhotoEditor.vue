@@ -25,7 +25,7 @@
             <el-input v-model="form.introduce" type="textarea" :rows="3" placeholder="请输入照片介绍" />
           </el-form-item>
           <el-form-item label="状态">
-            <el-select v-model="form.start" placeholder="请选择照片状态">
+            <el-select v-model="form.startRating" placeholder="请选择照片状态">
               <el-option :value="1" label="星标照片">
                 <div style="display: flex; align-items: center">
                   <el-icon style="color: gold; margin-right: 8px">
@@ -154,7 +154,7 @@ const showDeleteConfirm = ref(false);
 const form = reactive({
   title: '',
   introduce: '',
-  start: 0,
+  startRating: 0,
   camera: '',
   lens: '',
   aperture: '',
@@ -176,7 +176,7 @@ const loadPhotoData = async () => {
       // 填充表单数据
       form.title = photoData.title || '';
       form.introduce = photoData.introduce || '';
-      form.start = photoData.start || 0;
+      form.startRating = photoData.startRating || 0;
       form.camera = photoData.camera || '';
       form.lens = photoData.lens || '';
       form.aperture = photoData.aperture || '';
@@ -229,7 +229,7 @@ const submitForm = async () => {
       id: props.photoId,
       title: form.title,
       introduce: form.introduce,
-      start: form.start,
+      startRating: form.startRating,
       camera: form.camera,
       lens: form.lens,
       aperture: form.aperture,
@@ -240,7 +240,7 @@ const submitForm = async () => {
       author: photoInfo.value.author || '',
       width: photoInfo.value.width || 0,
       height: photoInfo.value.height || 0,
-      time: photoInfo.value.time || ''
+      shootTime: photoInfo.value.shootTime || ''
     });
 
     // 更新本地数据
@@ -248,7 +248,7 @@ const submitForm = async () => {
       ...photoInfo.value,
       title: form.title,
       introduce: form.introduce,
-      start: form.start,
+      startRating: form.startRating,
       camera: form.camera,
       lens: form.lens,
       aperture: form.aperture,

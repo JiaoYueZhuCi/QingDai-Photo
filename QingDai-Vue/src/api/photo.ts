@@ -24,7 +24,7 @@ export interface PhotoResponse {
 
 export interface PhotoStatusUpdateParams {
   id: string;
-  start: number;
+  startRating: number;
 }
 
 export interface PhotoInfoUpdateParams extends WaterfallItem { }// 获取100K压缩照片(批量)

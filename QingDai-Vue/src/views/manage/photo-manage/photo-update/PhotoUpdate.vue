@@ -36,7 +36,7 @@
             </div>
 
             <div class="submit-area">
-                <el-select v-model="startValue" placeholder="选择照片级别" style="margin-right: 10px;">
+                <el-select v-model="startRating" placeholder="选择照片级别" style="margin-right: 10px;">
                     <el-option label="精选" :value="1">
                         <el-tag :type="'warning'">精选</el-tag>
                     </el-option>
@@ -94,7 +94,7 @@ onMounted(() => {
     visible.value = props.modelValue;
 });
 
-const startValue = ref(0);
+const startRating = ref(0);
 
 const uploadLoading = ref(false);
 const previewUrls = ref<string[]>([]);
@@ -153,7 +153,7 @@ const handleSubmit = async () => {
     fileList.value.forEach(file => {
         formData.append('files', file);
     });
-    formData.append('start', startValue.value.toString());
+    formData.append('startRating', startRating.value.toString());
     formData.append('overwrite', 'true');
 
     try {

@@ -46,7 +46,7 @@ public class TimelineController {
         try {
             List<Timeline> timelines = timelineService.list(
                     new LambdaQueryWrapper<Timeline>()
-                            .orderByDesc(Timeline::getTime)
+                            .orderByDesc(Timeline::getRecordTime)
             );
 
             if (timelines == null || timelines.isEmpty()) {
@@ -76,7 +76,7 @@ public class TimelineController {
             }
             Page<Timeline> timelinePage = new Page<>(page, pageSize);
             timelineService.page(timelinePage, new LambdaQueryWrapper<Timeline>()
-                    .orderByDesc(Timeline::getTime));
+                    .orderByDesc(Timeline::getRecordTime));
             
             log.info("成功获取时间线分页信息，总记录数: {}, 总页数: {}", timelinePage.getTotal(), timelinePage.getPages());
             return ResponseEntity.ok().body(timelinePage);
@@ -94,7 +94,7 @@ public class TimelineController {
             Timeline timeline = new Timeline();
             timeline.setId(snowflakeIdGenerator.nextId());
             timeline.setTitle(timelineDTO.getTitle());
-            timeline.setTime(timelineDTO.getTime());
+            timeline.setRecordTime(timelineDTO.getRecordTime());
             timeline.setText(timelineDTO.getText());
 
             boolean success = timelineService.save(timeline);

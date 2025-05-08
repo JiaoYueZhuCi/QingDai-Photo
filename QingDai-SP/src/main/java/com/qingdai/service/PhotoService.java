@@ -21,9 +21,9 @@ public interface PhotoService extends IService<Photo> {
 
     long countByYear(Year year);
 
-    long countByMonthAndStart(YearMonth yearMonth, int start);
+    long countByMonthAndStart(YearMonth yearMonth, int startRating);
 
-    long countByYearAndStart(Year year, int start);
+    long countByYearAndStart(Year year, int startRating);
 
     // 从PhotoProcessingService迁移的方法
     List<Photo> getPhotosByFolder(File folder);
@@ -65,11 +65,11 @@ public interface PhotoService extends IService<Photo> {
     /**
      * 处理前端上传的图片
      * @param files 上传的图片文件数组
-     * @param start 图片的start值
+     * @param startRating 图片的startRating值
      * @param overwrite 是否覆盖已存在的文件
      * @return 处理结果，包含更新和新增的图片列表
      */
-    ProcessResult processPhotosFromFrontend(MultipartFile[] files, Integer start, boolean overwrite);
+    ProcessResult processPhotosFromFrontend(MultipartFile[] files, Integer startRating, boolean overwrite);
 
     /**
      * 验证数据库中的照片文件是否都存在于文件系统中
@@ -256,11 +256,11 @@ public interface PhotoService extends IService<Photo> {
      * MQ消息消费者处理图片
      * @param fileNames 文件名数组
      * @param tempDirPath 临时目录路径
-     * @param start 图片的start值
+     * @param startRating 图片的startRating值
      * @param overwrite 是否覆盖已存在的文件
      * @return 处理结果
      */
-    ProcessResult processPhotoFromMQ(String[] fileNames, String tempDirPath, Integer start, boolean overwrite);
+    ProcessResult processPhotoFromMQ(String[] fileNames, String tempDirPath, Integer startRating, boolean overwrite);
 
     /**
      * 获取照片上传处理状态

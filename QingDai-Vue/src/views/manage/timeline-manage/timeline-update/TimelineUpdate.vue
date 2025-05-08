@@ -3,7 +3,7 @@
         <el-form :model="form" :rules="rules" ref="formRef" label-width="120px">
             <el-form-item label="时间" prop="time">
                 <el-date-picker 
-                    v-model="form.time" 
+                    v-model="form.recordTime" 
                     type="daterange" 
                     range-separator="至"
                     start-placeholder="开始日期"
@@ -30,7 +30,7 @@
         <div class="preview-container">
             <h3>预览效果</h3>
             <el-timeline>
-                <el-timeline-item :timestamp="form.time ? `${form.time[0]} 至 ${form.time[1]}` : '日期未选择'" placement="top">
+                <el-timeline-item :timestamp="form.recordTime ? `${form.recordTime[0]} 至 ${form.recordTime[1]}` : '日期未选择'" placement="top">
                     <el-card>
                         <h4>{{ form.title || '标题未填写' }}</h4>
                         <p>{{ form.text || '内容未填写' }}</p>
@@ -72,13 +72,13 @@ watch(visible, (val) => {
 const formRef = ref<FormInstance>();
 
 const form = reactive({
-    time: [] as string[],
+    recordTime: [] as string[],
     title: '',
     text: ''
 })
 
 const rules = reactive<FormRules>({
-    time: [
+    recordTime: [
         { required: true, message: '请选择时间范围', trigger: 'change' }
     ],
     title: [
@@ -97,7 +97,7 @@ const submitForm = async () => {
         if (valid) {
             try {
                 await addTimeline({
-                    time: `${form.time[0]} - ${form.time[1]}`,
+                    recordTime: `${form.recordTime[0]} - ${form.recordTime[1]}`,
                     title: form.title,
                     text: form.text
                 })

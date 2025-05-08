@@ -1,7 +1,7 @@
 <template>
     <div class="timeline-item">
         <div class="timeline-dot"></div>
-        <div class="time-label">{{ photo.time }}</div>
+        <div class="time-label">{{ photo.shootTime }}</div>
         <div class="timeline-card">
             <div class="photo-container" @click="handleClick">
                 <img v-if="photo.compressedSrc" :src="photo.compressedSrc" alt="照片" />

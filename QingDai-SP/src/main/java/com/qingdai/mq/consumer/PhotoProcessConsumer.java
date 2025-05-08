@@ -86,7 +86,7 @@ public class PhotoProcessConsumer implements RocketMQListener<PhotoMessage> {
                 ProcessResult result = photoService.processPhotoFromMQ(
                         message.getFileNames(), 
                         tempDirPath, 
-                        message.getStart(), 
+                        message.getStartRating(), 
                         message.isOverwrite());
                 
                 if (result.isSuccess()) {

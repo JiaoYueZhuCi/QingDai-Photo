@@ -37,7 +37,7 @@ public class Photo {
     private Integer height;
     @TableField(value = "shoot_time")
     @Schema(description = "拍摄时间")
-    private String time;
+    private String shootTime;
     @TableField(value = "aperture")
     @Schema(description = "光圈")
     private String aperture;
@@ -61,7 +61,7 @@ public class Photo {
     private String introduce;
     @TableField(value = "star_rating")
     @Schema(description = "星标")
-    private Integer start;
+    private Integer startRating;
     @TableField(value = "created_time", fill = FieldFill.INSERT)
     @Schema(description = "创建时间")
     private LocalDateTime createdTime;

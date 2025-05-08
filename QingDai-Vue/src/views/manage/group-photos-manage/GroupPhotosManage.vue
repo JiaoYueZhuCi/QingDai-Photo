@@ -164,10 +164,10 @@ const fetchData = async () => {
           camera: '',
           lens: '',
           focalLength: '',
-          time: '',
+          shootTime: '',
           title: '',
           introduce: '',
-          start: 0,
+          startRating: 0,
           compressedSrc: ''
         }));
 

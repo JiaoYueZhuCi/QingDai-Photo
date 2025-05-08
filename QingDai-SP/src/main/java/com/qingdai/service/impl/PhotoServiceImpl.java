@@ -101,8 +101,8 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
         LocalDate startDate = yearMonth.atDay(1);
         LocalDate endDate = yearMonth.atEndOfMonth();
         return count(new LambdaQueryWrapper<Photo>()
-                .ge(Photo::getTime, startDate)
-                .le(Photo::getTime, endDate));
+                .ge(Photo::getShootTime, startDate)
+                .le(Photo::getShootTime, endDate));
     }
 
     @Override
@@ -111,30 +111,30 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
         LocalDate startDate = year.atDay(1);
         LocalDate endDate = year.atDay(year.length());
         return count(new LambdaQueryWrapper<Photo>()
-                .ge(Photo::getTime, startDate)
-                .le(Photo::getTime, endDate));
+                .ge(Photo::getShootTime, startDate)
+                .le(Photo::getShootTime, endDate));
     }
 
     @Override
-    @Cacheable(key = "'countByMonthAndStart_' + #yearMonth + '_' + #start")
-    public long countByMonthAndStart(YearMonth yearMonth, int start) {
+    @Cacheable(key = "'countByMonthAndStart_' + #yearMonth + '_' + #startRating")
+    public long countByMonthAndStart(YearMonth yearMonth, int startRating) {
         LocalDate startDate = yearMonth.atDay(1);
         LocalDate endDate = yearMonth.atEndOfMonth();
         return count(new LambdaQueryWrapper<Photo>()
-                .ge(Photo::getTime, startDate)
-                .le(Photo::getTime, endDate)
-                .eq(Photo::getStart, start));
+                .ge(Photo::getShootTime, startDate)
+                .le(Photo::getShootTime, endDate)
+                .eq(Photo::getStartRating, startRating));
     }
 
     @Override
-    @Cacheable(key = "'countByYearAndStart_' + #year + '_' + #start")
-    public long countByYearAndStart(Year year, int start) {
+    @Cacheable(key = "'countByYearAndStart_' + #year + '_' + #startRating")
+    public long countByYearAndStart(Year year, int startRating) {
         LocalDate startDate = year.atDay(1);
         LocalDate endDate = year.atDay(year.length());
         return count(new LambdaQueryWrapper<Photo>()
-                .ge(Photo::getTime, startDate)
-                .le(Photo::getTime, endDate)
-                .eq(Photo::getStart, start));
+                .ge(Photo::getShootTime, startDate)
+                .le(Photo::getShootTime, endDate)
+                .eq(Photo::getStartRating, startRating));
     }
 
     // 处理指定文件夹中的图片文件，返回一个包含处理后照片信息的 Photo 对象列表
@@ -411,7 +411,7 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
         photo.setHeight(Photo.getHeight());
         photo.setTitle(null);
         photo.setIntroduce(null);
-        photo.setStart(0);
+        photo.setStartRating(0);
         return photo;
     }
 
@@ -435,7 +435,7 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
         // 使 photoDate 向前八个小时 矫正时区错误
         if (photoDate != null) {
             photoDate = new Date(photoDate.getTime() - 8 * 60 * 60 * 1000);
-            photo.setTime(DateUtils.formatDateTime(photoDate));
+            photo.setShootTime(DateUtils.formatDateTime(photoDate));
             return;
         }
 
@@ -452,7 +452,7 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
                     // 解析日期和时间
                     java.text.SimpleDateFormat dateFormat = new java.text.SimpleDateFormat("yyyyMMddHHmmss");
                     Date parsedDate = dateFormat.parse(dateStr + timeStr);
-                    photo.setTime(DateUtils.formatDateTime(parsedDate));
+                    photo.setShootTime(DateUtils.formatDateTime(parsedDate));
                     return;
                 } catch (java.text.ParseException e) {
                     // 解析失败，继续尝试其他格式
@@ -468,7 +468,7 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
                     // 解析日期，时间设为00:00:00
                     java.text.SimpleDateFormat dateFormat = new java.text.SimpleDateFormat("yyyyMMdd");
                     Date parsedDate = dateFormat.parse(dateStr);
-                    photo.setTime(DateUtils.formatDateTime(parsedDate));
+                    photo.setShootTime(DateUtils.formatDateTime(parsedDate));
                     return;
                 } catch (java.text.ParseException e) {
                     // 解析失败，不设置时间
@@ -581,7 +581,7 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
     }
 
     @Override
-    public ProcessResult processPhotosFromFrontend(MultipartFile[] files, Integer start, boolean overwrite) {
+    public ProcessResult processPhotosFromFrontend(MultipartFile[] files, Integer startRating, boolean overwrite) {
         try {
             if (files == null || files.length == 0) {
                 log.warn("没有收到文件");
@@ -618,7 +618,7 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
                     photo.setFileName(existingPhoto.getFileName());
                     photo.setAuthor(existingPhoto.getAuthor());
                     photo.setIntroduce(existingPhoto.getIntroduce());
-                    photo.setStart(existingPhoto.getStart());
+                    photo.setStartRating(existingPhoto.getStartRating());
                     
                     // 删除原有文件
                     deletePhotoFiles(fullSizeUrl, thumbnail100KUrl, thumbnail1000KUrl, photo.getFileName());
@@ -626,7 +626,7 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
                     existingPhotos.add(photo);
                 } else {
                     // 设置新的start值
-                    photo.setStart(start);
+                    photo.setStartRating(startRating);
                     newPhotos.add(photo);
                 }
             }
@@ -650,7 +650,7 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
     }
 
     @Override
-    public ProcessResult processPhotoFromMQ(String[] fileNames, String tempDirPath, Integer start, boolean overwrite) {
+    public ProcessResult processPhotoFromMQ(String[] fileNames, String tempDirPath, Integer startRating, boolean overwrite) {
         try {
             if (fileNames == null || fileNames.length == 0) {
                 log.warn("没有接收到文件名");
@@ -697,14 +697,14 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
                     photo.setFileName(existingPhoto.getFileName());
                     photo.setAuthor(existingPhoto.getAuthor());
                     photo.setIntroduce(existingPhoto.getIntroduce());
-                    photo.setStart(existingPhoto.getStart());
+                    photo.setStartRating(existingPhoto.getStartRating());
                     
                     // 在MQ消费场景下不需要删除原有文件，因为文件已经被处理和替换
                     
                     existingPhotos.add(photo);
                 } else {
-                    // 设置新的start值
-                    photo.setStart(start);
+                    // 设置新的startRating值
+                    photo.setStartRating(startRating);
                     newPhotos.add(photo);
                 }
             }
@@ -1055,10 +1055,10 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
     @Cacheable(key = "'photoTypeCounts'")
     public Map<String, Object> getPhotoTypeCounts() {
         Map<String, Object> photoTypeCounts = new HashMap<>();
-        photoTypeCounts.put("starred", count(new LambdaQueryWrapper<Photo>().eq(Photo::getStart, 1)));
-        photoTypeCounts.put("normal", count(new LambdaQueryWrapper<Photo>().eq(Photo::getStart, 0)));
-        photoTypeCounts.put("meteorology", count(new LambdaQueryWrapper<Photo>().eq(Photo::getStart, 2)));
-        photoTypeCounts.put("hidden", count(new LambdaQueryWrapper<Photo>().eq(Photo::getStart, -1)));
+        photoTypeCounts.put("starred", count(new LambdaQueryWrapper<Photo>().eq(Photo::getStartRating, 1)));
+        photoTypeCounts.put("normal", count(new LambdaQueryWrapper<Photo>().eq(Photo::getStartRating, 0)));
+        photoTypeCounts.put("meteorology", count(new LambdaQueryWrapper<Photo>().eq(Photo::getStartRating, 2)));
+        photoTypeCounts.put("hidden", count(new LambdaQueryWrapper<Photo>().eq(Photo::getStartRating, -1)));
         return photoTypeCounts;
     }
     
@@ -1294,13 +1294,13 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
         
         // 尝试获取最早照片的年份
         Integer earliestYear = getOne(new LambdaQueryWrapper<Photo>()
-                .orderByAsc(Photo::getTime)
+                .orderByAsc(Photo::getShootTime)
                 .last("LIMIT 1"))
-                .getTime() != null ? Integer.parseInt(
+                .getShootTime() != null ? Integer.parseInt(
                         getOne(new LambdaQueryWrapper<Photo>()
-                                .orderByAsc(Photo::getTime)
+                                .orderByAsc(Photo::getShootTime)
                                 .last("LIMIT 1"))
-                                .getTime().substring(0, 4))
+                                .getShootTime().substring(0, 4))
                         : currentYear - 5; // 如果没有照片，默认显示近5年
         
         // 确保至少有5年的数据显示
@@ -1527,7 +1527,7 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
         
         // 构建查询条件：任何一个元数据字段为NULL或空字符串
         LambdaQueryWrapper<Photo> queryWrapper = new LambdaQueryWrapper<Photo>()
-                .orderByDesc(Photo::getTime)
+                .orderByDesc(Photo::getShootTime)
                 .and(wrapper -> wrapper
                     .isNull(Photo::getFileName).or().eq(Photo::getFileName, "")
                     .or()
@@ -1537,7 +1537,7 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
                     .or()
                     .isNull(Photo::getHeight)
                     .or()
-                    .isNull(Photo::getTime).or().eq(Photo::getTime, "")
+                    .isNull(Photo::getShootTime).or().eq(Photo::getShootTime, "")
                     .or()
                     .isNull(Photo::getAperture).or().eq(Photo::getAperture, "")
                     .or()
@@ -1551,7 +1551,7 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
                     .or()
                     .isNull(Photo::getFocalLength).or().eq(Photo::getFocalLength, "")
                     .or()
-                    .isNull(Photo::getStart)
+                    .isNull(Photo::getStartRating)
                 );
         
         return page(photoPage, queryWrapper);

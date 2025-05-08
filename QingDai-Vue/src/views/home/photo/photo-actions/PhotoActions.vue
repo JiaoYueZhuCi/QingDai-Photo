@@ -6,8 +6,8 @@
                 :popper-style="{ padding: '12px' }" :teleported="true">
                 <template #reference>
                     <div class="action-icon" @click.stop>
-                        <el-icon :color="getStarColor(photo.start)">
-                            <Star v-if="photo.start === -1" />
+                        <el-icon :color="getStarColor(photo.startRating)">
+                            <Star v-if="photo.startRating === -1" />
                             <StarFilled v-else />
                         </el-icon>
                     </div>
@@ -121,10 +121,10 @@ const updateStarStatus = async (item: EnhancedWaterfallItem, startVal: number) =
     try {
         await updatePhotoStart({
             id: item.id,
-            start: startVal
+            startRating: startVal
         });
         // 创建一个新对象以便通知父组件状态已更新
-        const updatedPhoto = { ...item, start: startVal };
+        const updatedPhoto = { ...item, startRating: startVal };
         emit('statusUpdated', updatedPhoto);
         ElMessage.success('更新状态成功');
     } catch (error) {

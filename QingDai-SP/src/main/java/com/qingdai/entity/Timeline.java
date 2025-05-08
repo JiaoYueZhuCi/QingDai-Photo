@@ -22,7 +22,7 @@ public class Timeline {
     private String id;
     @TableField(value = "record_time")
     @Schema(description = "时间")
-    private String time;
+    private String recordTime;
     @TableField(value = "title")
     @Schema(description = "标题")
     private String title;

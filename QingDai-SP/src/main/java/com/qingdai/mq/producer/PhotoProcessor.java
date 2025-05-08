@@ -64,7 +64,7 @@ public class PhotoProcessor {
         private static final long serialVersionUID = 1L;
         
         private String messageId;
-        private Integer start;
+        private Integer startRating;
         private boolean overwrite;
         private String[] fileNames;
         private String tempDir;
@@ -72,9 +72,9 @@ public class PhotoProcessor {
         public PhotoMessage() {
         }
 
-        public PhotoMessage(Integer start, boolean overwrite, String[] fileNames, String tempDir) {
+        public PhotoMessage(Integer startRating, boolean overwrite, String[] fileNames, String tempDir) {
             this.messageId = String.valueOf(System.currentTimeMillis()); // 使用时间戳作为默认ID
-            this.start = start;
+            this.startRating = startRating;
             this.overwrite = overwrite;
             this.fileNames = fileNames;
             this.tempDir = tempDir;
@@ -88,12 +88,12 @@ public class PhotoProcessor {
             this.messageId = messageId;
         }
 
-        public Integer getStart() {
-            return start;
+        public Integer getStartRating() {
+            return startRating;
         }
 
-        public void setStart(Integer start) {
-            this.start = start;
+        public void setStartRating(Integer startRating) {
+            this.startRating = startRating;
         }
 
         public boolean isOverwrite() {
@@ -124,7 +124,7 @@ public class PhotoProcessor {
         public String toString() {
             return "PhotoMessage{" +
                     "messageId='" + messageId + '\'' +
-                    ", start=" + start +
+                    ", startRating=" + startRating +
                     ", overwrite=" + overwrite +
                     ", fileNames.length=" + (fileNames != null ? fileNames.length : 0) +
                     ", tempDir='" + tempDir + '\'' +

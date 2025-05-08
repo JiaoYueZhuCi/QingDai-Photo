@@ -6,7 +6,7 @@ const BASE_URL = '/api/QingDai/timelines';
 
 // 类型定义
 export interface TimelineDTO {
-  time: string;
+  recordTime: string;
   title: string;
   text: string;
 }

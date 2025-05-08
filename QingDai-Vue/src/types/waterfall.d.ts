@@ -10,10 +10,10 @@ export interface WaterfallItem {
   camera: string        // 相机
   lens: string          // 镜头
   focalLength: string   // 焦距
-  time: string          // 拍摄时间
+  shootTime: string     // 拍摄时间
   title: string         // 标题
   introduce: string     // 介绍
-  start: number         //代表作
+  startRating: number   //代表作
 
   aspectRatio?: number  // 自动计算的宽高比
   calcWidth?: number    // 自动计算的宽度（像素）

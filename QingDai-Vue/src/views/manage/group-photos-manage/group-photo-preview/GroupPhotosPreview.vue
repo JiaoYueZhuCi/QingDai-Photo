@@ -194,10 +194,10 @@ const currentPhotoData = ref<EnhancedWaterfallItem>({
     camera: '',
     lens: '',
     focalLength: '',
-    time: '',
+    shootTime: '',
     title: '',
     introduce: '',
-    start: 0
+    startRating: 0
 })
 
 // 添加全屏预览相关的状态

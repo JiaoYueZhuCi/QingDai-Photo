@@ -181,7 +181,7 @@ public class PhotoController {
         try {
             List<Photo> photos = photoService.list(
                     new LambdaQueryWrapper<Photo>()
-                            .orderByDesc(Photo::getTime));
+                            .orderByDesc(Photo::getShootTime));
 
             if (photos == null || photos.isEmpty()) {
                 log.warn("未找到任何照片记录");
@@ -200,12 +200,12 @@ public class PhotoController {
     @GetMapping("/starred")
     @Operation(summary = "获取代表作照片信息(时间倒叙)", description = "从数据库获取所有代表作的详细信息(时间倒叙)")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<Photo>> getStartPhotos() {
+    public ResponseEntity<List<Photo>> getStartRatingPhotos() {
         try {
             List<Photo> photos = photoService.list(
                     new LambdaQueryWrapper<Photo>()
-                            .orderByDesc(Photo::getTime)
-                            .eq(Photo::getStart, 1));
+                            .orderByDesc(Photo::getShootTime)
+                            .eq(Photo::getShootTime, 1));
 
             if (photos == null || photos.isEmpty()) {
                 log.warn("未找到任何代表作照片记录");
@@ -329,7 +329,7 @@ public class PhotoController {
     @Operation(summary = "获取代表作照片总数", description = "从数据库获取start字段为1的照片总数")
     public ResponseEntity<Long> getStartPhotoCount() {
         try {
-            long count = photoService.count(new LambdaQueryWrapper<Photo>().eq(Photo::getStart, 1));
+            long count = photoService.count(new LambdaQueryWrapper<Photo>().eq(Photo::getStartRating, 1));
             log.info("成功获取代表作照片总数: {}", count);
             return ResponseEntity.ok().body(count);
         } catch (Exception e) {
@@ -352,7 +352,7 @@ public class PhotoController {
 
             // 构建查询条件
             LambdaQueryWrapper<Photo> queryWrapper = new LambdaQueryWrapper<Photo>()
-                    .in(Photo::getStart, typeList);
+                    .in(Photo::getStartRating, typeList);
 
             long count = photoService.count(queryWrapper);
             log.info("成功获取照片类型{}的照片总数: {}", types, count);
@@ -439,8 +439,8 @@ public class PhotoController {
             }
             Page<Photo> photoPage = new Page<>(page, pageSize);
             photoService.page(photoPage, new LambdaQueryWrapper<Photo>()
-                    .orderByDesc(Photo::getTime)
-                    .in(Photo::getStart, Arrays.asList(0, 1)));
+                    .orderByDesc(Photo::getShootTime)
+                    .in(Photo::getStartRating, Arrays.asList(0, 1)));
             log.info("成功获取可见照片分页信息，总记录数: {}, 总页数: {}", photoPage.getTotal(), photoPage.getPages());
             return ResponseEntity.ok().body(photoPage);
         } catch (Exception e) {
@@ -462,7 +462,7 @@ public class PhotoController {
             }
             Page<Photo> photoPage = new Page<>(page, pageSize);
             photoService.page(photoPage, new LambdaQueryWrapper<Photo>()
-                    .orderByDesc(Photo::getTime));
+                    .orderByDesc(Photo::getShootTime));
             log.info("成功获取照片分页信息，总记录数: {}, 总页数: {}", photoPage.getTotal(), photoPage.getPages());
             return ResponseEntity.ok().body(photoPage);
         } catch (Exception e) {
@@ -480,8 +480,8 @@ public class PhotoController {
         try {
             Page<Photo> photoPage = new Page<>(page, pageSize);
             photoService.page(photoPage, new LambdaQueryWrapper<Photo>()
-                    .orderByDesc(Photo::getTime)
-                    .eq(Photo::getStart, 1));
+                    .orderByDesc(Photo::getShootTime)
+                    .eq(Photo::getStartRating, 1));
             log.info("成功获取代表作照片分页信息，总记录数: {}, 总页数: {}", photoPage.getTotal(), photoPage.getPages());
             return ResponseEntity.ok().body(photoPage);
         } catch (Exception e) {
@@ -690,10 +690,10 @@ public class PhotoController {
     @PutMapping("/{id}/starred")
     @Operation(summary = "更新照片星标状态", description = "根据ID更新照片的星标状态")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<String> updatePhotoStartStatus(
+    public ResponseEntity<String> updatePhotoStartStartRating(
             @RequestBody PhotoStartStatusDTO photoStartStatusDTO, @PathVariable String id) {
         try {
-            Integer start = photoStartStatusDTO.getStart();
+            Integer start = photoStartStatusDTO.getStartRating();
 
             if (start == null || (start != 0 && start != 1 && start != -1)) {
                 log.error("更新星标状态失败：无效的start值: {}", start);
@@ -702,7 +702,7 @@ public class PhotoController {
 
             boolean updated = photoService.update(new LambdaUpdateWrapper<Photo>()
                     .eq(Photo::getId, Long.parseLong(id))
-                    .set(Photo::getStart, start));
+                    .set(Photo::getStartRating, start));
 
             if (!updated) {
                 log.warn("未找到ID为{}的照片记录", id);
@@ -771,8 +771,8 @@ public class PhotoController {
             }
             Page<Photo> photoPage = new Page<>(page, pageSize);
             photoService.page(photoPage, new LambdaQueryWrapper<Photo>()
-                    .orderByDesc(Photo::getTime)
-                    .eq(Photo::getStart, -1));
+                    .orderByDesc(Photo::getShootTime)
+                    .eq(Photo::getStartRating,-1));
             log.info("成功获取隐藏照片分页信息，总记录数: {}, 总页数: {}", photoPage.getTotal(), photoPage.getPages());
             return ResponseEntity.ok().body(photoPage);
         } catch (Exception e) {
@@ -794,8 +794,8 @@ public class PhotoController {
             }
             Page<Photo> photoPage = new Page<>(page, pageSize);
             photoService.page(photoPage, new LambdaQueryWrapper<Photo>()
-                    .orderByDesc(Photo::getTime)
-                    .eq(Photo::getStart, 2));
+                    .orderByDesc(Photo::getShootTime)
+                    .eq(Photo::getStartRating, 2));
             log.info("成功获取气象照片分页信息，总记录数: {}, 总页数: {}", photoPage.getTotal(), photoPage.getPages());
             return ResponseEntity.ok().body(photoPage);
         } catch (Exception e) {
@@ -888,6 +888,7 @@ public class PhotoController {
     public ResponseEntity<Map<String, Object>> getPhotoDashboardStats() {
         try {
             Map<String, Object> stats = photoService.getPhotoDashboardStats();
+            log.warn(stats.toString());
             log.info("成功获取照片统计数据");
             return ResponseEntity.ok(stats);
         } catch (Exception e) {

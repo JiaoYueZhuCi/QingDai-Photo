@@ -31,7 +31,7 @@
                         {{ previewData.focalLength || '未知' }}
                     </el-descriptions-item>
                     <el-descriptions-item label="拍摄时间">
-                        {{ previewData.time || '未知' }}
+                        {{ previewData.shootTime || '未知' }}
                     </el-descriptions-item>
                     <el-descriptions-item label="参数">
                         <span v-if="previewData.aperture">光圈：{{ previewData.aperture }}</span>
@@ -40,10 +40,10 @@
                         <span v-if="!previewData.aperture && !previewData.shutter && !previewData.iso">未知</span>
                     </el-descriptions-item>
                     <el-descriptions-item label="级别">
-                        <el-tag v-if="previewData.start === 1" :type="'warning'">精选</el-tag>
-                        <el-tag v-if="previewData.start === 0" :type="'success'">普通</el-tag>
-                        <el-tag v-if="previewData.start === -1" :type="'info'">隐藏</el-tag>
-                        <el-tag v-if="previewData.start === 2" :type="'primary'">气象</el-tag>
+                        <el-tag v-if="previewData.startRating === 1" :type="'warning'">精选</el-tag>
+                        <el-tag v-if="previewData.startRating  === 0" :type="'success'">普通</el-tag>
+                        <el-tag v-if="previewData.startRating === -1" :type="'info'">隐藏</el-tag>
+                        <el-tag v-if="previewData.startRating === 2" :type="'primary'">气象</el-tag>
                     </el-descriptions-item>
                 </el-descriptions>
             </div>
@@ -87,10 +87,10 @@ const previewData = ref<EnhancedWaterfallItem>({
     camera: "",
     lens: "",
     focalLength: "",
-    time: "",
+    shootTime: "",
     title: "",
     introduce: "",
-    start: 0,
+    startRating: 0,
 })
 
 const isLoading = ref(false)
@@ -155,10 +155,10 @@ const handleClose = () => {
         camera: "",
         lens: "",
         focalLength: "",
-        time: "",
+        shootTime: "",
         title: "",
         introduce: "",
-        start: 0,
+        startRating: 0,
     }
 }
 

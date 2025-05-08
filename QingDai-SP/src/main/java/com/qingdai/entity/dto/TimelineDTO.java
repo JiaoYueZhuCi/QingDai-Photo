@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class TimelineDTO {
-    private String time;
+    private String recordTime;
     private String title;
     private String text;
 }

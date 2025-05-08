@@ -5,8 +5,8 @@
         <el-table :data="tableData" style="width: 100%" border stripe :max-height="tableHeight">
             <el-table-column prop="time" label="时间" width="180">
                 <template #default="scope">
-                    <el-input v-if="scope.row.isEditing" v-model="scope.row.time" />
-                    <span v-else>{{ scope.row.time }}</span>
+                    <el-input v-if="scope.row.isEditing" v-model="scope.row.recordTime" />
+                    <span v-else>{{ scope.row.recordTime }}</span>
                 </template>
             </el-table-column>
             <el-table-column prop="title" label="标题" width="180">
@@ -109,7 +109,7 @@ const fetchData = async () => {
             tableData.value = response.records.map((item: any) => ({
                 isEditing: false,
                 id: item.id,
-                time: item.time || '',
+                recordTime: item.recordTime || '',
                 title: item.title || '',
                 text: item.text || ''
             }))
@@ -167,7 +167,7 @@ const submitEdit = async (row: any) => {
         
         await updateTimeline({
             id: row.id,
-            time: row.time,
+            recordTime: row.recordTime,
             title: row.title,
             text: row.text
         })

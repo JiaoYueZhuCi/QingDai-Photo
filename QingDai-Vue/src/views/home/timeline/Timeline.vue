@@ -2,7 +2,7 @@
   <div class="timelineContainer">
     <el-empty v-if="!timelines || timelines.length === 0" description="暂无时间轴数据"></el-empty>
     <el-timeline v-else>
-      <el-timeline-item v-for="(timelineItem, index) in timelines" :key="index" :timestamp="timelineItem.time" placement="top">
+      <el-timeline-item v-for="(timelineItem, index) in timelines" :key="index" :timestamp="timelineItem.recordTime" placement="top">
         <el-card class="timeline-card">
           <h4 class="timeline-title">{{ timelineItem.title }}</h4>
           <p class="content-cell">{{ timelineItem.text }}</p>

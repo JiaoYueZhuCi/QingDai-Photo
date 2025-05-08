@@ -1,6 +1,6 @@
 <template>
     <div class="photo-list-container">
-        <el-button class="refresh-button" type="primary" @click="fetchData">刷新照片列表</el-button>
+        <el-button class="refresh-button" type="primary" @click="handleRefresh">刷新照片列表</el-button>
         <el-button class="no-metadata-button" type="warning" @click="fetchNoMetadataData">无元数据照片列表</el-button>
         
         <el-table :data="tableData" style="width: 100%" border stripe :max-height="tableHeight">
@@ -13,7 +13,7 @@
 
             <el-table-column prop="start" label="标记" width="95">
                 <template #default="scope">
-                    <el-select v-model="scope.row.start" :disabled="!scope.row.isEditing" placeholder="状态"
+                    <el-select v-model="scope.row.startRating" :disabled="!scope.row.isEditing" placeholder="状态"
                         style="width: 80px">
                         <el-option label="精选" :value="1">
                             <el-tag :type="'warning'">
@@ -99,8 +99,8 @@
             
             <el-table-column prop="time" label="拍摄时间" width="100">
                 <template #default="scope">
-                    <el-input v-if="scope.row.isEditing" v-model="scope.row.time" />
-                    <span v-else>{{ scope.row.time }}</span>
+                    <el-input v-if="scope.row.isEditing" v-model="scope.row.shootTime" />
+                    <span v-else>{{ scope.row.shootTime }}</span>
                 </template>
             </el-table-column>
 
@@ -183,6 +183,7 @@ const total = ref(0)
 const userRole = ref('')
 const loading = ref(false)
 const tableHeight = ref(window.innerHeight - 65)
+const isNoMetadataMode = ref(false)
 
 // 预览相关
 const previewVisible = ref(false)
@@ -215,6 +216,7 @@ const fetchData = async () => {
     });
     
     try {
+        isNoMetadataMode.value = false
         let response: PhotoResponse;
         
         if (userRole.value === 'ADMIN') {
@@ -261,6 +263,7 @@ const fetchNoMetadataData = async () => {
     });
     
     try {
+        isNoMetadataMode.value = true
         const response = await getNoMetadataPhotosByPage({
             page: currentPage.value,
             pageSize: pageSize.value
@@ -280,7 +283,7 @@ const fetchNoMetadataData = async () => {
         
         // 批量获取缩略图
         await get100KPhotos(tableData.value);
-        ElMessage.success('已切换到无元数据照片列表');
+        ElMessage.success('获取无元数据照片成功');
     } catch (error) {
         console.error('获取无元数据照片数据失败:', error);
         ElMessage.error('无元数据照片加载失败');
@@ -292,12 +295,20 @@ const fetchNoMetadataData = async () => {
 // 分页相关方法
 const handleCurrentChange = (val: number) => {
     currentPage.value = val;
-    fetchData();
+    if (isNoMetadataMode.value) {
+        fetchNoMetadataData();
+    } else {
+        fetchData();
+    }
 }
 
 const handleSizeChange = (val: number) => {
     pageSize.value = val;
-    fetchData();
+    if (isNoMetadataMode.value) {
+        fetchNoMetadataData();
+    } else {
+        fetchData();
+    }
 }
 
 // 开始编辑照片
@@ -320,7 +331,7 @@ const submitEdit = async (row: EnhancedWaterfallItem) => {
             id: row.id,
             title: row.title,
             introduce: row.introduce,
-            start: row.start,
+            startRating: row.start,
             camera: row.camera,
             lens: row.lens,
             aperture: row.aperture,
@@ -331,7 +342,7 @@ const submitEdit = async (row: EnhancedWaterfallItem) => {
             author: row.author,
             width: row.width,
             height: row.height,
-            time: row.time
+            shootTime: row.shootTime
         });
         ElMessage.success('更新成功');
         row.isEditing = false;
@@ -375,6 +386,15 @@ const openPreview = (item: WaterfallItem) => {
 // 打开照片上传对话框
 const showPhotoUpload = () => {
     photoUploadVisible.value = true
+}
+
+// 添加刷新处理方法
+const handleRefresh = () => {
+    if (isNoMetadataMode.value) {
+        fetchNoMetadataData();
+    } else {
+        fetchData();
+    }
 }
 
 // 初始加载

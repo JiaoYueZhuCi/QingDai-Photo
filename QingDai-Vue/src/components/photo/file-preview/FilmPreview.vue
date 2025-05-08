@@ -61,10 +61,10 @@
                     <div class="info-content">
                         <div class="title-row">
                             <div class="tag-container">
-                                <el-tag v-if="previewData.start === 1" :type="'warning'" size="small">精选</el-tag>
-                                <el-tag v-if="previewData.start === 0" :type="'success'" size="small">普通</el-tag>
-                                <el-tag v-if="previewData.start === -1" :type="'info'" size="small">隐藏</el-tag>
-                                <el-tag v-if="previewData.start === 2" :type="'primary'" size="small">气象</el-tag>
+                                <el-tag v-if="previewData.startRating === 1" :type="'warning'" size="small">精选</el-tag>
+                                <el-tag v-if="previewData.startRating === 0" :type="'success'" size="small">普通</el-tag>
+                                <el-tag v-if="previewData.startRating === -1" :type="'info'" size="small">隐藏</el-tag>
+                                <el-tag v-if="previewData.startRating === 2" :type="'primary'" size="small">气象</el-tag>
                             </div>
                             <p class="title">{{ previewData.title || '无标题' }}</p>
 
@@ -74,7 +74,7 @@
                             <p class="description">{{ previewData.introduce || '暂无介绍' }}</p>
                         </el-tooltip>
                         <div class="metadata">
-                            <span class="metadata-item">{{ previewData.time || '未知时间' }}</span>
+                            <span class="metadata-item">{{ previewData.shootTime || '未知时间' }}</span>
                             <span class="metadata-item">{{ previewData.camera || '未知相机' }}</span>
                             <span class="metadata-item">{{ previewData.lens || '未知镜头' }}</span>
                             <span class="metadata-item">{{ previewData.focalLength || '未知' }}mm</span>
@@ -208,7 +208,8 @@ const previewData = ref<EnhancedWaterfallItem>({
     camera: "",
     lens: "",
     focalLength: "",
-    time: "",
+    shootTime: "",
+    startRating: 0,
     title: "",
     introduce: "",
     start: 0,
@@ -289,8 +290,6 @@ const preloadImage = async (photoId: string | null): Promise<void> => {
 // 监听 modelValue 变化
 watch(() => props.modelValue, (newVal) => {
     visible.value = newVal
-    console.log('filmPreview组件 modelValue变化')
-    console.log(props.photoId)
     // 仅更新可见状态，不触发加载
     if (newVal) {
         // 锁定滚动
@@ -315,13 +314,11 @@ watch(() => props.photoId, (newVal) => {
 // 确保数据加载 - 统一的加载入口
 const ensureDataLoaded = async () => {
     if (isLoading.value) {
-        console.log('正在加载中，跳过重复加载')
         return
     }
     
     // 如果当前展示的照片ID与请求的相同，且已有数据，则无需重新加载
     if (previewData.value.id === props.photoId && previewData.value.title) {
-        console.log('已有当前照片数据，无需重新加载')
         applyAnimations() // 只应用动画效果
         return
     }
@@ -454,10 +451,10 @@ const handleClose = () => {
         camera: "",
         lens: "",
         focalLength: "",
-        time: "",
+        shootTime: "",
         title: "",
         introduce: "",
-        start: 0,
+        startRating: 0,
     }
 }
 
