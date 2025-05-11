@@ -317,6 +317,16 @@ const ensureDataLoaded = async () => {
         return
     }
     
+    if (!props.photoId) {
+        ElMessage({
+            type: 'error',
+            message: '照片ID无效，无法加载预览',
+            duration: 3000
+        })
+        handleClose()
+        return
+    }
+    
     // 如果当前展示的照片ID与请求的相同，且已有数据，则无需重新加载
     if (previewData.value.id === props.photoId && previewData.value.title) {
         applyAnimations() // 只应用动画效果
@@ -383,6 +393,16 @@ const applyAnimations = () => {
 
 // 打开对话框时获取数据
 const handleOpen = async () => {
+    if (!props.photoId) {
+        ElMessage({
+            type: 'error',
+            message: '照片ID无效，无法加载数据',
+            duration: 3000
+        })
+        handleClose()
+        return
+    }
+    
     isLoading.value = true
     isInfoLoading.value = true
 
@@ -508,6 +528,14 @@ const handleBackgroundClick = (event: MouseEvent) => {
 
 // 处理图片点击
 const handleImageClick = () => {
+    if (!props.photoId) {
+        ElMessage({
+            type: 'error',
+            message: '照片ID无效，无法打开查看器',
+            duration: 3000
+        })
+        return
+    }
     emit('image-click', props.photoId)
 }
 

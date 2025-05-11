@@ -13,7 +13,7 @@
             :photo-id="currentPreviewId" 
             :photo-ids="extractedPhotoIds"
             @close="handlePreviewClose" 
-            @image-click="handleImageClick" 
+            @image-click="handleFilmPreviewImageClick" 
             @navigate="handleNavigate" 
         />
 
@@ -206,6 +206,29 @@ const handleImageClick = (item: EnhancedWaterfallItem, event?: MouseEvent) => {
     }
 };
 
+// 处理FilmPreview组件中图片点击事件
+const handleFilmPreviewImageClick = (photoId: string) => {
+    if (!photoId) {
+        ElMessage({
+            type: 'error',
+            message: '照片ID无效，无法打开查看器',
+            duration: 3000
+        })
+        return
+    }
+    
+    currentPreviewId.value = photoId
+    viewerVisible.value = true
+    
+    // 查找当前索引
+    const index = images.value.findIndex(img => img.id === photoId)
+    if (index !== -1) {
+        currentIndex.value = index
+    }
+    // 更新URL
+    updateUrlWithViewerId(photoId)
+}
+
 // 处理预览关闭
 const handlePreviewClose = () => {
     previewVisible.value = false;
@@ -263,6 +286,15 @@ const viewerVisible = ref(false);
 const currentIndex = ref(0);
 
 const openFullImg = (id: string) => {
+    if (!id) {
+        ElMessage({
+            type: 'error',
+            message: '照片ID无效，无法打开查看器',
+            duration: 3000
+        })
+        return
+    }
+    
     currentPreviewId.value = id;
     viewerVisible.value = true;
     // 查找当前索引

@@ -59,7 +59,7 @@ public class Photo {
     @TableField(value = "introduce")
     @Schema(description = "照片介绍")
     private String introduce;
-    @TableField(value = "star_rating")
+    @TableField(value = "start_rating")
     @Schema(description = "星标")
     private Integer startRating;
     @TableField(value = "created_time", fill = FieldFill.INSERT)

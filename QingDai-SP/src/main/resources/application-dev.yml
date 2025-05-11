@@ -5,7 +5,7 @@ spring:
     password: 123456
   data:
     redis:
-      host: dev.qingdai.art
+      host: 129.226.192.212
       port: 6379
 
 qingdai:

@@ -154,14 +154,14 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
 
     // 根据照片ID获取文件名
     @Override
-    @Cacheable(key = "'fileName_' + #photoId")
+    @Cacheable(key = "'fileName_' + #photoId", unless = "#result == null")
     public String getFileNameById(String photoId) {
         // 先检查布隆过滤器，如果布隆过滤器显示元素不存在，则直接返回null
         // 这样可以避免对不存在的ID进行数据库查询，防止缓存穿透
-        if (!bloomFilterUtil.exists(photoId)) {
-            log.debug("照片ID在布隆过滤器中不存在: {}", photoId);
-            return null;
-        }
+        // if (!bloomFilterUtil.exists(photoId)) {
+        //     log.debug("照片ID在布隆过滤器中不存在: {}", photoId);
+        //     return null;
+        // }
         
         Photo photo = getById(photoId);
         if (photo == null) {

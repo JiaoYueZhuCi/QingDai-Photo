@@ -53,6 +53,7 @@ import FilmPreview from '@/components/photo/file-preview/FilmPreview.vue'
 import PhotoViewer from '@/components/photo/photo-viewer/PhotoViewer.vue'
 import { getGroupPhoto } from '@/api/groupPhoto'
 import { useRouter, useRoute } from 'vue-router'
+import { ElMessage } from 'element-plus'
 
 const props = defineProps<{
     modelValue: boolean;
@@ -186,12 +187,22 @@ const handleNavigate = (id: string) => {
 }
 
 
-// 添加打开全屏预览的方法
-const openFullScreen = (id: string) => {
-    fullScreenPhotoId.value = id
+// 打开全屏查看
+const openFullScreen = (photoId: string) => {
+    if (!photoId) {
+        ElMessage({
+            type: 'error',
+            message: '照片ID无效，无法打开查看器',
+            duration: 3000
+        })
+        return
+    }
+    
     showFullScreen.value = true
-    // 更新URL为全屏查看模式
-    updateUrlWithGroupParams(true, props.groupId, id, true)
+    fullScreenPhotoId.value = photoId
+    
+    // 更新URL，添加组图查看器参数，以便刷新页面时能恢复到全屏模式
+    updateUrlWithGroupParams(true, props.groupId, photoId, true)
 }
 
 // 添加关闭全屏预览的方法
