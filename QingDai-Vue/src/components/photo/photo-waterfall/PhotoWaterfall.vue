@@ -34,8 +34,8 @@
                 </el-image>
                 
                 <div class="image-info">
-                    <div>{{ item.title || '标题' }}</div>
-                    <div>{{ item.introduce || '文字介绍' }}</div>
+                    <div>{{ item.title || '暂无标题' }}</div>
+                    <!-- <div>{{ item.introduce || '暂无介绍' }}</div> -->
                 </div>
             </div>
         </div>

@@ -1,6 +1,6 @@
 <template>
     <div class="film-preview" v-if="visible" @click="handleBackgroundClick" @touchstart="handleTouchStart"
-        @touchmove="handleTouchMove" @touchend="handleTouchEnd">
+        @touchmove="handleTouchMove" @touchend="handleTouchEnd" @touchcancel="handleTouchCancel">
         <!-- 水平胶片条 -->
         <div class="film-strip" ref="filmStripRef">
             <!-- 左侧卡片(上一张) -->
@@ -227,6 +227,7 @@ const touchStartX = ref(0)
 const touchEndX = ref(0)
 const minSwipeDistance = 10 // 最小滑动距离，单位像素
 const isDragging = ref(false)
+const isMultiTouch = ref(false) // 添加多点触摸标志
 
 // 当前照片在数组中的索引
 const currentIndex = computed(() => {
@@ -480,19 +481,37 @@ const handleClose = () => {
 
 // 处理触摸开始
 const handleTouchStart = (event: TouchEvent) => {
+    // 检测是否为多点触摸
+    if (event.touches.length > 1) {
+        isMultiTouch.value = true
+        return
+    }
+    
+    isMultiTouch.value = false
     touchStartX.value = event.touches[0].clientX
     touchEndX.value = event.touches[0].clientX
 }
 
 // 处理触摸移动
 const handleTouchMove = (event: TouchEvent) => {
-    if (isAnimating.value) return
+    // 检测是否变成了多点触摸
+    if (event.touches.length > 1) {
+        isMultiTouch.value = true
+        return
+    }
+    
+    // 如果是多点触摸或动画中，不处理滑动
+    if (isMultiTouch.value || isAnimating.value) return
     touchEndX.value = event.touches[0].clientX
 }
 
 // 处理触摸结束
-const handleTouchEnd = () => {
-    if (isAnimating.value) return
+const handleTouchEnd = (event: TouchEvent) => {
+    // 如果是多点触摸或动画中，不处理滑动
+    if (isMultiTouch.value || isAnimating.value) {
+        isMultiTouch.value = false // 重置多点触摸标志
+        return
+    }
 
     const swipeDistance = touchEndX.value - touchStartX.value
 
@@ -510,6 +529,14 @@ const handleTouchEnd = () => {
     // 重置触摸状态
     touchStartX.value = 0
     touchEndX.value = 0
+}
+
+// 处理触摸取消
+const handleTouchCancel = () => {
+    // 重置所有触摸状态
+    touchStartX.value = 0
+    touchEndX.value = 0
+    isMultiTouch.value = false
 }
 
 // 处理背景点击

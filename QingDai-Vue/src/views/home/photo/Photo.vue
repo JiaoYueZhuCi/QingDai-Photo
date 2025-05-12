@@ -29,6 +29,7 @@
             v-model="editorVisible" 
             :photo-id="currentPreviewId" 
             @updated="handlePhotoUpdated" 
+            @close="handleEditorClose"
         />
 
         <!-- 瀑布流组件 -->
@@ -206,6 +207,13 @@ const handleImageClick = (item: EnhancedWaterfallItem, event?: MouseEvent) => {
     }
 };
 
+// 添加编辑器关闭的处理函数
+const handleEditorClose = () => {
+    editorVisible.value = false;
+    // 确保关闭PhotoEditor后解锁页面滚动
+    document.body.style.overflow = '';
+};
+
 // 处理FilmPreview组件中图片点击事件
 const handleFilmPreviewImageClick = (photoId: string) => {
     if (!photoId) {
@@ -327,6 +335,9 @@ const handleNavigate = (photoId: string) => {
 
 // 添加图片编辑图标
 const openPhotoEditor = (item: EnhancedWaterfallItem) => {
+    // 先确保页面滚动状态被重置，避免多次锁定
+    document.body.style.overflow = '';
+    
     currentPreviewId.value = item.id;
     editorVisible.value = true;
 };
@@ -346,6 +357,9 @@ const handlePhotoUpdated = (updatedPhoto: any) => {
         images.value[index].shutter = updatedPhoto.shutter;
         images.value[index].iso = updatedPhoto.iso;
     }
+    
+    // 确保关闭PhotoEditor后解锁页面滚动
+    document.body.style.overflow = '';
 };
 
 // 分享相关状态

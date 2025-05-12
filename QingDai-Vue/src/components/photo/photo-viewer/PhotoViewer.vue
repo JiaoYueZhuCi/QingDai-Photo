@@ -143,7 +143,7 @@ const handleClose = () => {
     left: 0;
     right: 0;
     bottom: 0;
-    z-index: 2000;
+    z-index: 9999;
     background-color: rgba(0, 0, 0, 0.9);
     display: flex;
     justify-content: center;

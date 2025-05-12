@@ -297,7 +297,7 @@ public class PhotoController {
     @Operation(summary = "获取照片元数据", description = "根据ID获取照片的完整元数据信息")
     public ResponseEntity<Photo> getPhotoById(@PathVariable String id) {
         try {
-            Photo photo = photoService.getById(Long.valueOf(id));
+            Photo photo = photoService.getById(id);
             if (photo == null) {
                 log.warn("未找到ID为{}的照片记录", id);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
