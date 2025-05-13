@@ -26,36 +26,44 @@
           </el-form-item>
           <el-form-item label="状态">
             <el-select v-model="form.startRating" placeholder="请选择照片状态">
-              <el-option :value="1" label="星标照片">
+              <el-option :value="PhotoStarRating.STAR" :label="getStarLabel(PhotoStarRating.STAR)">
                 <div style="display: flex; align-items: center">
-                  <el-icon style="color: gold; margin-right: 8px">
+                  <el-icon :style="{ color: getStarColor(PhotoStarRating.STAR), marginRight: '8px' }">
                     <StarFilled />
                   </el-icon>
-                  <span>星标照片</span>
+                  <span>{{ getStarLabel(PhotoStarRating.STAR) }}</span>
                 </div>
               </el-option>
-              <el-option :value="0" label="普通照片">
+              <el-option :value="PhotoStarRating.NORMAL" :label="getStarLabel(PhotoStarRating.NORMAL)">
                 <div style="display: flex; align-items: center">
-                  <el-icon style="color: var(--qd-color-primary); margin-right: 8px">
+                  <el-icon :style="{ color: getStarColor(PhotoStarRating.NORMAL), marginRight: '8px' }">
                     <StarFilled />
                   </el-icon>
-                  <span>普通照片</span>
+                  <span>{{ getStarLabel(PhotoStarRating.NORMAL) }}</span>
                 </div>
               </el-option>
-              <el-option :value="2" label="气象照片">
+              <el-option :value="PhotoStarRating.METEOROLOGY" :label="getStarLabel(PhotoStarRating.METEOROLOGY)">
                 <div style="display: flex; align-items: center">
-                  <el-icon style="color: darkturquoise; margin-right: 8px">
+                  <el-icon :style="{ color: getStarColor(PhotoStarRating.METEOROLOGY), marginRight: '8px' }">
                     <StarFilled />
                   </el-icon>
-                  <span>气象照片</span>
+                  <span>{{ getStarLabel(PhotoStarRating.METEOROLOGY) }}</span>
                 </div>
               </el-option>
-              <el-option :value="-1" label="隐藏照片">
+              <el-option :value="PhotoStarRating.GROUP_ONLY" :label="getStarLabel(PhotoStarRating.GROUP_ONLY)">
                 <div style="display: flex; align-items: center">
-                  <el-icon style="color: var(--qd-color-primary-light-8); margin-right: 8px">
+                  <el-icon :style="{ color: getStarColor(PhotoStarRating.GROUP_ONLY), marginRight: '8px' }">
+                    <StarFilled />
+                  </el-icon>
+                  <span>{{ getStarLabel(PhotoStarRating.GROUP_ONLY) }}</span>
+                </div>
+              </el-option>
+              <el-option :value="PhotoStarRating.HIDDEN" :label="getStarLabel(PhotoStarRating.HIDDEN)">
+                <div style="display: flex; align-items: center">
+                  <el-icon :style="{ color: getStarColor(PhotoStarRating.HIDDEN), marginRight: '8px' }">
                     <Star />
                   </el-icon>
-                  <span>隐藏照片</span>
+                  <span>{{ getStarLabel(PhotoStarRating.HIDDEN) }}</span>
                 </div>
               </el-option>
             </el-select>
@@ -115,6 +123,7 @@ import { ref, watch, reactive, onMounted } from 'vue';
 import { ElMessage, ElDialog, ElButton, ElForm, ElFormItem, ElInput, ElSelect, ElOption, ElImage, ElIcon } from 'element-plus';
 import { Star, StarFilled, Picture } from '@element-plus/icons-vue';
 import { getPhotoDetailInfo, processPhotoData, type EnhancedWaterfallItem, get100KPhoto } from '@/utils/photo';
+import { PhotoStarRating, getStarColor, getStarLabel } from '@/config/photo';
 import { updatePhotoInfo, deletePhotoById } from '@/api/photo';
 
 const props = defineProps<{

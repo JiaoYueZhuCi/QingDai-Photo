@@ -317,6 +317,57 @@
     <el-card class="develop-card">
       <template #header>
         <div class="card-header">
+          <span>气象组图冲突校验</span>
+        </div>
+      </template>
+      <div class="card-content">
+        <div class="action-group">
+          <el-button type="primary" @click="handleValidateMeteorologyGroups">
+            开始校验
+          </el-button>
+        </div>
+        <div class="description">
+          检查照片在气象组图中是否有冲突，照片不能同时属于冲突的组图类型(朝霞与日落、晚霞与日出)
+        </div>
+        <div class="result-summary">
+          <template v-if="meteorologyGroupsResult">
+            <p>总照片数: {{ meteorologyGroupsResult.totalPhotos }}</p>
+            <p>冲突照片数: {{ meteorologyGroupsResult.conflictCount }}</p>
+            
+            <el-collapse v-if="meteorologyGroupsResult.conflicts && meteorologyGroupsResult.conflicts.length > 0">
+              <el-collapse-item>
+                <template #title>
+                  冲突详情 ({{ meteorologyGroupsResult.conflicts.length }})
+                </template>
+                <div class="conflict-details">
+                  <div v-for="(item, index) in meteorologyGroupsResult.conflicts" :key="index" class="conflict-item">
+                    <p>照片ID: {{ item.photoId }}</p>
+                    <p>照片名称: {{ item.fileName }}</p>
+                    <p>冲突组图: {{ formatConflictGroups(item.groupIds) }}</p>
+                    <div class="conflict-actions">
+                        <GroupPhotoCombiner :photoId="item.photoId" @update="handleGroupPhotoUpdate">
+                          <el-button type="warning" size="small">
+                            修复冲突
+                          </el-button>
+                        </GroupPhotoCombiner>
+                      
+                    </div>
+                  </div>
+                </div>
+              </el-collapse-item>
+            </el-collapse>
+          </template>
+          <template v-else>
+            <p>总照片数: <span class="pending-data">待校验</span></p>
+            <p>冲突照片数: <span class="pending-data">待校验</span></p>
+          </template>
+        </div>
+      </div>
+    </el-card>
+
+    <el-card class="develop-card">
+      <template #header>
+        <div class="card-header">
           <span>相机型号替换</span>
         </div>
       </template>
@@ -458,9 +509,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, nextTick } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { fullSizePhotoToMysql, thumbnailImages, processPendingPhotos, validatePhotoExistence, validateFileSystemPhotos, deletePhotosNotInDatabase, deleteMissingPhotoRecords, getAllCameras, getAllLenses, updateCameraName, updateLensName, getPhotoCountByCamera, getPhotoCountByLens, getAllFocalLengths, updateFocalLengthValue, getPhotoCountByFocalLength } from '@/api/photo';
+import { fullSizePhotoToMysql, thumbnailImages, processPendingPhotos, validatePhotoExistence, validateFileSystemPhotos, deletePhotosNotInDatabase, deleteMissingPhotoRecords, getAllCameras, getAllLenses, updateCameraName, updateLensName, getPhotoCountByCamera, getPhotoCountByLens, getAllFocalLengths, updateFocalLengthValue, getPhotoCountByFocalLength, validateMeteorologyGroups } from '@/api/photo';
+import GroupPhotoCombiner from '@/components/group-photos/group-photo-combiner/GroupPhotoCombiner.vue';
 
 // 图片处理相关
 const thumbnailOverwrite = ref(false);
@@ -522,6 +574,24 @@ const selectedFocalLength = ref('');
 const newFocalLength = ref('');
 const focalLengthCount = ref<number | null>(null);
 const loadingFocalLengths = ref(false);
+
+// 气象组图校验结果
+interface MeteorologyGroupConflict {
+  photoId: string;
+  fileName: string;
+  groupIds: number[];
+}
+
+interface MeteorologyGroupsResult {
+  totalPhotos: number;
+  conflictCount: number;
+  conflicts: MeteorologyGroupConflict[];
+}
+
+const meteorologyGroupsResult = ref<MeteorologyGroupsResult | null>(null);
+
+// 冲突修复相关
+const currentConflictPhotoId = ref<string | null>(null);
 
 // 图片处理方法
 const handleFullSizePhotoToMysql = async () => {
@@ -924,6 +994,45 @@ const handleUpdateFocalLength = async () => {
     }
   }
 };
+
+// 气象组图校验
+const handleValidateMeteorologyGroups = async () => {
+  try {
+    ElMessage.success('校验中！');
+    // 清空之前的结果
+    meteorologyGroupsResult.value = null;
+
+    // 调用API
+    const response = await validateMeteorologyGroups();
+    meteorologyGroupsResult.value = response;
+
+    ElMessage.success('校验完成！');
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('校验失败：' + (error as Error).message);
+    }
+  }
+};
+
+// 格式化冲突组图显示
+const formatConflictGroups = (groupIds: number[]): string => {
+  const groupNames: Record<number, string> = {
+    1: '朝霞',
+    2: '晚霞',
+    3: '日出',
+    4: '日落'
+  };
+  
+  return groupIds.map(id => `${id}(${groupNames[id] || '未知'})`).join(' 和 ');
+};
+
+
+
+// 当组图更新后重新校验
+const handleGroupPhotoUpdate = () => {
+  // 重新验证气象组图
+  handleValidateMeteorologyGroups();
+}
 </script>
 
 <style scoped>
@@ -1249,5 +1358,29 @@ const handleUpdateFocalLength = async () => {
 
 .result-summary h3{
   margin: 3px 0;
+}
+
+.conflict-details {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.conflict-item {
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  background-color: var(--qd-color-bg);
+  border-radius: 4px;
+  border-left: 3px solid #e6a23c;
+}
+
+.conflict-item p {
+  margin: 3px 0;
+  font-size: 13px;
+}
+
+.conflict-actions {
+  margin-top: 5px;
+  display: flex;
+  align-items: center;
 }
 </style> 

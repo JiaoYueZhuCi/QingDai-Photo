@@ -211,6 +211,11 @@ export const getPhotoDashboardStats = async (): Promise<any> => {
   return await request.get(`${BASE_URL}/stats/dashboard`);
 };
 
+// 验证气象组图冲突
+export const validateMeteorologyGroups = async (): Promise<any> => {
+  return await request.get(`${BASE_URL}/validate-meteorology-groups`);
+};
+
 // 获取所有相机型号
 export function getAllCameras(): Promise<any> {
   return request.get<string[]>(`${BASE_URL}/cameras`);

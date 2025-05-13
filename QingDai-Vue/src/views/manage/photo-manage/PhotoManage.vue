@@ -11,29 +11,49 @@
                 </template>
             </el-table-column>
 
-            <el-table-column prop="start" label="标记" width="95">
+            <el-table-column prop="start" label="标记" width="115">
                 <template #default="scope">
                     <el-select v-model="scope.row.startRating" :disabled="!scope.row.isEditing" placeholder="状态"
-                        style="width: 80px">
-                        <el-option label="精选" :value="1">
-                            <el-tag :type="'warning'">
-                                精选
-                            </el-tag>
+                        style="width: 100px">
+                        <el-option :label="getStarLabel(PhotoStarRating.STAR)" :value="PhotoStarRating.STAR">
+                            <div style="display: flex; align-items: center">
+                                <el-icon :style="{ color: getStarColor(PhotoStarRating.STAR), marginRight: '8px' }">
+                                    <StarFilled />
+                                </el-icon>
+                                <span>{{ getShortStarLabel(PhotoStarRating.STAR) }}</span>
+                            </div>
                         </el-option>
-                        <el-option label="普通" :value="0">
-                            <el-tag :type="'success'">
-                                普通
-                            </el-tag>
+                        <el-option :label="getStarLabel(PhotoStarRating.NORMAL)" :value="PhotoStarRating.NORMAL">
+                            <div style="display: flex; align-items: center">
+                                <el-icon :style="{ color: getStarColor(PhotoStarRating.NORMAL), marginRight: '8px' }">
+                                    <StarFilled />
+                                </el-icon>
+                                <span>{{ getShortStarLabel(PhotoStarRating.NORMAL) }}</span>
+                            </div>
                         </el-option>
-                        <el-option label="私密" :value="-1">
-                            <el-tag :type="'info'">
-                                隐藏
-                            </el-tag>
+                        <el-option :label="getStarLabel(PhotoStarRating.HIDDEN)" :value="PhotoStarRating.HIDDEN">
+                            <div style="display: flex; align-items: center">
+                                <el-icon :style="{ color: getStarColor(PhotoStarRating.HIDDEN), marginRight: '8px' }">
+                                    <Star />
+                                </el-icon>
+                                <span>{{ getShortStarLabel(PhotoStarRating.HIDDEN) }}</span>
+                            </div>
                         </el-option>
-                        <el-option label="气象" :value="2">
-                            <el-tag :type="'primary'">
-                                气象
-                            </el-tag>
+                        <el-option :label="getStarLabel(PhotoStarRating.METEOROLOGY)" :value="PhotoStarRating.METEOROLOGY">
+                            <div style="display: flex; align-items: center">
+                                <el-icon :style="{ color: getStarColor(PhotoStarRating.METEOROLOGY), marginRight: '8px' }">
+                                    <StarFilled />
+                                </el-icon>
+                                <span>{{ getShortStarLabel(PhotoStarRating.METEOROLOGY) }}</span>
+                            </div>
+                        </el-option>
+                        <el-option :label="getStarLabel(PhotoStarRating.GROUP_ONLY)" :value="PhotoStarRating.GROUP_ONLY">
+                            <div style="display: flex; align-items: center">
+                                <el-icon :style="{ color: getStarColor(PhotoStarRating.GROUP_ONLY), marginRight: '8px' }">
+                                    <StarFilled />
+                                </el-icon>
+                                <span>{{ getShortStarLabel(PhotoStarRating.GROUP_ONLY) }}</span>
+                            </div>
                         </el-option>
                     </el-select>
                 </template>
@@ -164,11 +184,13 @@ import PhotoUpdate from '@/views/manage/photo-manage/photo-update/PhotoUpdate.vu
 import PhotoPreview from '@/components/photo/photo-preview/PhotoPreview.vue'
 import { ref, watchEffect, onMounted, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox, ElLoading } from 'element-plus'
-import { Upload } from '@element-plus/icons-vue'
+import { Star, StarFilled, Upload } from '@element-plus/icons-vue'
 import { getPhotosByPage, updatePhotoInfo, deletePhotoById, getVisiblePhotosByPage, getNoMetadataPhotosByPage } from '@/api/photo'
 import { getRolesPermissions } from '@/api/user'
 import type { PhotoResponse } from '@/api/photo'
 import { get100KPhotos, processPhotoData, type EnhancedWaterfallItem } from '@/utils/photo'
+import { PhotoStarRating, getStarColor, getStarLabel, getShortStarLabel } from '@/config/photo'
+import { ManagePagination } from '@/config/pagination'
 import type { WaterfallItem } from '@/types'
 
 const photoUpdateRef = ref()
@@ -178,7 +200,7 @@ const photoUploadVisible = ref(false)
 const tableData = ref<EnhancedWaterfallItem[]>([])
 const editOriginData = ref<Record<string, EnhancedWaterfallItem>>({})
 const currentPage = ref(1)
-const pageSize = ref(50)
+const pageSize = ref(ManagePagination.PHOTO_MANAGE_PAGE_SIZE)
 const total = ref(0)
 const userRole = ref('')
 const loading = ref(false)

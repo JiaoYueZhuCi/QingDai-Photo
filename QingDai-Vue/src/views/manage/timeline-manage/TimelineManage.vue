@@ -73,13 +73,14 @@ import type { TimelineItem } from '@/types'
 import { ElMessage, ElMessageBox, ElLoading } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { getAllTimelines, updateTimeline, deleteTimeline, getTimelinesByPage } from '@/api/timeline'
+import { ManagePagination } from '@/config/pagination'
 
 const timelineUpdateRef = ref()
 const timelineAddVisible = ref(false)
 const tableData = ref<TimelineItem[]>([])
 const editOriginData = ref<any>({})
 const currentPage = ref(1)
-const pageSize = ref(50)
+const pageSize = ref(ManagePagination.TIMELINE_MANAGE_PAGE_SIZE)
 const total = ref(0)
 const loading = ref(false)
 const tableHeight = ref(window.innerHeight - 65)

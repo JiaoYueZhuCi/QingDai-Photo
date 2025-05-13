@@ -3,6 +3,8 @@ import { h } from 'vue'
 import errorPage from '@/components/common/error/Error.vue'
 import { getRolesPermissions } from '@/api/user.ts';
 import { ElMessage } from 'element-plus';
+import { MeteorologyGroupType } from '@/config/groupPhotos';
+import { PhotoStarRating } from '@/config/photo';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -54,7 +56,7 @@ const router = createRouter({
                 console.error('组件加载失败:', error);
                 return h(errorPage, { errorMessage: error.toString() });
               }),
-              props: { photoType: 1 }
+              props: { photoType: PhotoStarRating.STAR }
             },
             {
               path: 'photos',
@@ -62,7 +64,7 @@ const router = createRouter({
                 console.error('组件加载失败:', error);
                 return h(errorPage, { errorMessage: error.toString() });
               }),
-              props: { photoType: 0 }
+              props: { photoType: PhotoStarRating.VISIBLE }
             },
             {
               path: 'timeline',
@@ -91,7 +93,7 @@ const router = createRouter({
                 console.error('组件加载失败:', error);
                 return h(errorPage, { errorMessage: error.toString() });
               }),
-              props: { photoType: 2 }
+              props: { photoType: PhotoStarRating.HIDDEN }
             },
             {
               path: 'meteorology',
@@ -99,7 +101,7 @@ const router = createRouter({
                 console.error('组件加载失败:', error);
                 return h(errorPage, { errorMessage: error.toString() });
               }),
-              props: { photoType: 3 }
+              props: { photoType: PhotoStarRating.METEOROLOGY }
             },
             {
               path: 'sunriseGlow',
@@ -107,7 +109,7 @@ const router = createRouter({
                 console.error('组件加载失败:', error);
                 return h(errorPage, { errorMessage: error.toString() });
               }),
-              props: { meteorologyType: '1' }
+              props: { meteorologyType: MeteorologyGroupType.SUNRISE_GLOW }
             },
             {
               path: 'sunsetGlow',
@@ -115,7 +117,7 @@ const router = createRouter({
                 console.error('组件加载失败:', error);
                 return h(errorPage, { errorMessage: error.toString() });
               }),
-              props: { meteorologyType: '2' }
+              props: { meteorologyType: MeteorologyGroupType.SUNSET_GLOW }
             },
             {
               path: 'sunrise',
@@ -123,14 +125,23 @@ const router = createRouter({
                 console.error('组件加载失败:', error);
                 return h(errorPage, { errorMessage: error.toString() });
               }),
-              props: { meteorologyType: '3' }
-            }, {
+              props: { meteorologyType: MeteorologyGroupType.SUNRISE }
+            },
+            {
               path: 'sunset',
               component: () => import('@/views/home/meteorology/MeteorologyTimeLine.vue').catch((error) => {
                 console.error('组件加载失败:', error);
                 return h(errorPage, { errorMessage: error.toString() });
               }),
-              props: { meteorologyType: '4' }
+              props: { meteorologyType: MeteorologyGroupType.SUNSET }
+            },
+            {
+              path: 'groupOnly',
+              component: () => import('@/views/home/photo/Photo.vue').catch((error) => {
+                console.error('组件加载失败:', error);
+                return h(errorPage, { errorMessage: error.toString() });
+              }),
+              props: { photoType: PhotoStarRating.GROUP_ONLY }
             }
           ]
         },

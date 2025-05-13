@@ -77,6 +77,7 @@ import type { GroupPhotoDTO } from '@/types/groupPhoto'
 import GroupPhotoUpdate from '@/components/group-photos/group-photos-update/GroupPhotosUpdate.vue'
 import GroupPhotoPreview from '@/views/manage/group-photos-manage/group-photo-preview/GroupPhotosPreview.vue'
 import { get100KPhotos, type EnhancedWaterfallItem } from '@/utils/photo'
+import { ManagePagination } from '@/config/pagination'
 
 const groupPhotoDialogVisible = ref(false)
 const editMode = ref(false)
@@ -84,7 +85,7 @@ const currentEditData = ref<GroupPhotoDTO | null>(null)
 
 const tableData = ref<any[]>([])
 const currentPage = ref(1)
-const pageSize = ref(50)
+const pageSize = ref(ManagePagination.GROUP_PHOTOS_MANAGE_PAGE_SIZE)
 const total = ref(0)
 const loading = ref(false)
 

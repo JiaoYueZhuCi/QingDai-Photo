@@ -32,8 +32,12 @@
             @close="handleEditorClose"
         />
 
+        <!-- 空状态显示 - 仅在数据加载完成且为空时显示 -->
+        <el-empty v-if="!loading && images.length === 0" description="暂无照片数据"></el-empty>
+
         <!-- 瀑布流组件 -->
         <PhotoWaterfall
+            v-if="images.length > 0"
             :images="images"
             :isShareMode="isShareMode"
             :selectedPhotos="selectedPhotos"
@@ -49,6 +53,9 @@
                 />
             </template>
         </PhotoWaterfall>
+
+        <!-- 加载更多指示器 -->
+        <LoadMoreIndicator v-if="hasMore" text="加载更多照片..." />
     </div>
 </template>
 
@@ -65,6 +72,9 @@ import PhotoActions from "@/views/home/photo/photo-actions/PhotoActions.vue";
 import PhotoShare from "@/views/home/photo/photo-share/PhotoShare.vue";
 import { get100KPhotos, processPhotoData, type EnhancedWaterfallItem } from '@/utils/photo';
 import { useRouter, useRoute } from 'vue-router';
+import { PhotoPagination, InfiniteScrollConfig } from '@/config/pagination';
+import { PhotoStarRating } from '@/config/photo';
+import LoadMoreIndicator from '@/components/common/loading/LoadMoreIndicator.vue'
 
 // 添加路由
 const router = useRouter();
@@ -74,37 +84,45 @@ const route = useRoute();
 const props = defineProps({
     photoType: {
         type: Number,
-        default: 0,
+        default: PhotoStarRating.NORMAL,
     },
 });
 
 //// 照片流数据
 const images = ref<EnhancedWaterfallItem[]>([]);
 const currentPage = ref(1);
-const pageSize = ref(30);
+const pageSize = ref(PhotoPagination.HOME_WATERFALL_PAGE_SIZE);
 const hasMore = ref(true);
 const containerRef = ref<HTMLElement | null>(null);
 
+// 添加loading状态
+const loading = ref(false);
+
 //  getPhotos 方法
 const getPhotos = async () => {
-    if (!hasMore.value) return;
+    if (!hasMore.value || loading.value) return;
+    
+    loading.value = true;
 
     try {
         let apiEndpoint;
 
         // 根据photoType选择不同的API
         switch (props.photoType) {
-            case 0: // 可见照片
+            case PhotoStarRating.VISIBLE: // 可见照片
                 apiEndpoint = getVisiblePhotosByPage;
                 break;
-            case 1: // 星标照片
+            case PhotoStarRating.STAR: // 星标照片
                 apiEndpoint = getStartPhotosByPage;
                 break;
-            case 2: // 隐藏照片
+            case PhotoStarRating.HIDDEN: // 隐藏照片
                 apiEndpoint = getHiddenPhotosByPage;
                 break;
-            case 3: // 气象照片
+            case PhotoStarRating.METEOROLOGY: // 气象照片
                 apiEndpoint = getMeteorologyPhotosByPage;
+                break;
+            case PhotoStarRating.GROUP_ONLY: // 仅组图照片
+                apiEndpoint = getVisiblePhotosByPage; // ！！！！仅组图照片暂时使用可见照片API
                 break;
             default:
                 apiEndpoint = getVisiblePhotosByPage;
@@ -135,6 +153,8 @@ const getPhotos = async () => {
     } catch (error) {
         console.error('获取照片数据失败:', error);
         ElMessage.error('照片加载失败');
+    } finally {
+        loading.value = false;
     }
 };
 
@@ -143,11 +163,11 @@ const handleScroll = debounce(() => {
     const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
     const scrollBottom = scrollHeight - (scrollTop + clientHeight);
 
-    // 当距离底部小于 50px
-    if (scrollBottom < 50 && hasMore.value) {
+    // 当距离底部小于配置的触发距离
+    if (scrollBottom < InfiniteScrollConfig.TRIGGER_DISTANCE && hasMore.value) {
         getPhotos();
     }
-}, 200);
+}, InfiniteScrollConfig.THROTTLE_DELAY);
 
 // 在 onMounted 中添加滚动监听
 onMounted(async () => {

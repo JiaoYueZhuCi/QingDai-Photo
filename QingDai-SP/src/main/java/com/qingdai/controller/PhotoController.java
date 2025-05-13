@@ -801,6 +801,21 @@ public class PhotoController {
         }
     }
 
+    @GetMapping("/validate-meteorology-groups")
+    @Operation(summary = "验证气象组图冲突", description = "检查照片是否同时属于冲突的气象组图类型")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Object> validateMeteorologyGroups() {
+        try {
+            log.info("控制器调用: 验证气象组图冲突");
+            Map<String, Object> result = photoService.validateMeteorologyGroups();
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("验证气象组图冲突时发生错误: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Collections.singletonMap("error", "验证过程中发生错误: " + e.getMessage()));
+        }
+    }
+
     @DeleteMapping("/not-in-database")
     @Operation(summary = "删除数据库中没有记录的照片", description = "删除文件系统中存在但数据库中没有记录的照片文件")
     @PreAuthorize("hasRole('ADMIN')")

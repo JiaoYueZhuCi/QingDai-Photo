@@ -3,7 +3,8 @@ import { ElMessage } from 'element-plus';
 import { getThumbnail100KPhotos, getPhotosByIds, getThumbnail1000KPhoto, getFullSizePhoto, getPhotoInfo, getThumbnail100KPhoto } from '@/api/photo';
 import type { WaterfallItem } from '@/types';
 import { get100KPhotoFromDB, save100KPhotoToDB, get1000KPhotoFromDB, save1000KPhotoToDB, getFullPhotoFromDB, saveFullPhotoToDB } from "@/utils/indexedDB";
-import { toRaw, triggerRef } from 'vue';
+
+
 
 // 增强的瀑布流项类型，支持动态属性
 export interface EnhancedWaterfallItem extends WaterfallItem {

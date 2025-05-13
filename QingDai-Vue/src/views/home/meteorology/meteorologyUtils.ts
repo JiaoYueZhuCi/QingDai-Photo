@@ -1,22 +1,12 @@
+import { getMeteorologyGroupName } from '@/config/groupPhotos';
+
 /**
  * 将气象类型ID转换为对应的名称
  * @param meteorologyType 气象类型ID
  * @returns 气象类型名称
  */
-export const getMeteorologyTypeName = (meteorologyType: string | number): string => {
-    const typeMap: Record<number, string> = {
-        1: '朝霞',
-        2: '晚霞',
-        3: '日出',
-        4: '日落'
-    };
-    
-    // 确保类型为数字
-    const meteorologyTypeNumber = typeof meteorologyType === 'string'
-        ? parseInt(meteorologyType, 10)
-        : meteorologyType;
-        
-    return typeMap[meteorologyTypeNumber] || '气象异常';
+export const getMeteorologyTypeName = (meteorologyType: string): string => {
+    return getMeteorologyGroupName(meteorologyType);
 };
 
 /**

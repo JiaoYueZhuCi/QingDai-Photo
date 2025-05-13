@@ -64,13 +64,14 @@
 import { ref, onMounted, computed } from 'vue';
 import { ElMessage, ElLoading } from 'element-plus';
 import { getAllShares, deleteShare, getSharesByPage } from '@/api/share';
+import { ManagePagination } from '@/config/pagination';
 
 // 数据状态
 const loading = ref(false);
 const shareList = ref([]);
 const tableHeight = ref(window.innerHeight - 65);
 const currentPage = ref(1);
-const pageSize = ref(50);
+const pageSize = ref(ManagePagination.SHARE_MANAGE_PAGE_SIZE);
 const total = ref(0);
 
 // 生命周期钩子

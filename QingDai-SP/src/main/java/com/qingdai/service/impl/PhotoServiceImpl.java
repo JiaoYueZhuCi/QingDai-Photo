@@ -56,6 +56,8 @@ import java.util.concurrent.TimeUnit;
 import org.springframework.transaction.annotation.Transactional;
 import com.qingdai.service.FileProcessService;
 import org.springframework.context.annotation.Lazy;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * <p>
@@ -766,10 +768,11 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
         List<Photo> allPhotos = list();
 
         Map<String, Object> result = new HashMap<>();
-        List<String> missingFullSize = new ArrayList<>();
-        List<String> missingThumbnail100K = new ArrayList<>();
-        List<String> missingThumbnail1000K = new ArrayList<>();
-        List<String> missingAll = new ArrayList<>();
+        List<String> missingFullSizeFiles = new ArrayList<>();
+        List<String> missingThumbnail100KFiles = new ArrayList<>();
+        List<String> missingThumbnail1000KFiles = new ArrayList<>();
+        List<String> missingAllFiles = new ArrayList<>();
+        List<String> missingDetails = new ArrayList<>();
 
         if (allPhotos.isEmpty()) {
             log.warn("数据库中没有照片记录");
@@ -786,42 +789,49 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
             boolean thumbnail1000KMissing = !new File(thumbnail1000KUrl, fileName).exists();
 
             if (fullSizeMissing) {
-                missingFullSize.add(fileName);
+                missingFullSizeFiles.add(fileName);
             }
 
             if (thumbnail100KMissing) {
-                missingThumbnail100K.add(fileName);
+                missingThumbnail100KFiles.add(fileName);
             }
 
             if (thumbnail1000KMissing) {
-                missingThumbnail1000K.add(fileName);
+                missingThumbnail1000KFiles.add(fileName);
             }
 
             if (fullSizeMissing && thumbnail100KMissing && thumbnail1000KMissing) {
-                missingAll.add(fileName);
+                missingAllFiles.add(fileName);
+                missingDetails.add(String.format("ID:%s,文件名:%s,原图缺失:%s,100K缺失:%s,1000K缺失:%s",
+                        photo.getId(), fileName, 
+                        fullSizeMissing ? "true" : "false",
+                        thumbnail100KMissing ? "true" : "false",
+                        thumbnail1000KMissing ? "true" : "false"));
             }
         }
 
-        int missingFullSizeCount = missingFullSize.size();
-        int missingThumbnail100KCount = missingThumbnail100K.size();
-        int missingThumbnail1000KCount = missingThumbnail1000K.size();
-        int missingAllCount = missingAll.size();
+        int missingFullSize = missingFullSizeFiles.size();
+        int missingThumbnail100K = missingThumbnail100KFiles.size();
+        int missingThumbnail1000K = missingThumbnail1000KFiles.size();
+        int missingAllCount = missingAllFiles.size();
 
         log.info("数据库中共有{}张照片，其中{}张丢失原图，{}张丢失100K缩略图，{}张丢失1000K缩略图，{}张三种图片都丢失",
-                totalCount, missingFullSizeCount, missingThumbnail100KCount, missingThumbnail1000KCount,
+                totalCount, missingFullSize, missingThumbnail100K, missingThumbnail1000K,
                 missingAllCount);
 
-        result.put("totalPhotos", totalCount);
-        result.put("missingFullSize", missingFullSizeCount);
-        result.put("missingThumbnail100K", missingThumbnail100KCount);
-        result.put("missingThumbnail1000K", missingThumbnail1000KCount);
+        // 使用与前端匹配的键名
+        result.put("totalCount", totalCount);
+        result.put("missingFullSize", missingFullSize);
+        result.put("missing100K", missingThumbnail100K);
+        result.put("missing1000K", missingThumbnail1000K);
         result.put("missingAll", missingAllCount);
-        result.put("missingFullSizeFiles", missingFullSize);
-        result.put("missingThumbnail100KFiles", missingThumbnail100K);
-        result.put("missingThumbnail1000KFiles", missingThumbnail1000K);
-        result.put("missingAllFiles", missingAll);
+        result.put("missingFullSizeFiles", missingFullSizeFiles);
+        result.put("missing100KFiles", missingThumbnail100KFiles);
+        result.put("missing1000KFiles", missingThumbnail1000KFiles);
+        result.put("missingAllFiles", missingAllFiles);
+        result.put("missingDetails", missingDetails);
         result.put("message", String.format("数据库中共有%d张照片，其中%d张丢失原图，%d张丢失100K缩略图，%d张丢失1000K缩略图，%d张三种图片都丢失",
-                totalCount, missingFullSizeCount, missingThumbnail100KCount, missingThumbnail1000KCount,
+                totalCount, missingFullSize, missingThumbnail100K, missingThumbnail1000K,
                 missingAllCount));
 
         return result;
@@ -847,14 +857,17 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
         // 先验证数据库照片在文件系统中的存在性
         Map<String, Object> validateResult = validatePhotoExistence();
 
-        if (!validateResult.containsKey("missingDetails")) {
-            log.error("验证数据库照片失败，无法执行删除操作");
-            result.put("error", "验证失败，无法执行删除操作");
-            return result;
-        }
-
         @SuppressWarnings("unchecked")
         List<String> missingDetails = (List<String>) validateResult.get("missingDetails");
+        
+        if (missingDetails == null || missingDetails.isEmpty()) {
+            log.info("没有需要删除的记录");
+            result.put("message", "没有需要删除的记录");
+            result.put("totalDeleted", 0);
+            result.put("deletedRecords", Collections.emptyList());
+            result.put("errorRecords", Collections.emptyList());
+            return result;
+        }
 
         List<String> deletedRecords = new ArrayList<>();
         List<String> errorRecords = new ArrayList<>();
@@ -872,14 +885,13 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
 
                 // 只有当三种图片都缺失时才删除记录
                 if (fullSizeMissing && thumbnail100KMissing && thumbnail1000KMissing) {
-                    long id = Long.parseLong(idStr);
-                    if (removeById(id)) {
+                    if (removeById(idStr)) {
                         deletedRecords.add(detail);
                         totalDeleted++;
-                        log.info("已删除缺失全部三种图片的数据库记录，ID: {}", id);
+                        log.info("已删除缺失全部三种图片的数据库记录，ID: {}", idStr);
                     } else {
                         errorRecords.add(detail + " - 删除失败");
-                        log.error("删除数据库记录失败，ID: {}", id);
+                        log.error("删除数据库记录失败，ID: {}", idStr);
                     }
                 }
             } catch (Exception e) {
@@ -1638,5 +1650,87 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
     public boolean existsByFileName(String fileName) {
         return count(new LambdaQueryWrapper<Photo>()
                 .eq(Photo::getFileName, fileName)) > 0;
+    }
+
+    @Override
+    public Map<String, Object> validateMeteorologyGroups() {
+        log.info("开始验证气象组图冲突");
+        
+        Map<String, Object> result = new HashMap<>();
+        List<Map<String, Object>> conflicts = new ArrayList<>();
+        
+        // 气象组ID对应关系（朝霞-日落，晚霞-日出是冲突的）
+        // 使用常量来定义冲突组，而不是硬编码数字
+        // 朝霞(1)和日落(4)冲突，晚霞(2)和日出(3)冲突
+        final String SUNRISE_GLOW = "1"; // 朝霞
+        final String SUNSET_GLOW = "2";  // 晚霞
+        final String SUNRISE = "3";      // 日出
+        final String SUNSET = "4";       // 日落
+        
+        List<List<String>> conflictGroups = new ArrayList<>();
+        conflictGroups.add(Arrays.asList(SUNRISE_GLOW, SUNSET)); // 朝霞和日落冲突
+        conflictGroups.add(Arrays.asList(SUNSET_GLOW, SUNRISE)); // 晚霞和日出冲突
+        
+        // 获取所有气象组图ID
+        List<String> meteorologyGroupIds = new ArrayList<>();
+        for (List<String> group : conflictGroups) {
+            meteorologyGroupIds.addAll(group);
+        }
+        
+        // 获取所有属于气象组的照片ID列表
+        Set<String> allMeteorologyPhotoIds = new HashSet<>();
+        
+        // 为每对冲突组图构建照片ID映射
+        for (List<String> conflictPair : conflictGroups) {
+            String groupId1 = conflictPair.get(0);
+            String groupId2 = conflictPair.get(1);
+            
+            // 获取第一个组的所有照片
+            List<String> photosInGroup1 = groupPhotoPhotoService.getPhotoIdsByGroupPhotoId(groupId1);
+            Set<String> photosInGroup1Set = new HashSet<>(photosInGroup1);
+            allMeteorologyPhotoIds.addAll(photosInGroup1);
+            log.debug("组图 {} 包含 {} 张照片", groupId1, photosInGroup1.size());
+            
+            // 获取第二个组的所有照片
+            List<String> photosInGroup2 = groupPhotoPhotoService.getPhotoIdsByGroupPhotoId(groupId2);
+            Set<String> photosInGroup2Set = new HashSet<>(photosInGroup2);
+            allMeteorologyPhotoIds.addAll(photosInGroup2);
+            log.debug("组图 {} 包含 {} 张照片", groupId2, photosInGroup2.size());
+            
+            // 找出同时属于两个组的照片（冲突）
+            Set<String> conflictingPhotoIds = new HashSet<>(photosInGroup1Set);
+            conflictingPhotoIds.retainAll(photosInGroup2Set); // 取交集
+            
+            if (!conflictingPhotoIds.isEmpty()) {
+                log.debug("发现 {} 张照片同时属于组图 {} 和 {}", conflictingPhotoIds.size(), groupId1, groupId2);
+                
+                // 查询冲突照片的详细信息
+                for (String photoId : conflictingPhotoIds) {
+                    Photo photo = getById(photoId);
+                    if (photo != null) {
+                        Map<String, Object> conflict = new HashMap<>();
+                        conflict.put("photoId", photoId);
+                        conflict.put("fileName", photo.getFileName());
+                        conflict.put("groupIds", Arrays.asList(
+                            Integer.parseInt(groupId1),
+                            Integer.parseInt(groupId2)
+                        ));
+                        conflicts.add(conflict);
+                    }
+                }
+            }
+        }
+        
+        int totalMeteorologyPhotos = allMeteorologyPhotoIds.size();
+        int conflictCount = conflicts.size();
+        
+        log.info("气象组图总照片数: {}, 发现 {} 张照片存在气象组图冲突", totalMeteorologyPhotos, conflictCount);
+        
+        // 组装结果
+        result.put("totalPhotos", totalMeteorologyPhotos);
+        result.put("conflictCount", conflictCount);
+        result.put("conflicts", conflicts);
+        
+        return result;
     }
 }

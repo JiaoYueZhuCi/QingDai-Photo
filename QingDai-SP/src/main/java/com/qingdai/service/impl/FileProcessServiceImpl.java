@@ -334,63 +334,80 @@ public class FileProcessServiceImpl implements FileProcessService {
         log.info("开始验证文件系统照片在数据库中的存在性");
         
         Map<String, Object> result = new HashMap<>();
-        List<String> missingInDatabase = new ArrayList<>();
+        List<String> fullSizeNotInDb = new ArrayList<>();
+        List<String> thumbnail100KNotInDb = new ArrayList<>();
+        List<String> thumbnail1000KNotInDb = new ArrayList<>();
         
-        // 获取所有照片文件名
-        Set<String> allFileNames = new HashSet<>();
+        // 获取数据库照片数
+        long dbPhotoCount = photoService.count();
         
         // 获取原图目录中的所有照片
         File fullSizeDir = new File(fullSizeUrl);
+        int fullSizeCount = 0;
         if (fullSizeDir.exists() && fullSizeDir.isDirectory()) {
-            for (File file : Objects.requireNonNull(fullSizeDir.listFiles())) {
+            File[] files = fullSizeDir.listFiles();
+            if (files != null) {
+                for (File file : files) {
                 if (fileIsSupportedPhoto(file)) {
-                    allFileNames.add(file.getName());
+                        fullSizeCount++;
+                        boolean existsInDatabase = photoService.existsByFileName(file.getName());
+                        if (!existsInDatabase) {
+                            fullSizeNotInDb.add(file.getName());
+                        }
+                    }
                 }
             }
         }
         
         // 获取100K缩略图目录中的所有照片
         File thumbnail100KDir = new File(thumbnail100KUrl);
+        int thumbnail100KCount = 0;
         if (thumbnail100KDir.exists() && thumbnail100KDir.isDirectory()) {
-            for (File file : Objects.requireNonNull(thumbnail100KDir.listFiles())) {
+            File[] files = thumbnail100KDir.listFiles();
+            if (files != null) {
+                for (File file : files) {
                 if (fileIsSupportedPhoto(file)) {
-                    allFileNames.add(file.getName());
+                        thumbnail100KCount++;
+                        boolean existsInDatabase = photoService.existsByFileName(file.getName());
+                        if (!existsInDatabase) {
+                            thumbnail100KNotInDb.add(file.getName());
+                        }
+                    }
                 }
             }
         }
         
         // 获取1000K缩略图目录中的所有照片
         File thumbnail1000KDir = new File(thumbnail1000KUrl);
+        int thumbnail1000KCount = 0;
         if (thumbnail1000KDir.exists() && thumbnail1000KDir.isDirectory()) {
-            for (File file : Objects.requireNonNull(thumbnail1000KDir.listFiles())) {
+            File[] files = thumbnail1000KDir.listFiles();
+            if (files != null) {
+                for (File file : files) {
                 if (fileIsSupportedPhoto(file)) {
-                    allFileNames.add(file.getName());
+                        thumbnail1000KCount++;
+                        boolean existsInDatabase = photoService.existsByFileName(file.getName());
+            if (!existsInDatabase) {
+                            thumbnail1000KNotInDb.add(file.getName());
+            }
+        }
                 }
             }
         }
         
-        int totalFiles = allFileNames.size();
-        if (totalFiles == 0) {
-            log.warn("文件系统中没有照片");
-            result.put("message", "文件系统中没有照片");
-            return result;
-        }
+        log.info("文件系统中有：原图{}个、100K压缩图{}个、1000K压缩图{}个，数据库中有{}张照片记录", 
+                fullSizeCount, thumbnail100KCount, thumbnail1000KCount, dbPhotoCount);
         
-        // 检查每个文件是否在数据库中有记录
-        for (String fileName : allFileNames) {
-            boolean existsInDatabase = photoService.existsByFileName(fileName);
-            if (!existsInDatabase) {
-                missingInDatabase.add(fileName);
-            }
-        }
-        
-        int missingCount = missingInDatabase.size();
-        log.info("文件系统中有{}个照片文件，其中{}个在数据库中没有记录", totalFiles, missingCount);
-        
-        result.put("totalFiles", totalFiles);
-        result.put("missingInDatabase", missingCount);
-        result.put("missingFileNames", missingInDatabase);
-        result.put("message", String.format("文件系统中有%d个照片文件，其中%d个在数据库中没有记录", totalFiles, missingCount));
+        // 构建结果，使用与前端匹配的键名
+        result.put("dbPhotoCount", dbPhotoCount);
+        result.put("fullSizeCount", fullSizeCount);
+        result.put("thumbnail100KCount", thumbnail100KCount);
+        result.put("thumbnail1000KCount", thumbnail1000KCount);
+        result.put("fullSizeNotInDb", fullSizeNotInDb);
+        result.put("thumbnail100KNotInDb", thumbnail100KNotInDb);
+        result.put("thumbnail1000KNotInDb", thumbnail1000KNotInDb);
+        result.put("message", String.format("文件系统中有：原图%d个、100K压缩图%d个、1000K压缩图%d个，数据库中有%d张照片记录", 
+                fullSizeCount, thumbnail100KCount, thumbnail1000KCount, dbPhotoCount));
         
         return result;
     }
@@ -401,59 +418,96 @@ public class FileProcessServiceImpl implements FileProcessService {
         
         Map<String, Object> result = new HashMap<>();
         List<String> deletedFiles = new ArrayList<>();
+        List<String> errorFiles = new ArrayList<>();
         
         // 验证文件系统照片
         Map<String, Object> validateResult = validateFileSystemPhotos(fullSizeUrl, thumbnail100KUrl, thumbnail1000KUrl);
         
         @SuppressWarnings("unchecked")
-        List<String> missingFileNames = (List<String>) validateResult.get("missingFileNames");
+        List<String> fullSizeNotInDb = (List<String>) validateResult.get("fullSizeNotInDb");
         
-        if (missingFileNames == null || missingFileNames.isEmpty()) {
+        @SuppressWarnings("unchecked")
+        List<String> thumbnail100KNotInDb = (List<String>) validateResult.get("thumbnail100KNotInDb");
+        
+        @SuppressWarnings("unchecked")
+        List<String> thumbnail1000KNotInDb = (List<String>) validateResult.get("thumbnail1000KNotInDb");
+        
+        // 合并所有需要删除的文件
+        Set<String> filesToDelete = new HashSet<>();
+        if (fullSizeNotInDb != null) filesToDelete.addAll(fullSizeNotInDb);
+        if (thumbnail100KNotInDb != null) filesToDelete.addAll(thumbnail100KNotInDb);
+        if (thumbnail1000KNotInDb != null) filesToDelete.addAll(thumbnail1000KNotInDb);
+        
+        if (filesToDelete.isEmpty()) {
             log.info("没有需要删除的照片文件");
             result.put("message", "没有需要删除的照片文件");
+            result.put("totalToDelete", 0);
+            result.put("deletedCount", 0);
+            result.put("deletedFiles", Collections.emptyList());
+            result.put("errorFiles", Collections.emptyList());
             return result;
         }
         
-        int totalToDelete = missingFileNames.size();
+        int totalToDelete = filesToDelete.size();
         int deletedCount = 0;
         
         // 删除每个在数据库中没有记录的文件
-        for (String fileName : missingFileNames) {
-            boolean allDeleted = true;
+        for (String fileName : filesToDelete) {
+            boolean deleted = false;
+            boolean hasError = false;
             
             // 删除原图
             File fullSizeFile = new File(fullSizeUrl, fileName);
-            if (fullSizeFile.exists() && !fullSizeFile.delete()) {
+            if (fullSizeFile.exists()) {
+                if (fullSizeFile.delete()) {
+                    deleted = true;
+                    log.debug("删除了原图: {}", fullSizeFile.getAbsolutePath());
+                } else {
+                    hasError = true;
                 log.warn("无法删除原图文件: {}", fullSizeFile.getAbsolutePath());
-                allDeleted = false;
+                    errorFiles.add("原图:" + fileName);
+                }
             }
             
             // 删除100K缩略图
             File thumbnail100KFile = new File(thumbnail100KUrl, fileName);
-            if (thumbnail100KFile.exists() && !thumbnail100KFile.delete()) {
+            if (thumbnail100KFile.exists()) {
+                if (thumbnail100KFile.delete()) {
+                    deleted = true;
+                    log.debug("删除了100K缩略图: {}", thumbnail100KFile.getAbsolutePath());
+                } else {
+                    hasError = true;
                 log.warn("无法删除100K缩略图文件: {}", thumbnail100KFile.getAbsolutePath());
-                allDeleted = false;
+                    errorFiles.add("100K:" + fileName);
+                }
             }
             
             // 删除1000K缩略图
             File thumbnail1000KFile = new File(thumbnail1000KUrl, fileName);
-            if (thumbnail1000KFile.exists() && !thumbnail1000KFile.delete()) {
+            if (thumbnail1000KFile.exists()) {
+                if (thumbnail1000KFile.delete()) {
+                    deleted = true;
+                    log.debug("删除了1000K缩略图: {}", thumbnail1000KFile.getAbsolutePath());
+                } else {
+                    hasError = true;
                 log.warn("无法删除1000K缩略图文件: {}", thumbnail1000KFile.getAbsolutePath());
-                allDeleted = false;
+                    errorFiles.add("1000K:" + fileName);
+                }
             }
             
-            if (allDeleted) {
+            if (deleted && !hasError) {
                 deletedCount++;
                 deletedFiles.add(fileName);
             }
         }
         
-        log.info("成功删除了{}个数据库中没有记录的照片文件，共{}个需要删除", deletedCount, totalToDelete);
+        log.info("成功删除了{}个文件，共{}个需要删除", deletedCount, totalToDelete);
         
         result.put("totalToDelete", totalToDelete);
         result.put("deletedCount", deletedCount);
         result.put("deletedFiles", deletedFiles);
-        result.put("message", String.format("成功删除了%d个数据库中没有记录的照片文件，共%d个需要删除", deletedCount, totalToDelete));
+        result.put("errorFiles", errorFiles);
+        result.put("message", String.format("成功删除了%d个文件，共%d个需要删除", deletedCount, totalToDelete));
         
         return result;
     }

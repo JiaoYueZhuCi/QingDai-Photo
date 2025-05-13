@@ -126,6 +126,12 @@ public interface PhotoService extends IService<Photo> {
     Map<String, Object> getPhotoSubjectStats();
     
     /**
+     * 验证气象组图冲突（照片不能同时属于朝霞与日落、晚霞与日出）
+     * @return 包含验证结果的Map，包括总照片数、冲突照片数及详细信息
+     */
+    Map<String, Object> validateMeteorologyGroups();
+    
+    /**
      * 获取相机统计
      * @return 包含相机使用频率的列表
      */

@@ -1,7 +1,11 @@
 <template>
     <div class="container" ref="containerRef">
+        <!-- 空状态显示 - 仅在数据加载完成且为空时显示 -->
+        <el-empty v-if="!loading && images.length === 0" description="暂无组图数据"></el-empty>
+
         <!-- 瀑布流组件 -->
         <PhotoWaterfall
+            v-if="images.length > 0"
             :images="images"
             :isShareMode="false"
             :selectedPhotos="[]"
@@ -39,6 +43,9 @@
             @group-photo-updated="handleGroupPhotoUpdated"
             @close="closeGroupPhotoUpdate"
         />
+
+        <!-- 添加加载指示器 -->
+        <LoadMoreIndicator v-if="hasMore" text="加载更多组图..." />
     </div>
 </template>
 
@@ -57,6 +64,8 @@ import { get100KPhotos, processPhotoData } from '@/utils/photo';
 import { useRouter, useRoute } from 'vue-router';
 import type { WaterfallLayoutOptions } from '@/components/photo/photo-viewer/useWaterfallLayout';
 import { Edit } from '@element-plus/icons-vue';
+import { PhotoPagination, InfiniteScrollConfig, WaterfallLayoutConfig } from '@/config/pagination';
+import LoadMoreIndicator from '@/components/common/loading/LoadMoreIndicator.vue'
 
 // 添加路由
 const router = useRouter();
@@ -64,14 +73,14 @@ const route = useRoute();
 
 // 定义组图瀑布流布局选项
 const layoutOptions: WaterfallLayoutOptions = {
-    rowHeightMax: 300,
-    rowHeightMin: 150,
-    defaultGap: 10,
-    defaultSideMargin: 8,
-    mobileRowHeightMax: 200,
-    mobileRowHeightMin: 100,
-    mobileGap: 4,
-    mobileSideMargin: 4
+    rowHeightMax: WaterfallLayoutConfig.DESKTOP_ROW_HEIGHT_MAX,
+    rowHeightMin: WaterfallLayoutConfig.DESKTOP_ROW_HEIGHT_MIN,
+    defaultGap: WaterfallLayoutConfig.DESKTOP_GAP,
+    defaultSideMargin: WaterfallLayoutConfig.DESKTOP_SIDE_MARGIN,
+    mobileRowHeightMax: WaterfallLayoutConfig.MOBILE_ROW_HEIGHT_MAX,
+    mobileRowHeightMin: WaterfallLayoutConfig.MOBILE_ROW_HEIGHT_MIN,
+    mobileGap: WaterfallLayoutConfig.MOBILE_GAP,
+    mobileSideMargin: WaterfallLayoutConfig.MOBILE_SIDE_MARGIN
 };
 
 // 添加新的状态保存选中的组图和照片
@@ -149,7 +158,7 @@ const props = defineProps({
 //// 照片流数据
 const images = ref<WaterfallItem[]>([]);
 const currentPage = ref(1);
-const pageSize = ref(10); // 每页加载的组图数量
+const pageSize = ref(PhotoPagination.GROUP_PHOTOS_PAGE_SIZE); // 每页加载的组图数量
 const hasMore = ref(true);
 const containerRef = ref<HTMLElement | null>(null);
 const loading = ref(false);
@@ -222,16 +231,16 @@ const getPhotos = async () => {
     }
 };
 
-// 滚动事件处理
+// 新增滚动事件处理
 const handleScroll = debounce(() => {
     const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
     const scrollBottom = scrollHeight - (scrollTop + clientHeight);
 
-    // 当距离底部小于 50px 且还有更多数据时，加载更多
-    if (scrollBottom < 50 && hasMore.value && !loading.value) {
+    // 当距离底部小于配置的触发距离
+    if (scrollBottom < InfiniteScrollConfig.TRIGGER_DISTANCE && hasMore.value) {
         getPhotos();
     }
-}, 200);
+}, InfiniteScrollConfig.THROTTLE_DELAY);
 
 // 在 onMounted 中添加滚动监听
 onMounted(async () => {

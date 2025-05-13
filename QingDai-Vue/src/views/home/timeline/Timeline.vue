@@ -1,18 +1,20 @@
 <template>
   <div class="timelineContainer">
-    <el-empty v-if="!timelines || timelines.length === 0" description="暂无时间轴数据"></el-empty>
-    <el-timeline v-else>
+    <!-- 空状态显示 - 仅在数据加载完成且为空时显示 -->
+    <el-empty v-if="!loading && (!timelines || timelines.length === 0)" description="暂无时间轴数据"></el-empty>
+    
+    <!-- 时间轴 - 仅在有数据时显示 -->
+    <el-timeline v-if="timelines && timelines.length > 0">
       <el-timeline-item v-for="(timelineItem, index) in timelines" :key="index" :timestamp="timelineItem.recordTime" placement="top">
         <el-card class="timeline-card">
           <h4 class="timeline-title">{{ timelineItem.title }}</h4>
           <p class="content-cell">{{ timelineItem.text }}</p>
         </el-card>
       </el-timeline-item>
-      <div v-if="loading" class="loading-container">
-        <el-icon class="is-loading"><Loading /></el-icon>
-        <span>加载更多...</span>
-      </div>
     </el-timeline>
+    
+    <!-- 加载指示器 - 仅当有更多数据时显示 -->
+      <load-more-indicator v-if="hasMore" text="加载更多时间轴..." />
   </div>
 </template>
 
@@ -20,25 +22,19 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import type { TimelineItem } from '@/types';
 import { getTimelinesByPage } from '@/api/timeline';
-import { ElLoading, ElMessage } from 'element-plus';
+import { ElMessage } from 'element-plus';
 import { debounce } from 'lodash';
-import { Loading } from '@element-plus/icons-vue';
+import { PhotoPagination, InfiniteScrollConfig } from '@/config/pagination';
+import LoadMoreIndicator from '@/components/common/loading/LoadMoreIndicator.vue'
 
 const timelines = ref<TimelineItem[]>([]);
 const loading = ref(false);
 const currentPage = ref(1);
-const pageSize = ref(10);
+const pageSize = ref(PhotoPagination.TIMELINE_PAGE_SIZE);
 const hasMore = ref(true);
 
 const fetchTimelines = async () => {
   if (!hasMore.value || loading.value) return;
-  
-  const loadingInstance = ElLoading.service({
-    lock: true,
-    text: '加载时间线中...',
-    background: 'rgba(0, 0, 0, 0.8)',
-    fullscreen: true
-  });
   
   try {
     loading.value = true;
@@ -70,7 +66,6 @@ const fetchTimelines = async () => {
     ElMessage.error('获取时间线数据失败');
   } finally {
     loading.value = false;
-    loadingInstance.close();
   }
 };
 
@@ -79,11 +74,11 @@ const handleScroll = debounce(() => {
   const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
   const scrollBottom = scrollHeight - (scrollTop + clientHeight);
 
-  // 当距离底部小于 50px 且还有更多数据时，加载更多
-  if (scrollBottom < 50 && hasMore.value && !loading.value) {
+  // 当距离底部小于配置的触发距离且还有更多数据时，加载更多
+  if (scrollBottom < InfiniteScrollConfig.TRIGGER_DISTANCE && hasMore.value && !loading.value) {
     fetchTimelines();
   }
-}, 200);
+}, InfiniteScrollConfig.THROTTLE_DELAY);
 
 onMounted(() => {
   // 初始加载
@@ -125,34 +120,6 @@ onUnmounted(() => {
   word-break: break-word;
   color: var(--qd-color-text-secondary);
   margin: 0;
-}
-
-.loading-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin: 20px 0;
-  color: var(--qd-color-text-secondary);
-}
-
-.loading-container .el-icon {
-  font-size: 24px;
-  margin-bottom: 8px;
-}
-
-/* 自定义加载样式 */
-:deep(.el-loading-mask) {
-  z-index: 9999;
-}
-
-:deep(.el-loading-spinner .el-loading-text) {
-  color: #fff;
-  font-size: 16px;
-  margin-top: 10px;
-}
-
-:deep(.el-loading-spinner .path) {
-  stroke: #fff;
 }
 
 @media (max-width: 768px) {

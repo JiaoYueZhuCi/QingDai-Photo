@@ -40,7 +40,6 @@
             </div>
         </div>
     </div>
-    <el-empty v-else description="暂无照片数据"></el-empty>
 </template>
 
 <script setup lang="ts">

@@ -235,3 +235,16 @@ export const beianInfo = {
 
 3. 密码说明：
    - 所有用户密码均为明文 "123456" 的BCrypt加密结果:$2a$10$jndgC.sZFv0volqxQeXdk.NGN.K7Smrko/5UtP33pPVUcQdP0604a（根据配置文件jwt.secret:QingDai）
+
+#### 特殊字段
+1. photo.start_rating
+  - -1 隐藏
+  - 0 普通
+  - 1 精选
+  - 2 气象
+
+2. group_photo.id
+ - 1 朝霞
+ - 2 晚霞
+ - 3 日出
+ - 4 日落
