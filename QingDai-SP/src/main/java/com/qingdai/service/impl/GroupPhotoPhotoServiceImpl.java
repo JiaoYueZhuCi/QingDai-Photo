@@ -10,6 +10,7 @@ import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -46,6 +47,7 @@ public class GroupPhotoPhotoServiceImpl extends BaseCachedServiceImpl<GroupPhoto
     
     @Override
     @CacheEvict(value = {"groupPhotoPhoto", "groupPhoto"}, allEntries = true)
+    @Transactional(rollbackFor = Exception.class)
     public void deleteByGroupPhotoId(String groupPhotoId) {
         LambdaQueryWrapper<GroupPhotoPhoto> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(GroupPhotoPhoto::getGroupPhotoId, groupPhotoId);
@@ -54,6 +56,7 @@ public class GroupPhotoPhotoServiceImpl extends BaseCachedServiceImpl<GroupPhoto
 
     @Override
     @CacheEvict(value = {"groupPhotoPhoto", "groupPhoto"}, allEntries = true)
+    @Transactional(rollbackFor = Exception.class)
     public void updateGroupPhotoPhoto(GroupPhotoDTO groupPhotoDTO) {
         String groupPhotoId = groupPhotoDTO.getGroupPhoto().getId();
         

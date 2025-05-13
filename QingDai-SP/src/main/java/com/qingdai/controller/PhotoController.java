@@ -13,6 +13,7 @@ import com.qingdai.service.GroupPhotoService;
 import com.qingdai.utils.FileUtils;
 import com.qingdai.utils.ValidationUtils;
 import com.qingdai.mq.producer.PhotoProcessor;
+import com.qingdai.service.FileProcessService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -69,6 +70,9 @@ public class PhotoController {
 
     @Autowired
     private GroupPhotoPhotoService groupPhotoPhotoService;
+
+    @Autowired
+    private FileProcessService fileProcessService;
 
     @Value("${qingdai.fullSizeUrl}")
     private String fullSizeUrl;
@@ -266,29 +270,20 @@ public class PhotoController {
     public ResponseEntity<String> thumbnailImages(
             @RequestParam(defaultValue = "1024") int maxSizeKB,
             @RequestParam(defaultValue = "false") boolean overwrite) {
-
         try {
-            ValidationUtils.validateMaxSize(maxSizeKB);
-
-            File pendingDir = new File(pendingUrl);
-            File thumbnailSizeDir = new File(thumbnailSizeUrl);
-
-            FileUtils.validateDirectory(pendingDir);
-            FileUtils.validateDirectory(thumbnailSizeDir);
-
-            photoService.thumbnailPhotosFromFolderToFolder(pendingDir, thumbnailSizeDir, maxSizeKB, overwrite);
-
-            if (thumbnailSizeDir.listFiles() == null || thumbnailSizeDir.listFiles().length == 0) {
-                log.error("压缩任务失败，目标文件夹未生成任何文件");
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body("压缩任务失败，目标文件夹未生成任何文件");
+            File sourceDir = FileUtils.validateFolder(pendingUrl);
+            File targetDir = FileUtils.validateFolder(thumbnailSizeUrl);
+            if (sourceDir == null || targetDir == null) {
+                log.error("目录验证失败：{}或{}不是有效的目录", pendingUrl, thumbnailSizeUrl);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("目录验证失败，请检查配置");
             }
 
-            log.info("图片压缩任务完成，目标目录: {}", thumbnailSizeDir.getPath());
-            return ResponseEntity.ok("压缩任务已完成");
-        } catch (IllegalArgumentException e) {
-            log.error("图片压缩参数验证失败: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(e.getMessage());
+            fileProcessService.thumbnailPhotosFromFolderToFolder(sourceDir, targetDir, maxSizeKB, overwrite);
+            log.info("缩略图处理完成");
+            return ResponseEntity.ok("缩略图处理完成");
+        } catch (Exception e) {
+            log.error("处理缩略图时出错：{}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("处理缩略图时出错：" + e.getMessage());
         }
     }
 
@@ -490,7 +485,6 @@ public class PhotoController {
         }
     }
 
-    @Transactional
     @Operation(summary = "处理待处理图片", description = "将pendingUrl内的图片添加到数据库，压缩到thumbnailSizeUrl，复制到fullSizeUrl，删除pendingUrl图片")
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/process-pending")
@@ -508,35 +502,15 @@ public class PhotoController {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("目录验证失败");
             }
 
-            List<Photo> photos = photoService.getPhotosByFolder(pendingDir);
+            PhotoService.ProcessResult result = photoService.processPendingPhotosWithCompression(
+                pendingDir, thumbnail100KDir, thumbnail1000KDir, fullSizeDir, overwrite);
 
-            if (photos.isEmpty()) {
-                log.warn("没有找到有效的待处理照片");
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("无有效照片待处理");
-            }
-            log.info("找到{}张待处理照片", photos.size());
-
-            // 处理图片压缩流程
-            try {
-                photoService.processPhotoCompression(pendingDir, thumbnail100KDir, thumbnail1000KDir, fullSizeDir,
-                        overwrite);
-            } catch (IOException e) {
-                log.error("处理文件时出错, 错误: {}", e.getMessage(), e);
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body("处理文件时出错: " + e.getMessage());
-            }
-
-            // 存入数据库
-            boolean result = photoService.saveBatch(photos);
-
-            if (result) {
-                // 清理pending目录
-                FileUtils.clearFolder(pendingDir, true);
-                log.info("成功处理所有照片，共处理{}张", photos.size());
-                return ResponseEntity.ok("处理成功，已处理 " + photos.size() + " 张照片");
+            if (result.isSuccess()) {
+                log.info("成功处理所有照片，共处理{}张", result.getNewPhotos().size());
+                return ResponseEntity.ok("处理成功，已处理 " + result.getNewPhotos().size() + " 张照片");
             } else {
-                log.error("数据库批量保存失败");
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("数据库保存失败");
+                log.error("处理照片失败");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("处理照片失败");
             }
         } catch (Exception e) {
             log.error("处理待处理图片时发生错误: {}", e.getMessage(), e);
@@ -645,24 +619,16 @@ public class PhotoController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("未找到对应照片记录");
             }
 
-            // 如果文件名发生变化，先重命名文件
-            if (!oldPhoto.getFileName().equals(photo.getFileName())) {
-                boolean renameSuccess = photoService.renamePhotoFiles(oldPhoto.getFileName(), photo.getFileName());
-                if (!renameSuccess) {
-                    log.error("重命名照片文件失败，ID: {}", photo.getId());
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("重命名照片文件失败");
-                }
-            }
+            // 使用Service层方法处理文件重命名和数据库更新的一致性
+            boolean result = photoService.updatePhotoWithFileName(photo, oldPhoto.getFileName());
 
-            // 更新数据库记录
-            boolean updated = photoService.updateById(photo);
-            if (!updated) {
-                log.warn("未找到ID为{}的照片记录", photo.getId());
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("未找到对应照片记录");
+            if (result) {
+                log.info("成功更新照片信息,ID: {}", photo.getId());
+                return ResponseEntity.ok("照片信息更新成功");
+            } else {
+                log.warn("更新照片信息失败,ID: {}", photo.getId());
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("更新照片信息失败");
             }
-
-            log.info("成功更新照片信息,ID: {}", photo.getId());
-            return ResponseEntity.ok("照片信息更新成功");
         } catch (Exception e) {
             log.error("更新照片信息时发生错误,ID: {}, 错误: {}", photo.getId(), e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("更新过程中发生错误: " + e.getMessage());
@@ -886,9 +852,8 @@ public class PhotoController {
     @Operation(summary = "获取所有照片统计数据", description = "获取照片类型、年月变化、拍摄主题、相机、镜头、参数等全面统计数据")
     @PreAuthorize("permitAll()")
     public ResponseEntity<Map<String, Object>> getPhotoDashboardStats() {
-        try {
+        try { 
             Map<String, Object> stats = photoService.getPhotoDashboardStats();
-            log.warn(stats.toString());
             log.info("成功获取照片统计数据");
             return ResponseEntity.ok(stats);
         } catch (Exception e) {
@@ -930,11 +895,11 @@ public class PhotoController {
         }
     }
 
-    @PutMapping("/lenses/{oldLens}")
+    @PutMapping("/lenses")
     @Operation(summary = "批量更新镜头型号", description = "将所有使用指定镜头型号的照片更新为新的镜头型号")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> updateLensName(
-            @PathVariable String oldLens,
+            @RequestParam String oldLens,
             @RequestParam String newLens) {
         log.info("更新镜头型号: {} -> {}", oldLens, newLens);
         

@@ -115,6 +115,7 @@ public class GroupPhotoController {
             String groupPhotoId = snowflakeIdGenerator.nextId();
             groupPhotoDTO.getGroupPhoto().setId(groupPhotoId);
 
+            // 保存组图基本信息
             boolean saved = groupPhotoService.save(groupPhotoDTO.getGroupPhoto());
             if (!saved) {
                 log.error("组图保存失败");
@@ -122,11 +123,8 @@ public class GroupPhotoController {
                         .body("组图创建失败");
             }
 
-            // 添加照片关联
-            for (String photoId : groupPhotoDTO.getPhotoIds()) {
-                GroupPhotoPhoto groupPhotoPhoto = new GroupPhotoPhoto(groupPhotoId, photoId);
-                groupPhotoPhotoService.save(groupPhotoPhoto);
-            }
+            // 添加照片关联（使用服务层方法处理多表操作）
+            groupPhotoPhotoService.updateGroupPhotoPhoto(groupPhotoDTO);
 
             log.info("成功创建组图，ID: {}", groupPhotoId);
             return ResponseEntity.status(HttpStatus.CREATED)
@@ -147,7 +145,6 @@ public class GroupPhotoController {
             if (id == null) {
                 return ResponseEntity.badRequest().body("ID不能为空");
             }
-            log.info("开始更新组图，ID: {}", id);
 
             // 更新组图基本信息
             boolean updated = groupPhotoService.updateById(groupPhoto);
@@ -173,29 +170,18 @@ public class GroupPhotoController {
 
     @Operation(summary = "删除组图", description = "删除指定ID的组图记录")
     @DeleteMapping("/{id}")
-    @Transactional
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> deleteGroupPhoto(@PathVariable String id) {
         try {
-            GroupPhoto groupPhoto = groupPhotoService.getById(id);
-            if (groupPhoto == null) {
-                log.warn("尝试删除不存在的组图，ID: {}", id);
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("组图不存在");
-            }
-
-            // 先删除关联的GroupPhotoPhoto记录
-            log.info("开始删除组图ID: {} 的关联照片记录", id);
-            groupPhotoPhotoService.deleteByGroupPhotoId(id);
-
-            // 再删除组图记录
-            boolean removed = groupPhotoService.removeById(id);
-            if (removed) {
+            // 使用Service层方法处理删除逻辑
+            boolean result = groupPhotoService.deleteGroupPhotoWithRelations(id);
+            
+            if (result) {
                 log.info("成功删除组图及其关联照片，ID: {}", id);
                 return ResponseEntity.noContent().build();
             } else {
-                log.error("删除组图失败，ID: {}", id);
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body("组图删除失败");
+                log.warn("组图不存在或删除失败，ID: {}", id);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("组图不存在或删除失败");
             }
         } catch (Exception e) {
             log.error("删除组图时发生异常，ID: {}，错误: {}", id, e.getMessage(), e);

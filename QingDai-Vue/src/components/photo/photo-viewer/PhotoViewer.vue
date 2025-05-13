@@ -1,7 +1,7 @@
 <template>
     <div v-if="visible" class="showViewer">
-        <el-image-viewer v-if="urlList.length > 0" :url-list="urlList" :initial-index="initialIndex" :hide-on-click-modal="true"
-            @close="handleClose" ref="imageViewerRef" />
+        <el-image-viewer v-if="urlList.length > 0" :url-list="urlList" :initial-index="initialIndex"
+            :hide-on-click-modal="true" @close="handleClose" ref="imageViewerRef" />
     </div>
 </template>
 
@@ -47,7 +47,7 @@ watch(() => props.modelValue, (newVal) => {
 
 watch(() => visible.value, (newVal) => {
     emit('update:modelValue', newVal)
-    if(newVal==false){
+    if (newVal == false) {
         emit('close')
     }
 })
@@ -57,11 +57,11 @@ onMounted(() => {
     visible.value = props.modelValue
     originalBodyPadding = document.body.style.paddingRight
     scrollbarWidth = getScrollbarWidth()
-    
+
     if (visible.value) {
         document.body.style.overflow = 'hidden'
         document.body.style.paddingRight = `${scrollbarWidth}px`
-        
+
         // 如果有photoId，加载图片
         if (props.photoId) {
             loadImages()
@@ -115,9 +115,11 @@ const loadImages = async () => {
         const canViewFull = await canViewFullSizePhoto()
 
         // 根据权限获取不同质量的图片
-        const imageResult = canViewFull
-            ? await getFullPhoto(props.photoId)
-            : await get1000KPhoto(props.photoId)
+        // const imageResult = canViewFull
+        //     ? await getFullPhoto(props.photoId)
+        //     : await get1000KPhoto(props.photoId)
+
+        const imageResult = await get1000KPhoto(props.photoId)
 
         if (imageResult) {
             urlList.value = [imageResult.url]
@@ -160,4 +162,4 @@ body {
 .el-image-viewer__img {
     display: block !important;
 }
-</style> 
+</style>

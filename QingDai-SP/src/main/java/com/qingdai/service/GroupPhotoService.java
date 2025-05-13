@@ -20,4 +20,11 @@ public interface GroupPhotoService extends IService<GroupPhoto> {
     List<GroupPhotoDTO> getAllGroupPhotoDTOs();
 
     Page<GroupPhotoDTO> getGroupPhotoDTOsByPage(int page, int pageSize);
+    
+    /**
+     * 删除组图和相关联记录
+     * @param id 组图ID
+     * @return 是否成功删除
+     */
+    boolean deleteGroupPhotoWithRelations(String id);
 }

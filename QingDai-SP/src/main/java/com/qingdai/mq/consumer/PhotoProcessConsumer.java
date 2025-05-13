@@ -1,6 +1,7 @@
 package com.qingdai.mq.consumer;
 
 import com.qingdai.mq.producer.PhotoProcessor.PhotoMessage;
+import com.qingdai.service.FileProcessService;
 import com.qingdai.service.PhotoService;
 import com.qingdai.service.PhotoService.ProcessResult;
 import com.qingdai.utils.FileUtils;
@@ -19,20 +20,21 @@ import java.io.IOException;
  */
 @Slf4j
 @Component
-@RocketMQMessageListener(
-        topic = "${rocketmq.topic.photo}",
-        consumerGroup = "${rocketmq.consumer.group}")
+@RocketMQMessageListener(topic = "${rocketmq.topic.photo}", consumerGroup = "${rocketmq.consumer.group}")
 public class PhotoProcessConsumer implements RocketMQListener<PhotoMessage> {
 
     @Autowired
     private PhotoService photoService;
-    
+
+    @Autowired
+    private FileProcessService fileProcessService;
+
     @Value("${qingdai.fullSizeUrl}")
     private String fullSizeUrl;
-    
+
     @Value("${qingdai.thumbnail100KUrl}")
     private String thumbnail100KUrl;
-    
+
     @Value("${qingdai.thumbnail1000KUrl}")
     private String thumbnail1000KUrl;
 
@@ -40,10 +42,10 @@ public class PhotoProcessConsumer implements RocketMQListener<PhotoMessage> {
     public void onMessage(PhotoMessage message) {
         long startTime = System.currentTimeMillis();
         String messageId = message.getMessageId(); // 获取消息ID
-        
+
         try {
             log.info("接收到图片处理消息: {}", message);
-            
+
             // 验证参数
             if (message.getFileNames() == null || message.getFileNames().length == 0) {
                 log.warn("消息中没有文件名");
@@ -64,8 +66,8 @@ public class PhotoProcessConsumer implements RocketMQListener<PhotoMessage> {
             File thumbnail100KDir = FileUtils.validateFolder(thumbnail100KUrl);
             File thumbnail1000KDir = FileUtils.validateFolder(thumbnail1000KUrl);
 
-            if (!tempDir.exists() || !tempDir.isDirectory() || 
-                fullSizeDir == null || thumbnail100KDir == null || thumbnail1000KDir == null) {
+            if (!tempDir.exists() || !tempDir.isDirectory() ||
+                    fullSizeDir == null || thumbnail100KDir == null || thumbnail1000KDir == null) {
                 log.error("目录验证失败");
                 photoService.updatePhotoUploadStatus(messageId, "FAILED", 0, "目录验证失败");
                 return;
@@ -73,33 +75,34 @@ public class PhotoProcessConsumer implements RocketMQListener<PhotoMessage> {
 
             // 更新状态为处理中
             photoService.updatePhotoUploadStatus(messageId, "PROCESSING", 10, "开始处理图片");
-            
+
             // 处理图片元数据和压缩
             try {
                 // 处理图片压缩流程
                 photoService.updatePhotoUploadStatus(messageId, "PROCESSING", 30, "正在压缩图片");
-                photoService.processPhotoCompression(tempDir, thumbnail100KDir, thumbnail1000KDir, fullSizeDir, message.isOverwrite());
+                fileProcessService.processPhotoCompression(tempDir, thumbnail100KDir, thumbnail1000KDir, fullSizeDir,
+                        message.isOverwrite());
                 log.info("完成图片压缩处理");
-                
+
                 // 处理元数据并保存到数据库
                 photoService.updatePhotoUploadStatus(messageId, "PROCESSING", 60, "正在处理图片元数据");
                 ProcessResult result = photoService.processPhotoFromMQ(
-                        message.getFileNames(), 
-                        tempDirPath, 
-                        message.getStartRating(), 
+                        message.getFileNames(),
+                        tempDirPath,
+                        message.getStartRating(),
                         message.isOverwrite());
-                
+
                 if (result.isSuccess()) {
-                    photoService.updatePhotoUploadStatus(messageId, "PROCESSING", 80, 
-                            String.format("数据处理完成，更新：%d张，新增：%d张", 
+                    photoService.updatePhotoUploadStatus(messageId, "PROCESSING", 80,
+                            String.format("数据处理完成，更新：%d张，新增：%d张",
                                     result.getExistingPhotos().size(), result.getNewPhotos().size()));
-                    log.info("成功处理图片数据，更新：{}张，新增：{}张", 
-                        result.getExistingPhotos().size(), result.getNewPhotos().size());
+                    log.info("成功处理图片数据，更新：{}张，新增：{}张",
+                            result.getExistingPhotos().size(), result.getNewPhotos().size());
                 } else {
                     photoService.updatePhotoUploadStatus(messageId, "PROCESSING", 80, "图片数据处理未完全成功");
                     log.warn("图片数据处理未完全成功");
                 }
-                
+
                 // 清理临时目录
                 try {
                     photoService.updatePhotoUploadStatus(messageId, "PROCESSING", 90, "正在清理临时文件");
@@ -109,11 +112,11 @@ public class PhotoProcessConsumer implements RocketMQListener<PhotoMessage> {
                     log.warn("清理临时目录时出错: {}", e.getMessage(), e);
                     // 清理临时目录失败不影响整体处理结果
                 }
-                
+
                 // 更新状态为完成
                 long endTime = System.currentTimeMillis();
                 long duration = endTime - startTime;
-                photoService.updatePhotoUploadStatus(messageId, "COMPLETED", 100, 
+                photoService.updatePhotoUploadStatus(messageId, "COMPLETED", 100,
                         String.format("图片处理完成，耗时%d毫秒", duration));
                 log.info("图片处理完成，耗时{}毫秒", duration);
             } catch (Exception e) {
@@ -129,4 +132,4 @@ public class PhotoProcessConsumer implements RocketMQListener<PhotoMessage> {
             }
         }
     }
-} 
+}

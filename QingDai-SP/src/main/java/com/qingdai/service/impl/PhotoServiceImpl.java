@@ -16,7 +16,6 @@ import java.time.YearMonth;
 import java.time.Year;
 import java.time.LocalDate;
 
-// 导入从PhotoProcessingService所需的类
 import com.drew.imaging.ImageMetadataReader;
 import com.drew.imaging.ImageProcessingException;
 import com.drew.lang.Rational;
@@ -37,13 +36,11 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import java.nio.file.Files;
 import java.util.List;
@@ -51,13 +48,14 @@ import java.util.Collections;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.springframework.data.redis.core.RedisTemplate;
 import java.util.concurrent.TimeUnit;
 import org.springframework.transaction.annotation.Transactional;
+import com.qingdai.service.FileProcessService;
+import org.springframework.context.annotation.Lazy;
 
 /**
  * <p>
@@ -77,10 +75,10 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
 
     @Value("${qingdai.fullSizeUrl}")
     private String fullSizeUrl;
-    
+
     @Value("${qingdai.thumbnail100KUrl}")
     private String thumbnail100KUrl;
-    
+
     @Value("${qingdai.thumbnail1000KUrl}")
     private String thumbnail1000KUrl;
 
@@ -89,10 +87,14 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
 
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
-    
+
     @Autowired
     private BloomFilterUtil bloomFilterUtil;
-    
+
+    @Lazy
+    @Autowired
+    private FileProcessService fileProcessService;
+
     // Redis中存储上传任务状态的键前缀
     private static final String UPLOAD_STATUS_KEY_PREFIX = "photo:upload:status:";
 
@@ -159,10 +161,10 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
         // 先检查布隆过滤器，如果布隆过滤器显示元素不存在，则直接返回null
         // 这样可以避免对不存在的ID进行数据库查询，防止缓存穿透
         // if (!bloomFilterUtil.exists(photoId)) {
-        //     log.debug("照片ID在布隆过滤器中不存在: {}", photoId);
-        //     return null;
+        // log.debug("照片ID在布隆过滤器中不存在: {}", photoId);
+        // return null;
         // }
-        
+
         Photo photo = getById(photoId);
         if (photo == null) {
             log.debug("照片ID在数据库中不存在: {}", photoId);
@@ -184,57 +186,19 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
     // 压缩文件夹内所有图片到指定目录
     @Override
     public void thumbnailPhotosFromFolderToFolder(File srcDir, File thumbnailDir, int maxSizeKB, boolean overwrite) {
-        Arrays.stream(Objects.requireNonNull(srcDir.listFiles()))
-                .parallel()
-                .filter(this::fileIsSupportedPhoto)
-                .forEach(file -> compressPhoto(file, thumbnailDir, maxSizeKB, overwrite));
+        fileProcessService.thumbnailPhotosFromFolderToFolder(srcDir, thumbnailDir, maxSizeKB, overwrite);
     }
 
     // 判断是否为支持的图片格式
     @Override
     public boolean multipartFileIsSupportedPhoto(MultipartFile file) {
-        String fileName = file.getOriginalFilename().toLowerCase();
-        String contentType = file.getContentType();
-
-        // 验证文件扩展名
-        boolean validExtension = fileName.endsWith(".jpg") || fileName.endsWith(".jpeg")
-                || fileName.endsWith(".png") || fileName.endsWith(".webp");
-
-        // 验证MIME类型
-        boolean validMime = contentType != null && (contentType.startsWith("image/")
-                && (contentType.equals("image/jpeg")
-                        || contentType.equals("image/png")
-                        || contentType.equals("image/webp")));
-
-        return validExtension && validMime;
+        return fileProcessService.multipartFileIsSupportedPhoto(file);
     }
 
     // 判断文件是否为支持的图片格式
     @Override
     public boolean fileIsSupportedPhoto(File file) {
-        if (file == null || !file.exists() || file.isDirectory()) {
-            return false;
-        }
-
-        String fileName = file.getName().toLowerCase();
-
-        // 验证文件扩展名
-        boolean validExtension = fileName.endsWith(".jpg") || fileName.endsWith(".jpeg")
-                || fileName.endsWith(".png") || fileName.endsWith(".webp");
-
-        try {
-            // 探测真实MIME类型
-            String mimeType = Files.probeContentType(file.toPath());
-            boolean validMime = mimeType != null && (mimeType.startsWith("image/")
-                    && (mimeType.equals("image/jpeg")
-                            || mimeType.equals("image/png")
-                            || mimeType.equals("image/webp")));
-
-            return validExtension && validMime;
-        } catch (IOException e) {
-            System.out.println("文件类型检测失败: " + file.getName() + " - " + e.getMessage());
-            return false;
-        }
+        return fileProcessService.fileIsSupportedPhoto(file);
     }
 
     /*
@@ -281,10 +245,10 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
             }
 
             if (!sizeMet) {
-                String errorMsg = String.format("无法压缩到指定大小: %s (当前大小: %dKB, 目标大小: %dKB)", 
-                    fullSizeUrl.getName(), 
-                    fullSizeUrl.length() / 1024,
-                    maxSizeKB);
+                String errorMsg = String.format("无法压缩到指定大小: %s (当前大小: %dKB, 目标大小: %dKB)",
+                        fullSizeUrl.getName(),
+                        fullSizeUrl.length() / 1024,
+                        maxSizeKB);
                 log.error(errorMsg);
                 throw new IOException(errorMsg);
             }
@@ -365,7 +329,7 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
 
                 long currentSize = thumbnailUrl.length();
                 log.debug("压缩后大小: {}KB, 目标大小: {}KB", currentSize / 1024, maxSizeBytes / 1024);
-                
+
                 if (currentSize <= maxSizeBytes) {
                     log.info("质量调整成功，最终质量: {}, 文件大小: {}KB", quality, currentSize / 1024);
                     return true;
@@ -398,7 +362,7 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
 
                 long currentSize = thumbnailUrl.length();
                 log.debug("缩放后大小: {}KB, 目标大小: {}KB", currentSize / 1024, maxSizeBytes / 1024);
-                
+
                 if (currentSize <= maxSizeBytes) {
                     log.info("缩放成功，最终比例: {}, 文件大小: {}KB", scale, currentSize / 1024);
                     return true;
@@ -562,38 +526,47 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
     @Override
     public void deletePhotoFiles(String fullSizeUrl, String thumbnail100KUrl, String thumbnail1000KUrl, String fileName)
             throws IOException {
-        FileUtils.deleteFile(new File(fullSizeUrl, fileName));
-        FileUtils.deleteFile(new File(thumbnail100KUrl, fileName));
-        FileUtils.deleteFile(new File(thumbnail1000KUrl, fileName));
+        fileProcessService.deletePhotoFiles(fullSizeUrl, thumbnail100KUrl, thumbnail1000KUrl, fileName);
     }
 
     @Override
-    public void processPhotoCompression(File tempDir, File thumbnail100KDir, File thumbnail1000KDir, File fullSizeDir, boolean overwrite) throws IOException {
-        // 在tempDir下创建1000K临时目录
-        File temp1000KDir = new File(tempDir, "1000K");
-        if (!temp1000KDir.exists() && !temp1000KDir.mkdirs()) {
-            throw new IOException("无法创建1000K临时目录: " + temp1000KDir.getAbsolutePath());
+    public void processPhotoCompression(File tempDir, File thumbnail100KDir, File thumbnail1000KDir, File fullSizeDir,
+            boolean overwrite) throws IOException {
+        fileProcessService.processPhotoCompression(tempDir, thumbnail100KDir, thumbnail1000KDir, fullSizeDir,
+                overwrite);
+    }
+
+    /**
+     * 回滚已处理的文件（删除已复制的文件）
+     * 
+     * @param processedFiles 需要回滚的文件列表
+     */
+    private void rollbackProcessedFiles(List<File> processedFiles) {
+        log.info("开始回滚已处理的文件，共{}个文件", processedFiles.size());
+        for (File file : processedFiles) {
+            try {
+                if (file.exists() && file.isFile()) {
+                    boolean deleted = file.delete();
+                    if (deleted) {
+                        log.debug("成功删除文件: {}", file.getAbsolutePath());
+                    } else {
+                        log.warn("无法删除文件: {}", file.getAbsolutePath());
+                    }
+                }
+            } catch (Exception e) {
+                log.error("删除文件时发生错误: {}, 错误: {}", file.getAbsolutePath(), e.getMessage());
+            }
         }
-        
-        // 压缩到1000K临时目录
-        thumbnailPhotosFromFolderToFolder(tempDir, temp1000KDir, 1000, overwrite);
-        log.info("目录{}完成1000K压缩",tempDir.getName());
-        
-        // 基于1000K临时目录的图片压缩到100K目录
-        thumbnailPhotosFromFolderToFolder(temp1000KDir, thumbnail100KDir, 100, overwrite);
-        log.info("目录{}完成100K压缩",tempDir.getName());
-        
-        // 将1000K临时目录的图片复制到1000K目录
-        FileUtils.copyFiles(temp1000KDir, thumbnail1000KDir);
-        log.info("目录{}完成1000K图片复制",tempDir.getName());
-        
-        // 复制到原图目录
-        FileUtils.copyFiles(tempDir, fullSizeDir);
-        log.info("目录{}完成原图复制",tempDir.getName());
+        log.info("文件回滚完成");
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public ProcessResult processPhotosFromFrontend(MultipartFile[] files, Integer startRating, boolean overwrite) {
+        List<Photo> existingPhotos = new ArrayList<>();
+        List<Photo> newPhotos = new ArrayList<>();
+        List<File> processedFiles = new ArrayList<>(); // 用于记录已处理的文件，便于回滚
+
         try {
             if (files == null || files.length == 0) {
                 log.warn("没有收到文件");
@@ -606,66 +579,118 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
                     .collect(Collectors.toList());
 
             if (validFiles.isEmpty()) {
-                log.warn("没有有效的图片文件");
+                log.warn("没有有效的照片文件");
                 return new ProcessResult(Collections.emptyList(), Collections.emptyList(), false);
             }
 
-            // 处理照片元数据
-            List<Photo> photos = getPhotosByMultipartFiles(validFiles.toArray(new MultipartFile[0]));
+            // 遍历并处理每个文件
+            for (MultipartFile file : validFiles) {
+                // 获取照片对象
+                Photo photo = getPhotoObjectByMultipartFile(file);
+                if (photo == null) {
+                    log.warn("无法从文件中获取照片信息: {}", file.getOriginalFilename());
+                    continue;
+                }
 
-            // 检查重复文件名
-            List<Photo> existingPhotos = new ArrayList<>();
-            List<Photo> newPhotos = new ArrayList<>();
-            
-            for (Photo photo : photos) {
+                // 设置初始星级
+                photo.setStartRating(startRating);
+
+                // 检查是否存在同名文件
                 Photo existingPhoto = getOne(
-                    new LambdaQueryWrapper<Photo>()
-                        .eq(Photo::getFileName, photo.getFileName())
-                );
-                
+                        new LambdaQueryWrapper<Photo>()
+                                .eq(Photo::getFileName, photo.getFileName()));
+
                 if (existingPhoto != null) {
-                    // 保留原有字段
+                    // 已经存在同名文件
+                    if (!overwrite) {
+                        log.warn("照片已存在且不覆盖: {}", photo.getFileName());
+                        continue;
+                    }
+
+                    log.info("覆盖已存在的照片: {}", photo.getFileName());
+                    // 保留ID和创建时间
                     photo.setId(existingPhoto.getId());
-                    photo.setTitle(existingPhoto.getTitle());
+                    photo.setCreatedTime(existingPhoto.getCreatedTime());
+
+                    // 保留UI相关字段
                     photo.setFileName(existingPhoto.getFileName());
                     photo.setAuthor(existingPhoto.getAuthor());
                     photo.setIntroduce(existingPhoto.getIntroduce());
                     photo.setStartRating(existingPhoto.getStartRating());
-                    
+
                     // 删除原有文件
-                    deletePhotoFiles(fullSizeUrl, thumbnail100KUrl, thumbnail1000KUrl, photo.getFileName());
-                    
-                    existingPhotos.add(photo);
+                    try {
+                        deletePhotoFiles(fullSizeUrl, thumbnail100KUrl, thumbnail1000KUrl, photo.getFileName());
+                        existingPhotos.add(photo);
+                    } catch (IOException e) {
+                        log.error("删除原有文件失败: {}, 错误: {}", photo.getFileName(), e.getMessage(), e);
+                        throw new RuntimeException("删除原有文件失败: " + e.getMessage(), e);
+                    }
                 } else {
-                    // 设置新的start值
-                    photo.setStartRating(startRating);
+                    // 新照片，生成ID
+                    photo.setId(String.valueOf(idGenerator.nextId()));
                     newPhotos.add(photo);
+                }
+
+                // 将文件保存到目标目录
+                try {
+                    String fileName = file.getOriginalFilename();
+                    // 保存原图
+                    File destFullSize = new File(fullSizeUrl, fileName);
+                    file.transferTo(destFullSize);
+                    processedFiles.add(destFullSize);
+
+                    // 压缩到1000K目录
+                    File destThumbnail1000K = new File(thumbnail1000KUrl, fileName);
+                    Thumbnails.of(destFullSize)
+                            .scale(1.0)
+                            .outputQuality(0.8)
+                            .toFile(destThumbnail1000K);
+                    processedFiles.add(destThumbnail1000K);
+
+                    // 压缩到100K目录
+                    File destThumbnail100K = new File(thumbnail100KUrl, fileName);
+                    Thumbnails.of(destThumbnail1000K)
+                            .scale(1.0)
+                            .outputQuality(0.5)
+                            .toFile(destThumbnail100K);
+                    processedFiles.add(destThumbnail100K);
+                } catch (IOException e) {
+                    log.error("保存文件失败: {}, 错误: {}", file.getOriginalFilename(), e.getMessage(), e);
+                    fileProcessService.rollbackProcessedFiles(processedFiles);
+                    throw new RuntimeException("保存文件失败: " + e.getMessage(), e);
                 }
             }
 
             // 保存到数据库
-            boolean result = true;
             if (!existingPhotos.isEmpty()) {
-                result = result && updateBatchById(existingPhotos);
-                log.info("图片信息更新数据库成功");
-            }
-            if (!newPhotos.isEmpty()) {
-                result = result && saveBatch(newPhotos);
-                log.info("新图片信息保存数据库成功");
+                updateBatchById(existingPhotos);
             }
 
-            return new ProcessResult(existingPhotos, newPhotos, result);
+            if (!newPhotos.isEmpty()) {
+                saveBatch(newPhotos);
+            }
+
+            return new ProcessResult(existingPhotos, newPhotos, true);
         } catch (Exception e) {
-            log.error("处理图片时发生错误: {}", e.getMessage(), e);
-            return new ProcessResult(Collections.emptyList(), Collections.emptyList(), false);
+            log.error("处理照片时发生错误: {}", e.getMessage(), e);
+            // 回滚文件操作
+            fileProcessService.rollbackProcessedFiles(processedFiles);
+            // 事务会自动回滚数据库操作
+            throw new RuntimeException("处理照片失败: " + e.getMessage(), e);
         }
     }
 
     @Override
-    public ProcessResult processPhotoFromMQ(String[] fileNames, String tempDirPath, Integer startRating, boolean overwrite) {
+    @Transactional(rollbackFor = Exception.class)
+    public ProcessResult processPhotoFromMQ(String[] fileNames, String tempDirPath, Integer startRating,
+            boolean overwrite) {
+        List<Photo> existingPhotos = new ArrayList<>();
+        List<Photo> newPhotos = new ArrayList<>();
+
         try {
             if (fileNames == null || fileNames.length == 0) {
-                log.warn("没有接收到文件名");
+                log.warn("没有文件名");
                 return new ProcessResult(Collections.emptyList(), Collections.emptyList(), false);
             }
 
@@ -693,49 +718,45 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
             }
 
             // 检查重复文件名
-            List<Photo> existingPhotos = new ArrayList<>();
-            List<Photo> newPhotos = new ArrayList<>();
-            
+
             for (Photo photo : photos) {
                 Photo existingPhoto = getOne(
-                    new LambdaQueryWrapper<Photo>()
-                        .eq(Photo::getFileName, photo.getFileName())
-                );
-                
+                        new LambdaQueryWrapper<Photo>()
+                                .eq(Photo::getFileName, photo.getFileName()));
+
                 if (existingPhoto != null) {
-                    // 保留原有字段
+                    // 已经存在同名文件
+                    if (!overwrite) {
+                        log.warn("照片已存在且不覆盖: {}", photo.getFileName());
+                        continue;
+                    }
+
+                    log.info("覆盖已存在的照片: {}", photo.getFileName());
+                    // 保留ID和创建时间
                     photo.setId(existingPhoto.getId());
-                    photo.setTitle(existingPhoto.getTitle());
-                    photo.setFileName(existingPhoto.getFileName());
-                    photo.setAuthor(existingPhoto.getAuthor());
-                    photo.setIntroduce(existingPhoto.getIntroduce());
-                    photo.setStartRating(existingPhoto.getStartRating());
-                    
-                    // 在MQ消费场景下不需要删除原有文件，因为文件已经被处理和替换
-                    
+                    photo.setCreatedTime(existingPhoto.getCreatedTime());
                     existingPhotos.add(photo);
                 } else {
-                    // 设置新的startRating值
+                    // 新照片，生成ID
+                    photo.setId(String.valueOf(idGenerator.nextId()));
                     photo.setStartRating(startRating);
                     newPhotos.add(photo);
                 }
             }
 
             // 保存到数据库
-            boolean result = true;
             if (!existingPhotos.isEmpty()) {
-                result = result && updateBatchById(existingPhotos);
-                log.info("图片信息更新数据库成功");
-            }
-            if (!newPhotos.isEmpty()) {
-                result = result && saveBatch(newPhotos);
-                log.info("新图片信息保存数据库成功");
+                updateBatchById(existingPhotos);
             }
 
-            return new ProcessResult(existingPhotos, newPhotos, result);
+            if (!newPhotos.isEmpty()) {
+                saveBatch(newPhotos);
+            }
+
+            return new ProcessResult(existingPhotos, newPhotos, true);
         } catch (Exception e) {
-            log.error("处理来自MQ的图片时发生错误: {}", e.getMessage(), e);
-            return new ProcessResult(Collections.emptyList(), Collections.emptyList(), false);
+            log.error("处理照片元数据时发生错误: {}", e.getMessage(), e);
+            throw new RuntimeException("处理照片元数据失败: " + e.getMessage(), e);
         }
     }
 
@@ -743,266 +764,102 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
     public Map<String, Object> validatePhotoExistence() {
         log.info("开始验证数据库照片在文件系统中的存在性");
         List<Photo> allPhotos = list();
-        
+
         Map<String, Object> result = new HashMap<>();
-        
+        List<String> missingFullSize = new ArrayList<>();
+        List<String> missingThumbnail100K = new ArrayList<>();
+        List<String> missingThumbnail1000K = new ArrayList<>();
+        List<String> missingAll = new ArrayList<>();
+
         if (allPhotos.isEmpty()) {
             log.warn("数据库中没有照片记录");
             result.put("message", "数据库中没有照片记录");
             return result;
         }
-        
+
         int totalCount = allPhotos.size();
-        int missingFullSize = 0;
-        int missing100K = 0;
-        int missing1000K = 0;
-        List<String> missingDetails = new ArrayList<>();
-        
+
         for (Photo photo : allPhotos) {
             String fileName = photo.getFileName();
-            boolean fullSizeMissing = false;
-            boolean thumbnail100KMissing = false;
-            boolean thumbnail1000KMissing = false;
-            
-            // 检查原图
-            File fullSizeFile = new File(fullSizeUrl, fileName);
-            if (!fullSizeFile.exists()) {
-                missingFullSize++;
-                fullSizeMissing = true;
-                log.debug("照片ID:{}的原图文件缺失，文件名:{}", photo.getId(), fileName);
+            boolean fullSizeMissing = !new File(fullSizeUrl, fileName).exists();
+            boolean thumbnail100KMissing = !new File(thumbnail100KUrl, fileName).exists();
+            boolean thumbnail1000KMissing = !new File(thumbnail1000KUrl, fileName).exists();
+
+            if (fullSizeMissing) {
+                missingFullSize.add(fileName);
             }
-            
-            // 检查100K压缩图
-            File thumbnail100KFile = new File(thumbnail100KUrl, fileName);
-            if (!thumbnail100KFile.exists()) {
-                missing100K++;
-                thumbnail100KMissing = true;
-                log.debug("照片ID:{}的100K压缩图文件缺失，文件名:{}", photo.getId(), fileName);
+
+            if (thumbnail100KMissing) {
+                missingThumbnail100K.add(fileName);
             }
-            
-            // 检查1000K压缩图
-            File thumbnail1000KFile = new File(thumbnail1000KUrl, fileName);
-            if (!thumbnail1000KFile.exists()) {
-                missing1000K++;
-                thumbnail1000KMissing = true;
-                log.debug("照片ID:{}的1000K压缩图文件缺失，文件名:{}", photo.getId(), fileName);
+
+            if (thumbnail1000KMissing) {
+                missingThumbnail1000K.add(fileName);
             }
-            
-            // 如果有任何一个文件缺失，添加到详情列表
-            if (fullSizeMissing || thumbnail100KMissing || thumbnail1000KMissing) {
-                missingDetails.add(String.format("ID:%s,文件名:%s,原图缺失:%b,100K缺失:%b,1000K缺失:%b", 
-                    photo.getId(), fileName, fullSizeMissing, thumbnail100KMissing, thumbnail1000KMissing));
+
+            if (fullSizeMissing && thumbnail100KMissing && thumbnail1000KMissing) {
+                missingAll.add(fileName);
             }
         }
-        
-        result.put("totalCount", totalCount);
-        result.put("missingFullSize", missingFullSize);
-        result.put("missing100K", missing100K);
-        result.put("missing1000K", missing1000K);
-        result.put("missingDetails", missingDetails);
-        
-        log.info("验证完成，总照片数:{}, 缺失原图:{}, 缺失100K压缩图:{}, 缺失1000K压缩图:{}", 
-            totalCount, missingFullSize, missing100K, missing1000K);
-        
-        return result;
-    }
-    
-    @Override
-    public Map<String, Object> validateFileSystemPhotos(String fullSizeUrl, String thumbnail100KUrl, String thumbnail1000KUrl) {
-        log.info("开始验证文件系统中照片在数据库中的存在性");
-        Map<String, Object> result = new HashMap<>();
-        
-        // 获取所有目录下的文件
-        File fullSizeDir = new File(fullSizeUrl);
-        File thumbnail100KDir = new File(thumbnail100KUrl);
-        File thumbnail1000KDir = new File(thumbnail1000KUrl);
-        
-        // 验证目录
-        if (!fullSizeDir.exists() || !fullSizeDir.isDirectory() ||
-            !thumbnail100KDir.exists() || !thumbnail100KDir.isDirectory() ||
-            !thumbnail1000KDir.exists() || !thumbnail1000KDir.isDirectory()) {
-            log.error("无法访问一个或多个照片目录");
-            result.put("error", "无法访问照片目录");
-            return result;
-        }
-        
-        File[] fullSizeFiles = fullSizeDir.listFiles();
-        File[] thumbnail100KFiles = thumbnail100KDir.listFiles();
-        File[] thumbnail1000KFiles = thumbnail1000KDir.listFiles();
-        
-        if (fullSizeFiles == null || thumbnail100KFiles == null || thumbnail1000KFiles == null) {
-            log.error("无法列出一个或多个照片目录中的文件");
-            result.put("error", "无法列出目录文件");
-            return result;
-        }
-        
-        // 获取数据库中所有照片文件名
-        List<Photo> allPhotos = list();
-        Set<String> dbPhotoNames = allPhotos.stream()
-                .map(Photo::getFileName)
-                .collect(Collectors.toSet());
-        
-        // 检查原图目录
-        List<String> fullSizeNotInDb = Arrays.stream(fullSizeFiles)
-                .filter(f -> !f.isDirectory() && fileIsSupportedPhoto(f))
-                .map(File::getName)
-                .filter(name -> !dbPhotoNames.contains(name))
-                .peek(name -> log.debug("原图文件:{}不在数据库中", name))
-                .collect(Collectors.toList());
-        
-        // 检查100K压缩图目录
-        List<String> thumbnail100KNotInDb = Arrays.stream(thumbnail100KFiles)
-                .filter(f -> !f.isDirectory() && fileIsSupportedPhoto(f))
-                .map(File::getName)
-                .filter(name -> !dbPhotoNames.contains(name))
-                .peek(name -> log.debug("100K压缩文件:{}不在数据库中", name))
-                .collect(Collectors.toList());
-        
-        // 检查1000K压缩图目录
-        List<String> thumbnail1000KNotInDb = Arrays.stream(thumbnail1000KFiles)
-                .filter(f -> !f.isDirectory() && fileIsSupportedPhoto(f))
-                .map(File::getName)
-                .filter(name -> !dbPhotoNames.contains(name))
-                .peek(name -> log.debug("1000K压缩文件:{}不在数据库中", name))
-                .collect(Collectors.toList());
-        
-        result.put("fullSizeCount", fullSizeFiles.length);
-        result.put("thumbnail100KCount", thumbnail100KFiles.length);
-        result.put("thumbnail1000KCount", thumbnail1000KFiles.length);
-        result.put("dbPhotoCount", dbPhotoNames.size());
-        result.put("fullSizeNotInDb", fullSizeNotInDb);
-        result.put("thumbnail100KNotInDb", thumbnail100KNotInDb);
-        result.put("thumbnail1000KNotInDb", thumbnail1000KNotInDb);
-        
-        log.info("验证完成，原图目录文件数:{}, 100K压缩图目录文件数:{}, 1000K压缩图目录文件数:{}, 数据库照片数:{}, " +
-                "原图不在数据库中:{}, 100K压缩图不在数据库中:{}, 1000K压缩图不在数据库中:{}",
-                fullSizeFiles.length, thumbnail100KFiles.length, thumbnail1000KFiles.length, dbPhotoNames.size(),
-                fullSizeNotInDb.size(), thumbnail100KNotInDb.size(), thumbnail1000KNotInDb.size());
-        
+
+        int missingFullSizeCount = missingFullSize.size();
+        int missingThumbnail100KCount = missingThumbnail100K.size();
+        int missingThumbnail1000KCount = missingThumbnail1000K.size();
+        int missingAllCount = missingAll.size();
+
+        log.info("数据库中共有{}张照片，其中{}张丢失原图，{}张丢失100K缩略图，{}张丢失1000K缩略图，{}张三种图片都丢失",
+                totalCount, missingFullSizeCount, missingThumbnail100KCount, missingThumbnail1000KCount,
+                missingAllCount);
+
+        result.put("totalPhotos", totalCount);
+        result.put("missingFullSize", missingFullSizeCount);
+        result.put("missingThumbnail100K", missingThumbnail100KCount);
+        result.put("missingThumbnail1000K", missingThumbnail1000KCount);
+        result.put("missingAll", missingAllCount);
+        result.put("missingFullSizeFiles", missingFullSize);
+        result.put("missingThumbnail100KFiles", missingThumbnail100K);
+        result.put("missingThumbnail1000KFiles", missingThumbnail1000K);
+        result.put("missingAllFiles", missingAll);
+        result.put("message", String.format("数据库中共有%d张照片，其中%d张丢失原图，%d张丢失100K缩略图，%d张丢失1000K缩略图，%d张三种图片都丢失",
+                totalCount, missingFullSizeCount, missingThumbnail100KCount, missingThumbnail1000KCount,
+                missingAllCount));
+
         return result;
     }
 
     @Override
-    public Map<String, Object> deletePhotosNotInDatabase(String fullSizeUrl, String thumbnail100KUrl, String thumbnail1000KUrl) {
-        log.info("开始删除文件系统中数据库没有记录的照片");
-        Map<String, Object> result = new HashMap<>();
-        
-        // 先验证文件系统中的文件
-        Map<String, Object> validateResult = validateFileSystemPhotos(fullSizeUrl, thumbnail100KUrl, thumbnail1000KUrl);
-        
-        // 如果验证过程中出现错误，直接返回错误信息
-        if (validateResult.containsKey("error")) {
-            log.error("验证文件系统照片失败，无法执行删除操作");
-            result.put("error", "验证失败，无法执行删除操作");
-            return result;
-        }
-        
-        // 从验证结果中获取不在数据库中的文件列表
-        @SuppressWarnings("unchecked")
-        List<String> fullSizeNotInDb = (List<String>) validateResult.getOrDefault("fullSizeNotInDb", new ArrayList<String>());
-        
-        @SuppressWarnings("unchecked")
-        List<String> thumbnail100KNotInDb = (List<String>) validateResult.getOrDefault("thumbnail100KNotInDb", new ArrayList<String>());
-        
-        @SuppressWarnings("unchecked")
-        List<String> thumbnail1000KNotInDb = (List<String>) validateResult.getOrDefault("thumbnail1000KNotInDb", new ArrayList<String>());
-        
-        int deletedFullSize = 0;
-        int deleted100K = 0;
-        int deleted1000K = 0;
-        List<String> deletedFiles = new ArrayList<>();
-        List<String> errorFiles = new ArrayList<>();
-        
-        // 删除原图目录中的文件
-        for (String fileName : fullSizeNotInDb) {
-            try {
-                File file = new File(fullSizeUrl, fileName);
-                if (file.delete()) {
-                    deletedFullSize++;
-                    deletedFiles.add("原图: " + fileName);
-                    log.debug("已删除原图文件: {}", fileName);
-                } else {
-                    errorFiles.add("原图删除失败: " + fileName);
-                    log.warn("删除原图文件失败: {}", fileName);
-                }
-            } catch (Exception e) {
-                errorFiles.add("原图删除异常: " + fileName);
-                log.error("删除原图文件时发生异常: {}, 错误: {}", fileName, e.getMessage(), e);
-            }
-        }
-        
-        // 删除100K压缩图目录中的文件
-        for (String fileName : thumbnail100KNotInDb) {
-            try {
-                File file = new File(thumbnail100KUrl, fileName);
-                if (file.delete()) {
-                    deleted100K++;
-                    deletedFiles.add("100K压缩图: " + fileName);
-                    log.debug("已删除100K压缩图文件: {}", fileName);
-                } else {
-                    errorFiles.add("100K压缩图删除失败: " + fileName);
-                    log.warn("删除100K压缩图文件失败: {}", fileName);
-                }
-            } catch (Exception e) {
-                errorFiles.add("100K压缩图删除异常: " + fileName);
-                log.error("删除100K压缩图文件时发生异常: {}, 错误: {}", fileName, e.getMessage(), e);
-            }
-        }
-        
-        // 删除1000K压缩图目录中的文件
-        for (String fileName : thumbnail1000KNotInDb) {
-            try {
-                File file = new File(thumbnail1000KUrl, fileName);
-                if (file.delete()) {
-                    deleted1000K++;
-                    deletedFiles.add("1000K压缩图: " + fileName);
-                    log.debug("已删除1000K压缩图文件: {}", fileName);
-                } else {
-                    errorFiles.add("1000K压缩图删除失败: " + fileName);
-                    log.warn("删除1000K压缩图文件失败: {}", fileName);
-                }
-            } catch (Exception e) {
-                errorFiles.add("1000K压缩图删除异常: " + fileName);
-                log.error("删除1000K压缩图文件时发生异常: {}, 错误: {}", fileName, e.getMessage(), e);
-            }
-        }
-        
-        // 整理删除结果
-        result.put("deletedFullSize", deletedFullSize);
-        result.put("deleted100K", deleted100K);
-        result.put("deleted1000K", deleted1000K);
-        result.put("totalDeleted", deletedFullSize + deleted100K + deleted1000K);
-        result.put("deletedFiles", deletedFiles);
-        result.put("errorFiles", errorFiles);
-        
-        log.info("删除完成，删除原图: {}, 删除100K压缩图: {}, 删除1000K压缩图: {}, 总删除文件: {}, 错误文件: {}", 
-            deletedFullSize, deleted100K, deleted1000K, 
-            deletedFullSize + deleted100K + deleted1000K, errorFiles.size());
-        
-        return result;
+    public Map<String, Object> validateFileSystemPhotos(String fullSizeUrl, String thumbnail100KUrl,
+            String thumbnail1000KUrl) {
+        return fileProcessService.validateFileSystemPhotos(fullSizeUrl, thumbnail100KUrl, thumbnail1000KUrl);
+    }
+
+    @Override
+    public Map<String, Object> deletePhotosNotInDatabase(String fullSizeUrl, String thumbnail100KUrl,
+            String thumbnail1000KUrl) {
+        return fileProcessService.deletePhotosNotInDatabase(fullSizeUrl, thumbnail100KUrl, thumbnail1000KUrl);
     }
 
     @Override
     public Map<String, Object> deleteMissingPhotoRecords() {
         log.info("开始删除丢失了全部三种图片的数据库记录");
         Map<String, Object> result = new HashMap<>();
-        
+
         // 先验证数据库照片在文件系统中的存在性
         Map<String, Object> validateResult = validatePhotoExistence();
-        
+
         if (!validateResult.containsKey("missingDetails")) {
             log.error("验证数据库照片失败，无法执行删除操作");
             result.put("error", "验证失败，无法执行删除操作");
             return result;
         }
-        
+
         @SuppressWarnings("unchecked")
         List<String> missingDetails = (List<String>) validateResult.get("missingDetails");
-        
+
         List<String> deletedRecords = new ArrayList<>();
         List<String> errorRecords = new ArrayList<>();
         int totalDeleted = 0;
-        
+
         // 遍历所有缺失记录
         for (String detail : missingDetails) {
             // 解析缺失记录详情
@@ -1012,7 +869,7 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
                 boolean fullSizeMissing = detail.contains("原图缺失:true");
                 boolean thumbnail100KMissing = detail.contains("100K缺失:true");
                 boolean thumbnail1000KMissing = detail.contains("1000K缺失:true");
-                
+
                 // 只有当三种图片都缺失时才删除记录
                 if (fullSizeMissing && thumbnail100KMissing && thumbnail1000KMissing) {
                     long id = Long.parseLong(idStr);
@@ -1030,13 +887,13 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
                 log.error("处理缺失记录时发生异常: {}, 详情: {}", e.getMessage(), detail, e);
             }
         }
-        
+
         result.put("totalDeleted", totalDeleted);
         result.put("deletedRecords", deletedRecords);
         result.put("errorRecords", errorRecords);
-        
+
         log.info("删除操作完成，总共删除{}条记录", totalDeleted);
-        
+
         return result;
     }
 
@@ -1045,24 +902,22 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
     public Map<String, Object> getPhotoDashboardStats() {
         log.warn("此次照片数据分析查询未使用缓存");
         Map<String, Object> stats = new HashMap<>();
-        try {
-            stats.put("typeStats", getPhotoTypeCounts());
-            stats.put("changeStats", getPhotoChangeStats());
-            stats.put("subjectStats", getPhotoSubjectStats());
-            stats.put("cameraStats", getCameraStats());
-            stats.put("lensStats", getLensStats());
-            stats.put("isoStats", getIsoStats());
-            stats.put("shutterStats", getShutterStats());
-            stats.put("apertureStats", getApertureStats());
-            stats.put("focalLengthStats", getFocalLengthStats());
-            stats.put("monthStats", getMonthStats());
-            stats.put("yearStats", getYearStats());
-        } catch (Exception e) {
-            log.error("获取照片统计数据时发生错误: {}", e.getMessage(), e);
-        }
+
+        stats.put("typeStats", getPhotoTypeCounts());
+        stats.put("changeStats", getPhotoChangeStats());
+        stats.put("subjectStats", getPhotoSubjectStats());
+        stats.put("cameraStats", getCameraStats());
+        stats.put("lensStats", getLensStats());
+        stats.put("isoStats", getIsoStats());
+        stats.put("shutterStats", getShutterStats());
+        stats.put("apertureStats", getApertureStats());
+        stats.put("focalLengthStats", getFocalLengthStats());
+        stats.put("monthStats", getMonthStats());
+        stats.put("yearStats", getYearStats());
+
         return stats;
     }
-    
+
     @Override
     @Cacheable(key = "'photoTypeCounts'")
     public Map<String, Object> getPhotoTypeCounts() {
@@ -1073,65 +928,65 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
         photoTypeCounts.put("hidden", count(new LambdaQueryWrapper<Photo>().eq(Photo::getStartRating, -1)));
         return photoTypeCounts;
     }
-    
+
     @Override
     @Cacheable(key = "'photoChangeStats'")
     public Map<String, Object> getPhotoChangeStats() {
         Map<String, Object> changeStats = new HashMap<>();
-        
+
         // 普通照片变化
-        changeStats.put("monthlyChange", countByMonth(YearMonth.now()) 
+        changeStats.put("monthlyChange", countByMonth(YearMonth.now())
                 - countByMonth(YearMonth.now().minusMonths(1)));
-        changeStats.put("yearlyChange", 
+        changeStats.put("yearlyChange",
                 countByYear(Year.now()) - countByYear(Year.now().minusYears(1)));
-        
+
         // 精选照片变化
-        changeStats.put("monthlyStarredChange", countByMonthAndStart(YearMonth.now(), 1) 
+        changeStats.put("monthlyStarredChange", countByMonthAndStart(YearMonth.now(), 1)
                 - countByMonthAndStart(YearMonth.now().minusMonths(1), 1));
-        changeStats.put("yearlyStarredChange", countByYearAndStart(Year.now(), 1) 
+        changeStats.put("yearlyStarredChange", countByYearAndStart(Year.now(), 1)
                 - countByYearAndStart(Year.now().minusYears(1), 1));
-        
+
         // 气象照片变化
-        changeStats.put("monthlyMeteorologyChange", countByMonthAndStart(YearMonth.now(), 2) 
+        changeStats.put("monthlyMeteorologyChange", countByMonthAndStart(YearMonth.now(), 2)
                 - countByMonthAndStart(YearMonth.now().minusMonths(1), 2));
-        changeStats.put("yearlyMeteorologyChange", countByYearAndStart(Year.now(), 2) 
+        changeStats.put("yearlyMeteorologyChange", countByYearAndStart(Year.now(), 2)
                 - countByYearAndStart(Year.now().minusYears(1), 2));
-                
+
         return changeStats;
     }
-    
+
     @Override
     @Cacheable(key = "'photoSubjectStats'")
     public Map<String, Object> getPhotoSubjectStats() {
         Map<String, Object> subjectCounts = new HashMap<>();
         // 查询ID为1的组（朝霞）的照片数量
-        subjectCounts.put("morningGlow", 
+        subjectCounts.put("morningGlow",
                 groupPhotoPhotoService.count(new LambdaQueryWrapper<GroupPhotoPhoto>()
                         .eq(GroupPhotoPhoto::getGroupPhotoId, "1")));
-        
+
         // 查询ID为2的组（晚霞）的照片数量
-        subjectCounts.put("eveningGlow", 
+        subjectCounts.put("eveningGlow",
                 groupPhotoPhotoService.count(new LambdaQueryWrapper<GroupPhotoPhoto>()
                         .eq(GroupPhotoPhoto::getGroupPhotoId, "2")));
-        
+
         // 查询ID为3的组（日出）的照片数量
-        subjectCounts.put("sunrise", 
+        subjectCounts.put("sunrise",
                 groupPhotoPhotoService.count(new LambdaQueryWrapper<GroupPhotoPhoto>()
                         .eq(GroupPhotoPhoto::getGroupPhotoId, "3")));
-        
+
         // 查询ID为4的组（日落）的照片数量
-        subjectCounts.put("sunset", 
+        subjectCounts.put("sunset",
                 groupPhotoPhotoService.count(new LambdaQueryWrapper<GroupPhotoPhoto>()
                         .eq(GroupPhotoPhoto::getGroupPhotoId, "4")));
-                
+
         return subjectCounts;
     }
-    
+
     @Override
     @Cacheable(key = "'cameraStats'")
     public List<Map<String, Object>> getCameraStats() {
         final List<Map<String, Object>> cameraCounts = new ArrayList<>();
-        
+
         Map<String, Long> cameraCountMap = list(new LambdaQueryWrapper<Photo>()
                 .isNotNull(Photo::getCamera))
                 .stream()
@@ -1140,22 +995,22 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
                 .collect(Collectors.groupingBy(
                         camera -> camera,
                         Collectors.counting()));
-        
+
         cameraCountMap.forEach((cameraName, count) -> {
             Map<String, Object> map = new HashMap<>();
             map.put("name", cameraName);
             map.put("value", count);
             cameraCounts.add(map);
         });
-        
+
         return cameraCounts;
     }
-    
+
     @Override
     @Cacheable(key = "'lensStats'")
     public List<Map<String, Object>> getLensStats() {
         final List<Map<String, Object>> lensCounts = new ArrayList<>();
-        
+
         Map<String, Long> lensCountMap = list(new LambdaQueryWrapper<Photo>()
                 .isNotNull(Photo::getLens))
                 .stream()
@@ -1164,22 +1019,22 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
                 .collect(Collectors.groupingBy(
                         lens -> lens,
                         Collectors.counting()));
-        
+
         lensCountMap.forEach((lensName, count) -> {
             Map<String, Object> map = new HashMap<>();
             map.put("name", lensName);
             map.put("value", count);
             lensCounts.add(map);
         });
-        
+
         return lensCounts;
     }
-    
+
     @Override
     @Cacheable(key = "'isoStats'")
     public List<Map<String, Object>> getIsoStats() {
         final List<Map<String, Object>> isoCounts = new ArrayList<>();
-        
+
         Map<String, Long> isoCountMap = list(new LambdaQueryWrapper<Photo>()
                 .isNotNull(Photo::getIso))
                 .stream()
@@ -1188,22 +1043,22 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
                 .collect(Collectors.groupingBy(
                         iso -> iso,
                         Collectors.counting()));
-        
+
         isoCountMap.forEach((isoName, count) -> {
             Map<String, Object> map = new HashMap<>();
             map.put("name", isoName);
             map.put("value", count);
             isoCounts.add(map);
         });
-        
+
         return isoCounts;
     }
-    
+
     @Override
     @Cacheable(key = "'shutterStats'")
     public List<Map<String, Object>> getShutterStats() {
         final List<Map<String, Object>> shutterCounts = new ArrayList<>();
-        
+
         Map<String, Long> shutterCountMap = list(new LambdaQueryWrapper<Photo>()
                 .isNotNull(Photo::getShutter))
                 .stream()
@@ -1212,22 +1067,22 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
                 .collect(Collectors.groupingBy(
                         shutter -> shutter,
                         Collectors.counting()));
-        
+
         shutterCountMap.forEach((shutterName, count) -> {
             Map<String, Object> map = new HashMap<>();
             map.put("name", shutterName);
             map.put("value", count);
             shutterCounts.add(map);
         });
-        
+
         return shutterCounts;
     }
-    
+
     @Override
     @Cacheable(key = "'apertureStats'")
     public List<Map<String, Object>> getApertureStats() {
         final List<Map<String, Object>> apertureCounts = new ArrayList<>();
-        
+
         Map<String, Long> apertureCountMap = list(new LambdaQueryWrapper<Photo>()
                 .isNotNull(Photo::getAperture))
                 .stream()
@@ -1236,17 +1091,17 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
                 .collect(Collectors.groupingBy(
                         aperture -> aperture,
                         Collectors.counting()));
-        
+
         apertureCountMap.forEach((apertureName, count) -> {
             Map<String, Object> map = new HashMap<>();
             map.put("name", apertureName);
             map.put("value", count);
             apertureCounts.add(map);
         });
-        
+
         return apertureCounts;
     }
-    
+
     @Override
     @Cacheable(key = "'focalLengthStats'")
     public List<Map<String, Object>> getFocalLengthStats() {
@@ -1254,22 +1109,21 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
         try {
             // 获取所有不重复的焦距值
             List<String> focalLengths = baseMapper.selectList(
-                new LambdaQueryWrapper<Photo>()
-                    .select(Photo::getFocalLength)
-                    .isNotNull(Photo::getFocalLength)
-                    .ne(Photo::getFocalLength, "")
-            ).stream()
-            .map(Photo::getFocalLength)
-            .distinct()
-            .collect(Collectors.toList());
+                    new LambdaQueryWrapper<Photo>()
+                            .select(Photo::getFocalLength)
+                            .isNotNull(Photo::getFocalLength)
+                            .ne(Photo::getFocalLength, ""))
+                    .stream()
+                    .map(Photo::getFocalLength)
+                    .distinct()
+                    .collect(Collectors.toList());
 
             // 统计每个焦距的使用次数
             for (String focalLength : focalLengths) {
                 long count = baseMapper.selectCount(
-                    new LambdaQueryWrapper<Photo>()
-                        .eq(Photo::getFocalLength, focalLength)
-                );
-                
+                        new LambdaQueryWrapper<Photo>()
+                                .eq(Photo::getFocalLength, focalLength));
+
                 Map<String, Object> stat = new HashMap<>();
                 stat.put("name", focalLength);
                 stat.put("value", count);
@@ -1280,52 +1134,73 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
         }
         return stats;
     }
-    
+
     @Override
     @Cacheable(key = "'monthStats'")
     public Map<String, Long> getMonthStats() {
         Map<String, Long> monthStats = new HashMap<>();
-        
-        for (int i = 1; i <= 12; i++) {
-            final int month = i;
-            long count = count(new LambdaQueryWrapper<Photo>()
-                    .apply("DATE_FORMAT(time, '%m') = {0}", String.format("%02d", month)));
-            monthStats.put(String.valueOf(month), count);
+
+        try {
+            for (int i = 1; i <= 12; i++) {
+                String monthStr = String.format("%02d", i);
+                long count = count(new LambdaQueryWrapper<Photo>()
+                        .isNotNull(Photo::getShootTime)
+                        .apply("DATE_FORMAT(shoot_time, '%m') = {0}", monthStr));
+                monthStats.put(String.valueOf(i), count);
+            }
+        } catch (Exception e) {
+            log.error("获取月度统计数据时发生错误: {}", e.getMessage(), e);
+            // 确保即使出错也返回12个月的数据
+            for (int i = 1; i <= 12; i++) {
+                if (!monthStats.containsKey(String.valueOf(i))) {
+                    monthStats.put(String.valueOf(i), 0L);
+                }
+            }
         }
-        
+
         return monthStats;
     }
-    
+
     @Override
     @Cacheable(key = "'yearStats'")
     public Map<String, Long> getYearStats() {
         Map<String, Long> yearStats = new HashMap<>();
-        
-        // 获取最早的照片年份和当前年份
-        int currentYear = Year.now().getValue();
-        
-        // 尝试获取最早照片的年份
-        Integer earliestYear = getOne(new LambdaQueryWrapper<Photo>()
-                .orderByAsc(Photo::getShootTime)
-                .last("LIMIT 1"))
-                .getShootTime() != null ? Integer.parseInt(
-                        getOne(new LambdaQueryWrapper<Photo>()
-                                .orderByAsc(Photo::getShootTime)
-                                .last("LIMIT 1"))
-                                .getShootTime().substring(0, 4))
-                        : currentYear - 5; // 如果没有照片，默认显示近5年
-        
-        // 确保至少有5年的数据显示
-        earliestYear = Math.min(earliestYear, currentYear - 4);
-        
-        // 统计每年的照片数量
-        for (int year = earliestYear; year <= currentYear; year++) {
-            final int queryYear = year;
-            long count = count(new LambdaQueryWrapper<Photo>()
-                    .apply("DATE_FORMAT(time, '%Y') = {0}", String.valueOf(queryYear)));
-            yearStats.put(String.valueOf(queryYear), count);
+
+        try {
+            // 查询数据库中最早的年份和最晚的年份
+            Photo earliestPhoto = getOne(new LambdaQueryWrapper<Photo>()
+                    .isNotNull(Photo::getShootTime)
+                    .orderByAsc(Photo::getShootTime)
+                    .last("LIMIT 1"));
+
+            Photo latestPhoto = getOne(new LambdaQueryWrapper<Photo>()
+                    .isNotNull(Photo::getShootTime)
+                    .orderByDesc(Photo::getShootTime)
+                    .last("LIMIT 1"));
+
+            if (earliestPhoto != null && latestPhoto != null &&
+                    earliestPhoto.getShootTime() != null && latestPhoto.getShootTime() != null) {
+
+                int startYear = Integer.parseInt(earliestPhoto.getShootTime().substring(0, 4));
+                int endYear = Integer.parseInt(latestPhoto.getShootTime().substring(0, 4));
+
+                // 统计每一年的照片数量
+                for (int year = startYear; year <= endYear; year++) {
+                    long count = count(new LambdaQueryWrapper<Photo>()
+                            .isNotNull(Photo::getShootTime)
+                            .apply("DATE_FORMAT(shoot_time, '%Y') = {0}", String.valueOf(year)));
+                    yearStats.put(String.valueOf(year), count);
+                }
+            } else {
+                // 如果没有照片或时间为空，返回当前年份的空数据
+                yearStats.put(String.valueOf(Year.now().getValue()), 0L);
+            }
+        } catch (Exception e) {
+            log.error("获取年度统计数据时发生错误: {}", e.getMessage(), e);
+            // 确保至少返回当前年份的数据
+            yearStats.put(String.valueOf(Year.now().getValue()), 0L);
         }
-        
+
         return yearStats;
     }
 
@@ -1340,7 +1215,7 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
                 .distinct()
                 .sorted()
                 .collect(Collectors.toList());
-        
+
         log.info("成功获取所有相机型号，共{}种", cameras.size());
         return cameras;
     }
@@ -1356,37 +1231,37 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
                 .distinct()
                 .sorted()
                 .collect(Collectors.toList());
-        
+
         log.info("成功获取所有镜头型号，共{}种", lenses.size());
         return lenses;
     }
 
     @Override
-    @CacheEvict(value = {"photo"}, allEntries = true)
+    @CacheEvict(value = { "photo" }, allEntries = true)
     public boolean updateCameraName(String oldCamera, String newCamera) {
         log.info("更新相机型号: {} -> {}", oldCamera, newCamera);
         try {
             // 检查是否有使用该相机型号的照片
             long count = count(new LambdaQueryWrapper<Photo>()
                     .eq(Photo::getCamera, oldCamera));
-            
+
             if (count == 0) {
                 log.warn("没有找到使用该相机型号的照片: {}", oldCamera);
                 return false;
             }
-            
+
             // 更新相机型号
             boolean updated = update()
                     .eq("camera", oldCamera)
                     .set("camera", newCamera)
                     .update();
-            
+
             if (updated) {
                 log.info("成功将相机型号从 {} 更新为 {}, 更新了 {} 条记录", oldCamera, newCamera, count);
             } else {
                 log.error("更新相机型号失败: {} -> {}", oldCamera, newCamera);
             }
-            
+
             return updated;
         } catch (Exception e) {
             log.error("更新相机型号时发生错误: {}", e.getMessage(), e);
@@ -1395,31 +1270,31 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
     }
 
     @Override
-    @CacheEvict(value = {"photo"}, allEntries = true)
+    @CacheEvict(value = { "photo" }, allEntries = true)
     public boolean updateLensName(String oldLens, String newLens) {
         log.info("更新镜头型号: {} -> {}", oldLens, newLens);
         try {
             // 检查是否有使用该镜头型号的照片
             long count = count(new LambdaQueryWrapper<Photo>()
                     .eq(Photo::getLens, oldLens));
-            
+
             if (count == 0) {
                 log.warn("没有找到使用该镜头型号的照片: {}", oldLens);
                 return false;
             }
-            
+
             // 更新镜头型号
             boolean updated = update()
                     .eq("lens", oldLens)
                     .set("lens", newLens)
                     .update();
-            
+
             if (updated) {
                 log.info("成功将镜头型号从 {} 更新为 {}, 更新了 {} 条记录", oldLens, newLens, count);
             } else {
                 log.error("更新镜头型号失败: {} -> {}", oldLens, newLens);
             }
-            
+
             return updated;
         } catch (Exception e) {
             log.error("更新镜头型号时发生错误: {}", e.getMessage(), e);
@@ -1434,7 +1309,7 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
         try {
             long count = count(new LambdaQueryWrapper<Photo>()
                     .eq(Photo::getCamera, camera));
-            
+
             log.info("成功获取相机 {} 的照片数量: {}", camera, count);
             return count;
         } catch (Exception e) {
@@ -1447,134 +1322,103 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
     @Cacheable(key = "'photoCountByLens_' + #lens")
     public long getPhotoCountByLens(String lens) {
         return baseMapper.selectCount(
-            new LambdaQueryWrapper<Photo>()
-                .eq(Photo::getLens, lens)
-        );
+                new LambdaQueryWrapper<Photo>()
+                        .eq(Photo::getLens, lens));
     }
 
     @Override
     @Cacheable(key = "'allFocalLengths'")
     public List<String> getAllFocalLengths() {
         return baseMapper.selectList(
-            new LambdaQueryWrapper<Photo>()
-                .select(Photo::getFocalLength)
-                .isNotNull(Photo::getFocalLength)
-                .ne(Photo::getFocalLength, "")
-        ).stream()
-        .map(Photo::getFocalLength)
-        .distinct()
-        .collect(Collectors.toList());
+                new LambdaQueryWrapper<Photo>()
+                        .select(Photo::getFocalLength)
+                        .isNotNull(Photo::getFocalLength)
+                        .ne(Photo::getFocalLength, ""))
+                .stream()
+                .map(Photo::getFocalLength)
+                .distinct()
+                .collect(Collectors.toList());
     }
 
     @Override
     @Cacheable(key = "'photoCountByFocalLength_' + #focalLength")
     public long getPhotoCountByFocalLength(String focalLength) {
         return baseMapper.selectCount(
-            new LambdaQueryWrapper<Photo>()
-                .eq(Photo::getFocalLength, focalLength)
-        );
+                new LambdaQueryWrapper<Photo>()
+                        .eq(Photo::getFocalLength, focalLength));
     }
 
     @Override
-    @CacheEvict(value = {"photo"}, allEntries = true)
+    @CacheEvict(value = { "photo" }, allEntries = true)
     public boolean updateFocalLength(String oldFocalLength, String newFocalLength) {
         return baseMapper.update(
-            new LambdaUpdateWrapper<Photo>()
-                .eq(Photo::getFocalLength, oldFocalLength)
-                .set(Photo::getFocalLength, newFocalLength)
-        ) > 0;
+                new LambdaUpdateWrapper<Photo>()
+                        .eq(Photo::getFocalLength, oldFocalLength)
+                        .set(Photo::getFocalLength, newFocalLength)) > 0;
     }
 
     /**
      * 重命名照片文件
+     * 
      * @param oldFileName 原文件名
      * @param newFileName 新文件名
      * @return 是否所有文件都重命名成功
      */
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean renamePhotoFiles(String oldFileName, String newFileName) {
-        if (oldFileName == null || newFileName == null || oldFileName.equals(newFileName)) {
-            return true;
+        try {
+            return fileProcessService.renamePhotoFiles(oldFileName, newFileName, fullSizeUrl, thumbnail100KUrl,
+                    thumbnail1000KUrl);
+        } catch (IOException e) {
+            log.error("重命名照片文件失败: {}", e.getMessage(), e);
+            throw new RuntimeException("重命名照片文件失败", e);
         }
-
-        boolean allSuccess = true;
-        List<String> paths = Arrays.asList(fullSizeUrl, thumbnail100KUrl, thumbnail1000KUrl);
-        List<String> failedPaths = new ArrayList<>();
-
-        for (String path : paths) {
-            File oldFile = new File(path, oldFileName);
-            File newFile = new File(path, newFileName);
-
-            if (oldFile.exists()) {
-                try {
-                    if (!oldFile.renameTo(newFile)) {
-                        log.error("重命名文件失败: {} -> {}", oldFile.getAbsolutePath(), newFile.getAbsolutePath());
-                        allSuccess = false;
-                        failedPaths.add(path);
-                    } else {
-                        log.info("成功重命名文件: {} -> {}", oldFile.getAbsolutePath(), newFile.getAbsolutePath());
-                    }
-                } catch (Exception e) {
-                    log.error("重命名文件时发生异常: {} -> {}, 错误: {}", 
-                        oldFile.getAbsolutePath(), newFile.getAbsolutePath(), e.getMessage(), e);
-                    allSuccess = false;
-                    failedPaths.add(path);
-                }
-            } else {
-                log.warn("文件不存在，无需重命名: {}", oldFile.getAbsolutePath());
-            }
-        }
-
-        if (!allSuccess) {
-            log.error("部分文件重命名失败，失败的路径: {}", String.join(", ", failedPaths));
-        }
-
-        return allSuccess;
     }
 
     @Override
     @Cacheable(key = "'noMetadataPhotos_' + #page + '_' + #pageSize")
     public Page<Photo> getNoMetadataPhotosByPage(int page, int pageSize) {
         Page<Photo> photoPage = new Page<>(page, pageSize);
-        
+
         // 构建查询条件：任何一个元数据字段为NULL或空字符串
         LambdaQueryWrapper<Photo> queryWrapper = new LambdaQueryWrapper<Photo>()
                 .orderByDesc(Photo::getShootTime)
                 .and(wrapper -> wrapper
-                    .isNull(Photo::getFileName).or().eq(Photo::getFileName, "")
-                    .or()
-                    .isNull(Photo::getAuthor).or().eq(Photo::getAuthor, "")
-                    .or()
-                    .isNull(Photo::getWidth)
-                    .or()
-                    .isNull(Photo::getHeight)
-                    .or()
-                    .isNull(Photo::getShootTime).or().eq(Photo::getShootTime, "")
-                    .or()
-                    .isNull(Photo::getAperture).or().eq(Photo::getAperture, "")
-                    .or()
-                    .isNull(Photo::getShutter).or().eq(Photo::getShutter, "")
-                    .or()
-                    .isNull(Photo::getIso).or().eq(Photo::getIso, "")
-                    .or()
-                    .isNull(Photo::getCamera).or().eq(Photo::getCamera, "")
-                    .or()
-                    .isNull(Photo::getLens).or().eq(Photo::getLens, "")
-                    .or()
-                    .isNull(Photo::getFocalLength).or().eq(Photo::getFocalLength, "")
-                    .or()
-                    .isNull(Photo::getStartRating)
-                );
-        
+                        .isNull(Photo::getFileName).or().eq(Photo::getFileName, "")
+                        .or()
+                        .isNull(Photo::getAuthor).or().eq(Photo::getAuthor, "")
+                        .or()
+                        .isNull(Photo::getWidth)
+                        .or()
+                        .isNull(Photo::getHeight)
+                        .or()
+                        .isNull(Photo::getShootTime).or().eq(Photo::getShootTime, "")
+                        .or()
+                        .isNull(Photo::getAperture).or().eq(Photo::getAperture, "")
+                        .or()
+                        .isNull(Photo::getShutter).or().eq(Photo::getShutter, "")
+                        .or()
+                        .isNull(Photo::getIso).or().eq(Photo::getIso, "")
+                        .or()
+                        .isNull(Photo::getCamera).or().eq(Photo::getCamera, "")
+                        .or()
+                        .isNull(Photo::getLens).or().eq(Photo::getLens, "")
+                        .or()
+                        .isNull(Photo::getFocalLength).or().eq(Photo::getFocalLength, "")
+                        .or()
+                        .isNull(Photo::getStartRating));
+
         return page(photoPage, queryWrapper);
     }
 
     /**
      * 更新消息状态
+     * 
      * @param messageId 消息ID
-     * @param status 状态 (PROCESSING/COMPLETED/FAILED)
-     * @param progress 进度 (0-100)
-     * @param message 消息内容
+     * @param status    状态 (PROCESSING/COMPLETED/FAILED)
+     * @param progress  进度 (0-100)
+     * @param message   消息内容
      */
     @Override
     public void updatePhotoUploadStatus(String messageId, String status, int progress, String message) {
@@ -1584,26 +1428,26 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
         statusInfo.put("progress", progress);
         statusInfo.put("message", message);
         statusInfo.put("updateTime", System.currentTimeMillis());
-        
+
         // 存储到Redis，设置24小时过期
         String key = UPLOAD_STATUS_KEY_PREFIX + messageId;
         redisTemplate.opsForValue().set(key, statusInfo, 24, TimeUnit.HOURS);
         log.debug("已更新消息ID: {} 的处理状态为: {}, 进度: {}%", messageId, status, progress);
     }
-    
+
     @Override
     public Map<String, Object> getPhotoUploadStatus(String messageId) {
         String key = UPLOAD_STATUS_KEY_PREFIX + messageId;
         Object statusObj = redisTemplate.opsForValue().get(key);
-        
+
         if (statusObj != null && statusObj instanceof Map) {
             @SuppressWarnings("unchecked")
             Map<String, Object> statusInfo = (Map<String, Object>) statusObj;
-            log.debug("获取到消息ID: {} 的处理状态: {}, 进度: {}%", 
+            log.debug("获取到消息ID: {} 的处理状态: {}, 进度: {}%",
                     messageId, statusInfo.get("status"), statusInfo.get("progress"));
             return statusInfo;
         }
-        
+
         // 如果没有找到状态信息，返回默认完成状态
         // 在实际应用中，可能需要返回"未找到"或"过期"等状态
         Map<String, Object> defaultStatus = new HashMap<>();
@@ -1612,45 +1456,47 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
         defaultStatus.put("progress", 100);
         defaultStatus.put("message", "处理已完成或状态信息已过期");
         defaultStatus.put("updateTime", System.currentTimeMillis());
-        
+
         log.warn("未找到消息ID: {} 的处理状态，返回默认完成状态", messageId);
         return defaultStatus;
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean deletePhotoById(String id, String fullSizeUrl, String thumbnail100KUrl, String thumbnail1000KUrl) {
         try {
-            Long photoId = Long.valueOf(id);
-            Photo photo = this.getById(photoId);
+            Photo photo = getById(id);
             if (photo == null) {
-                log.warn("未找到ID为{}的照片记录", id);
+                log.warn("尝试删除不存在的照片，ID: {}", id);
                 return false;
             }
 
-            // 先删除照片在group_photo_photo表中的所有关联记录
+            // 删除关联的组图照片记录
             LambdaQueryWrapper<GroupPhotoPhoto> queryWrapper = new LambdaQueryWrapper<>();
             queryWrapper.eq(GroupPhotoPhoto::getPhotoId, id);
             groupPhotoPhotoService.remove(queryWrapper);
 
             // 删除照片文件
-            this.deletePhotoFiles(fullSizeUrl, thumbnail100KUrl, thumbnail1000KUrl, photo.getFileName());
-            
-            // 删除照片记录
-            boolean result = this.removeById(photoId);
+            try {
+                fileProcessService.deletePhotoFiles(fullSizeUrl, thumbnail100KUrl, thumbnail1000KUrl,
+                        photo.getFileName());
+            } catch (IOException e) {
+                log.error("删除照片文件失败，ID: {}, 文件名: {}, 错误: {}", id, photo.getFileName(), e.getMessage(), e);
+                throw new RuntimeException("删除照片文件失败: " + e.getMessage(), e);
+            }
 
-            if (result) {
-                log.info("成功删除照片，ID: {}, 文件名: {}", id, photo.getFileName());
-                // 注意：这里不需要从布隆过滤器中删除元素
-                // 布隆过滤器没有删除操作，对误判率的影响很小
+            // 删除照片记录
+            boolean removed = removeById(id);
+            if (removed) {
+                log.info("成功删除照片及其文件，ID: {}, 文件名: {}", id, photo.getFileName());
                 return true;
             } else {
                 log.error("删除照片记录失败，ID: {}", id);
-                return false;
+                throw new RuntimeException("删除照片记录失败");
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             log.error("删除照片时发生错误，ID: {}, 错误: {}", id, e.getMessage(), e);
-            throw new RuntimeException("删除照片失败: " + e.getMessage(), e);
+            throw e;
         }
     }
 
@@ -1664,7 +1510,7 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
         }
         return result;
     }
-    
+
     @Override
     public boolean saveBatch(Collection<Photo> entityList) {
         boolean result = super.saveBatch(entityList);
@@ -1676,5 +1522,121 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
             log.debug("已将{}个照片ID添加到布隆过滤器", entityList.size());
         }
         return result;
+    }
+
+    /**
+     * 更新照片信息并处理文件名的修改
+     * 
+     * @param photo       要更新的照片信息
+     * @param oldFileName 原文件名
+     * @return 是否更新成功
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean updatePhotoWithFileName(Photo photo, String oldFileName) {
+        // 记录需要回滚的信息
+        boolean needRenameRollback = false;
+        String newFileName = null;
+
+        try {
+            // 检查文件名是否发生变化
+            if (photo.getFileName() != null && !photo.getFileName().equals(oldFileName)) {
+                newFileName = photo.getFileName();
+                // 1. 重命名文件
+                boolean renameSuccess = false;
+                try {
+                    renameSuccess = fileProcessService.renamePhotoFiles(oldFileName, newFileName, fullSizeUrl,
+                            thumbnail100KUrl, thumbnail1000KUrl);
+                    if (!renameSuccess) {
+                        log.error("重命名照片文件失败: {} -> {}", oldFileName, newFileName);
+                        return false;
+                    }
+                    needRenameRollback = true;
+                } catch (IOException e) {
+                    log.error("重命名照片文件失败: {} -> {}, 错误: {}", oldFileName, newFileName, e.getMessage(), e);
+                    return false;
+                }
+            }
+
+            // 2. 更新数据库记录
+            boolean updateSuccess = updateById(photo);
+            if (!updateSuccess) {
+                log.error("更新照片记录失败: {}", photo.getId());
+                // 如果更新数据库失败，需要回滚文件重命名操作
+                if (needRenameRollback) {
+                    try {
+                        fileProcessService.renamePhotoFiles(newFileName, oldFileName, fullSizeUrl, thumbnail100KUrl,
+                                thumbnail1000KUrl);
+                    } catch (IOException e) {
+                        log.error("回滚重命名文件失败: {} -> {}, 错误: {}", newFileName, oldFileName, e.getMessage(), e);
+                    }
+                }
+                return false;
+            }
+
+            return true;
+        } catch (Exception e) {
+            log.error("更新照片时发生错误: {}", e.getMessage(), e);
+            // 如果发生异常，需要回滚文件重命名操作
+            if (needRenameRollback) {
+                try {
+                    fileProcessService.renamePhotoFiles(newFileName, oldFileName, fullSizeUrl, thumbnail100KUrl,
+                            thumbnail1000KUrl);
+                } catch (IOException ex) {
+                    log.error("回滚重命名文件失败: {} -> {}, 错误: {}", newFileName, oldFileName, ex.getMessage(), ex);
+                }
+            }
+            throw new RuntimeException("更新照片失败: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public ProcessResult processPendingPhotosWithCompression(File pendingDir, File thumbnail100KDir,
+            File thumbnail1000KDir, File fullSizeDir, boolean overwrite) {
+        List<Photo> photos = new ArrayList<>();
+        List<File> processedFiles = new ArrayList<>(); // 用于记录已处理的文件，便于回滚
+
+        try {
+            // 1. 处理照片元数据
+            photos = getPhotosByFolder(pendingDir);
+            if (photos.isEmpty()) {
+                log.warn("没有找到有效的待处理照片");
+                return new ProcessResult(Collections.emptyList(), Collections.emptyList(), false);
+            }
+
+            // 为每个照片分配ID
+            for (Photo photo : photos) {
+                photo.setId(String.valueOf(idGenerator.nextId()));
+            }
+
+            // 2. 处理图片压缩
+            fileProcessService.processPhotoCompression(pendingDir, thumbnail100KDir, thumbnail1000KDir, fullSizeDir,
+                    overwrite);
+
+            // 3. 保存照片到数据库
+            saveBatch(photos);
+
+            // 4. 清理pending目录
+            try {
+                FileUtils.clearFolder(pendingDir, true);
+            } catch (Exception e) {
+                log.warn("清理pending目录时出错: {}, 但不影响主要流程", e.getMessage());
+                // 清理目录失败不影响主流程，所以不抛出异常
+            }
+
+            return new ProcessResult(Collections.emptyList(), photos, true);
+        } catch (Exception e) {
+            log.error("处理待处理图片时发生错误: {}", e.getMessage(), e);
+            // 事务会自动回滚数据库操作，这里主动回滚文件操作
+            fileProcessService.rollbackProcessedFiles(processedFiles);
+            throw new RuntimeException("处理待处理图片失败: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public boolean existsByFileName(String fileName) {
+        return count(new LambdaQueryWrapper<Photo>()
+                .eq(Photo::getFileName, fileName)) > 0;
     }
 }

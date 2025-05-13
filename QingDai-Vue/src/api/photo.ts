@@ -27,9 +27,9 @@ export interface PhotoStatusUpdateParams {
   startRating: number;
 }
 
-export interface PhotoInfoUpdateParams extends WaterfallItem { }// 获取100K压缩照片(批量)
+export interface PhotoInfoUpdateParams extends WaterfallItem { }
 
-
+// 获取100K压缩照片(批量)
 export const getThumbnail100KPhotos = async (ids: string): Promise<any> => {
   // return await request.get(`${BASE_URL}/thumbnails/small`, {
     return await request.get(`${CDN_URL}/cdn/thumbnails/small`, {
@@ -233,9 +233,9 @@ export function updateCameraName(oldCamera: string, newCamera: string): Promise<
 // 更新镜头型号
 export function updateLensName(oldLens: string, newLens: string): Promise<any> {
   return request({
-    url: `${BASE_URL}/lenses/${encodeURI(oldLens)}`,
+    url: `${BASE_URL}/lenses`,
     method: 'put',
-    params: { newLens }
+    params: { oldLens, newLens }
   })
 }
 

@@ -307,4 +307,30 @@ public interface PhotoService extends IService<Photo> {
 
     // 添加删除照片的方法
     boolean deletePhotoById(String id, String fullSizeUrl, String thumbnail100KUrl, String thumbnail1000KUrl);
+
+    /**
+     * 更新照片信息并处理文件名的修改
+     * @param photo 要更新的照片信息
+     * @param oldFileName 原文件名
+     * @return 是否更新成功
+     */
+    boolean updatePhotoWithFileName(Photo photo, String oldFileName);
+    
+    /**
+     * 处理待处理图片并压缩
+     * @param pendingDir 待处理目录
+     * @param thumbnail100KDir 100K缩略图目录
+     * @param thumbnail1000KDir 1000K缩略图目录
+     * @param fullSizeDir 原图目录
+     * @param overwrite 是否覆盖已存在的文件
+     * @return 处理结果，包含保存到数据库中的照片记录
+     */
+    ProcessResult processPendingPhotosWithCompression(File pendingDir, File thumbnail100KDir, File thumbnail1000KDir, File fullSizeDir, boolean overwrite);
+
+    /**
+     * 根据文件名判断照片是否存在
+     * @param fileName 文件名
+     * @return 是否存在
+     */
+    boolean existsByFileName(String fileName);
 }
