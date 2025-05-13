@@ -2,81 +2,46 @@
     <div class="error-page">
         <div class="error-container">
             <div class="error-icon">
-                <el-icon><WarningFilled /></el-icon>
+                <el-icon><CircleCloseFilled /></el-icon>
             </div>
-            <h1 class="error-title">页面不存在</h1>
-            <p class="error-message">抱歉，您访问的页面不存在或已被移除</p>
-            <div class="error-timer">
-                <div class="timer-circle">
-                    <svg viewBox="0 0 100 100">
-                        <circle class="timer-circle-bg" cx="50" cy="50" r="45"></circle>
-                        <circle class="timer-circle-progress" cx="50" cy="50" r="45" 
-                            :style="{ strokeDashoffset: dashOffset }"></circle>
-                    </svg>
-                    <div class="timer-count">{{ countdown }}</div>
-                </div>
-            </div>
-            <p class="redirect-text">{{ countdown }}秒后自动返回首页</p>
-            <el-button type="primary" @click="goHome" class="home-button">
-                立即返回首页
+            <h1 class="error-title">组件加载错误</h1>
+            <p class="error-message">抱歉，组件加载失败，请稍后重试或联系管理员</p>
+            <p class="error-detail" v-if="errorMessage">
+                错误详情：{{ errorMessage }}
+            </p>
+            <el-button type="primary" @click="reload" class="action-button">
+                重新加载
             </el-button>
-            <div class="error-box">
-                <div class="error-box-lid"></div>
-                <div class="error-box-bottom"></div>
-            </div>
+            <el-button @click="goBack" class="action-button">
+                返回上一页
+            </el-button>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { ref, defineProps } from 'vue';
 import { useRouter } from 'vue-router';
-import { WarningFilled } from '@element-plus/icons-vue';
+import { CircleCloseFilled } from '@element-plus/icons-vue';
+
+const props = defineProps({
+    errorMessage: {
+        type: String,
+        default: ''
+    }
+});
 
 const router = useRouter();
-const countdown = ref(5);
-let timer: number | null = null;
 
-// 计算圆环进度
-const dashOffset = computed(() => {
-    // 圆的周长约为 2πr = 2 * 3.14 * 45 ≈ 283
-    const circumference = 2 * Math.PI * 45;
-    // 计算当前进度
-    const progress = countdown.value / 5;
-    // 计算偏移量
-    return circumference * (1 - progress);
-});
-
-// 跳转到首页
-const goHome = () => {
-    if (timer) {
-        clearInterval(timer);
-        timer = null;
-    }
-    router.push('/');
+// 重新加载页面
+const reload = () => {
+    window.location.reload();
 };
 
-onMounted(() => {
-    // 设置倒计时
-    timer = window.setInterval(() => {
-        countdown.value--;
-        if (countdown.value <= 0) {
-            if (timer) {
-                clearInterval(timer);
-                timer = null;
-            }
-            goHome();
-        }
-    }, 1000);
-});
-
-onUnmounted(() => {
-    // 清除定时器
-    if (timer) {
-        clearInterval(timer);
-        timer = null;
-    }
-});
+// 返回上一页
+const goBack = () => {
+    router.go(-1);
+};
 </script>
 
 <style scoped>
@@ -100,7 +65,7 @@ onUnmounted(() => {
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
     position: relative;
     z-index: 2;
-    animation: fadeIn 0.8s ease-out, float 6s ease-in-out infinite;
+    animation: fadeIn 0.8s ease-out;
 }
 
 @keyframes fadeIn {
@@ -114,18 +79,9 @@ onUnmounted(() => {
     }
 }
 
-@keyframes float {
-    0%, 100% {
-        transform: translateY(0);
-    }
-    50% {
-        transform: translateY(-10px);
-    }
-}
-
 .error-icon {
     font-size: 80px;
-    color: var(--qd-color-primary);
+    color: #f56c6c;
     margin-bottom: 20px;
     animation: pulse 2s infinite;
 }
@@ -144,7 +100,7 @@ onUnmounted(() => {
 
 .error-title {
     font-size: 36px;
-    color: var(--qd-color-primary);
+    color: #f56c6c;
     margin-bottom: 16px;
     font-weight: 600;
 }
@@ -152,137 +108,31 @@ onUnmounted(() => {
 .error-message {
     font-size: 18px;
     color: var(--qd-color-primary-light-3);
-    margin-bottom: 30px;
-}
-
-.error-timer {
-    display: flex;
-    justify-content: center;
     margin-bottom: 20px;
 }
 
-.timer-circle {
-    width: 100px;
-    height: 100px;
-    position: relative;
+.error-detail {
+    font-size: 14px;
+    color: #909399;
+    margin-bottom: 30px;
+    padding: 10px;
+    background-color: #f8f8f8;
+    border-radius: 4px;
+    word-break: break-word;
+    text-align: left;
+    max-height: 150px;
+    overflow-y: auto;
 }
 
-.timer-circle svg {
-    width: 100%;
-    height: 100%;
-    transform: rotate(-90deg);
-}
-
-.timer-circle-bg {
-    fill: none;
-    stroke: var(--qd-color-primary-light-8);
-    stroke-width: 8;
-}
-
-.timer-circle-progress {
-    fill: none;
-    stroke: var(--qd-color-primary);
-    stroke-width: 8;
-    stroke-dasharray: 283;
-    transition: stroke-dashoffset 1s linear;
-}
-
-.timer-count {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 32px;
-    font-weight: bold;
-    color: var(--qd-color-primary);
-}
-
-.redirect-text {
-    font-size: 16px;
-    color: var(--qd-color-primary-light-4);
-    margin-bottom: 24px;
-}
-
-.home-button {
+.action-button {
+    margin: 0 10px;
     padding: 12px 24px;
     font-size: 16px;
     transition: all 0.3s;
 }
 
-.home-button:hover {
+.action-button:hover {
     transform: translateY(-3px);
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
-
-/* 装饰性元素 */
-.error-box {
-    position: absolute;
-    bottom: -50px;
-    left: 50%;
-    transform: translateX(-50%);
-    perspective: 600px;
-}
-
-.error-box-lid {
-    width: 200px;
-    height: 20px;
-    background-color: var(--qd-color-primary-light-5);
-    transform-origin: bottom;
-    animation: openLid 4s ease-in-out infinite;
-    position: relative;
-    z-index: 2;
-    border-radius: 4px 4px 0 0;
-}
-
-.error-box-bottom {
-    width: 200px;
-    height: 50px;
-    background: linear-gradient(to bottom, var(--qd-color-primary-light-6), var(--qd-color-primary-light-4));
-    transform-origin: bottom;
-    position: relative;
-    z-index: 1;
-    border-radius: 0 0 4px 4px;
-}
-
-@keyframes openLid {
-    0%, 30%, 70%, 100% {
-        transform: rotateX(0);
-    }
-    40%, 60% {
-        transform: rotateX(-40deg);
-    }
-}
-
-/* 响应式调整 */
-@media (max-width: 768px) {
-    .error-container {
-        max-width: 90%;
-        padding: 30px;
-    }
-
-    .error-icon {
-        font-size: 60px;
-    }
-
-    .error-title {
-        font-size: 30px;
-    }
-
-    .error-message {
-        font-size: 16px;
-    }
-
-    .timer-circle {
-        width: 80px;
-        height: 80px;
-    }
-
-    .timer-count {
-        font-size: 28px;
-    }
-}
-</style> 
+</style>

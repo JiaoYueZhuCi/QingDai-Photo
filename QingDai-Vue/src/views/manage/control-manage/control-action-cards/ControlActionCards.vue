@@ -317,66 +317,6 @@
     <el-card class="develop-card">
       <template #header>
         <div class="card-header">
-          <span>token查验用户信息</span>
-        </div>
-      </template>
-      <div class="card-content">
-        <div class="action-group">
-          <el-input v-model="debugToken" placeholder="请输入token进行查验" class="debug-input" />
-          <el-button type="primary" @click="handleDebugUserInfo">
-            开始检测
-          </el-button>
-        </div>
-        <div class="description">
-          查验token的用户信息
-        </div>
-        <div class="result-summary">
-          <template v-if="userInfoResult">
-            <h3>用户基本信息</h3>
-            <p>id: {{ userInfoResult.user.id }}</p>
-            <p>用户名: {{ userInfoResult.user.username }}</p>
-            <p>密码: {{ userInfoResult.user.password }}</p>
-            <p>状态: {{ userInfoResult.user.status === 1 ? '正常' : '禁用' }}</p>
-            <p>创建时间: {{ userInfoResult.user.createdTime }}</p>
-            <p>更新时间: {{ userInfoResult.user.updatedTime }}</p>
-
-            <h3>用户角色</h3>
-            <div class="role-list">
-              <el-tag v-for="(role, index) in userInfoResult.roles" :key="index" type="success" class="role-tag">
-                {{ role }}
-              </el-tag>
-            </div>
-
-            <h3>用户权限</h3>
-            <div class="permission-list">
-              <el-tag v-for="(permission, index) in userInfoResult.permissions" :key="index" type="info"
-                class="permission-tag">
-                {{ permission }}
-              </el-tag>
-            </div>
-          </template>
-          <template v-else>
-            <h3>用户基本信息</h3>
-            <p>用户ID: <span class="pending-data">待检测</span></p>
-            <p>用户名: <span class="pending-data">待检测</span></p>
-            <p>密码: <span class="pending-data">待检测</span></p>
-            <p>状态: <span class="pending-data">待检测</span></p>
-            <p>创建时间: <span class="pending-data">待检测</span></p>
-            <p>更新时间: <span class="pending-data">待检测</span></p>
-
-            <h3>用户角色</h3>
-            <p><span class="pending-data">待检测</span></p>
-
-            <h3>用户权限</h3>
-            <p><span class="pending-data">待检测</span></p>
-          </template>
-        </div>
-      </div>
-    </el-card>
-
-    <el-card class="develop-card">
-      <template #header>
-        <div class="card-header">
           <span>相机型号替换</span>
         </div>
       </template>
@@ -521,7 +461,6 @@
 import { ref, computed } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { fullSizePhotoToMysql, thumbnailImages, processPendingPhotos, validatePhotoExistence, validateFileSystemPhotos, deletePhotosNotInDatabase, deleteMissingPhotoRecords, getAllCameras, getAllLenses, updateCameraName, updateLensName, getPhotoCountByCamera, getPhotoCountByLens, getAllFocalLengths, updateFocalLengthValue, getPhotoCountByFocalLength } from '@/api/photo';
-import { getUserInfo } from '@/api/user';
 
 // 图片处理相关
 const thumbnailOverwrite = ref(false);
@@ -557,10 +496,6 @@ const photoExistenceResult = ref<PhotoExistenceResult | null>(null);
 const fileSystemPhotosResult = ref<FileSystemPhotosResult | null>(null);
 const deleteResult = ref<any | null>(null);
 const missingPhotoDeleteResult = ref<MissingPhotoDeleteResult | null>(null);
-
-// Token查验
-const debugToken = ref('');
-const userInfoResult = ref<any | null>(null);
 
 // 文件过滤和分页
 const fullSizeFilter = ref('');
@@ -836,34 +771,6 @@ const paginatedThumbnail1000KFiles = computed(() => {
   const end = start + pageSize.value;
   return filteredThumbnail1000KFiles.value.slice(start, end);
 });
-
-// Token查验
-const handleDebugUserInfo = async () => {
-  try {
-    if (!debugToken.value) {
-      ElMessage.warning('请输入token');
-      return;
-    }
-
-    // 如果用户输入的token包含Bearer前缀，则去除它
-    let tokenToUse = debugToken.value;
-    if (tokenToUse.startsWith('Bearer ')) {
-      tokenToUse = tokenToUse.substring(7);
-    }
-
-    const response = await getUserInfo(tokenToUse);
-    userInfoResult.value = response;
-    ElMessage.success('获取用户信息成功');
-    console.log('用户信息:', response);
-  } catch (error: any) {
-    userInfoResult.value = null;
-    if (error.response && error.response.status === 401) {
-      ElMessage.error('Token验证失败：无效的token');
-    } else {
-      ElMessage.error('获取用户信息失败：' + (error as Error).message);
-    }
-  }
-};
 
 // 设备管理方法
 const loadCameras = async () => {

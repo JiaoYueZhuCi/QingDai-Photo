@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { h } from 'vue'
 import errorPage from '@/components/common/error/Error.vue'
 import { getRolesPermissions } from '@/api/user.ts';
 import { ElMessage } from 'element-plus';
@@ -16,19 +17,31 @@ const router = createRouter({
         },
         {
           path: '/show',
-          component: () => import('@/views/show/Show.vue').catch(() => errorPage),
+          component: () => import('@/views/show/Show.vue').catch((error) => {
+            console.error('组件加载失败:', error);
+            return h(errorPage, { errorMessage: error.toString() });
+          }),
         },
         {
           path: '/login',
-          component: () => import('@/components/common/login/Login.vue').catch(() => errorPage),
+          component: () => import('@/components/common/login/Login.vue').catch((error) => {
+            console.error('组件加载失败:', error);
+            return h(errorPage, { errorMessage: error.toString() });
+          }),
         },
         {
           path: '/test',
-          component: () => import('@/views/test/Test.vue').catch(() => errorPage),
+          component: () => import('@/views/test/Test.vue').catch((error) => {
+            console.error('组件加载失败:', error);
+            return h(errorPage, { errorMessage: error.toString() });
+          }),
         },
         {
           path: '/home',
-          component: () => import('@/views/home/Home.vue').catch(() => errorPage),
+          component: () => import('@/views/home/Home.vue').catch((error) => {
+            console.error('组件加载失败:', error);
+            return h(errorPage, { errorMessage: error.toString() });
+          }),
           props: true,
           children: [
             {
@@ -39,7 +52,7 @@ const router = createRouter({
               path: 'featured',
               component: () => import('@/views/home/photo/Photo.vue').catch((error) => {
                 console.error('组件加载失败:', error);
-                return errorPage;
+                return h(errorPage, { errorMessage: error.toString() });
               }),
               props: { photoType: 1 }
             },
@@ -47,52 +60,76 @@ const router = createRouter({
               path: 'photos',
               component: () => import('@/views/home/photo/Photo.vue').catch((error) => {
                 console.error('组件加载失败:', error);
-                return errorPage;
+                return h(errorPage, { errorMessage: error.toString() });
               }),
               props: { photoType: 0 }
             },
             {
               path: 'timeline',
-              component: () => import('@/views/home/timeline/Timeline.vue').catch(() => errorPage)
+              component: () => import('@/views/home/timeline/Timeline.vue').catch((error) => {
+                console.error('组件加载失败:', error);
+                return h(errorPage, { errorMessage: error.toString() });
+              })
             },
             {
               path: 'data',
-              component: () => import('@/views/home/data/Data.vue').catch(() => errorPage)
+              component: () => import('@/views/home/data/Data.vue').catch((error) => {
+                console.error('组件加载失败:', error);
+                return h(errorPage, { errorMessage: error.toString() });
+              })
             },
             {
               path: 'groupPhotos',
-              component: () => import('@/views/home/group-photos/GroupPhotos.vue').catch(() => errorPage)
+              component: () => import('@/views/home/group-photos/GroupPhotos.vue').catch((error) => {
+                console.error('组件加载失败:', error);
+                return h(errorPage, { errorMessage: error.toString() });
+              })
             },
             {
               path: 'hidden',
-              component: () => import('@/views/home/photo/Photo.vue').catch(() => errorPage),
+              component: () => import('@/views/home/photo/Photo.vue').catch((error) => {
+                console.error('组件加载失败:', error);
+                return h(errorPage, { errorMessage: error.toString() });
+              }),
               props: { photoType: 2 }
             },
             {
               path: 'meteorology',
-              component: () => import('@/views/home/photo/Photo.vue').catch(() => errorPage),
+              component: () => import('@/views/home/photo/Photo.vue').catch((error) => {
+                console.error('组件加载失败:', error);
+                return h(errorPage, { errorMessage: error.toString() });
+              }),
               props: { photoType: 3 }
             },
             {
               path: 'sunriseGlow',
               component: () => import('@/views/home/meteorology/MeteorologyTimeLine.vue').catch((error) => {
                 console.error('组件加载失败:', error);
-                return errorPage;
+                return h(errorPage, { errorMessage: error.toString() });
               }),
               props: { meteorologyType: '1' }
             },
             {
               path: 'sunsetGlow',
-              component: () => import('@/views/home/meteorology/MeteorologyTimeLine.vue').catch(() => errorPage),
+              component: () => import('@/views/home/meteorology/MeteorologyTimeLine.vue').catch((error) => {
+                console.error('组件加载失败:', error);
+                return h(errorPage, { errorMessage: error.toString() });
+              }),
               props: { meteorologyType: '2' }
             },
             {
               path: 'sunrise',
-              component: () => import('@/views/home/meteorology/MeteorologyTimeLine.vue').catch(() => errorPage),
+              component: () => import('@/views/home/meteorology/MeteorologyTimeLine.vue').catch((error) => {
+                console.error('组件加载失败:', error);
+                return h(errorPage, { errorMessage: error.toString() });
+              }),
               props: { meteorologyType: '3' }
             }, {
               path: 'sunset',
-              component: () => import('@/views/home/meteorology/MeteorologyTimeLine.vue').catch(() => errorPage),
+              component: () => import('@/views/home/meteorology/MeteorologyTimeLine.vue').catch((error) => {
+                console.error('组件加载失败:', error);
+                return h(errorPage, { errorMessage: error.toString() });
+              }),
               props: { meteorologyType: '4' }
             }
           ]
@@ -100,7 +137,10 @@ const router = createRouter({
 
         {
           path: '/manage',
-          component: () => import('@/views/manage/Manage.vue').catch(() => errorPage),
+          component: () => import('@/views/manage/Manage.vue').catch((error) => {
+            console.error('组件加载失败:', error);
+            return h(errorPage, { errorMessage: error.toString() });
+          }),
           children: [
             {
               path: '',
@@ -108,27 +148,52 @@ const router = createRouter({
             },
             {
               path: 'photoList',
-              component: () => import('@/views/manage/photo-manage/PhotoManage.vue').catch(() => errorPage)
+              component: () => import('@/views/manage/photo-manage/PhotoManage.vue').catch((error) => {
+                console.error('组件加载失败:', error);
+                return h(errorPage, { errorMessage: error.toString() });
+              })
             },
             {
               path: 'timelineList',
-              component: () => import('@/views/manage/timeline-manage/TimelineManage.vue').catch(() => errorPage)
+              component: () => import('@/views/manage/timeline-manage/TimelineManage.vue').catch((error) => {
+                console.error('组件加载失败:', error);
+                return h(errorPage, { errorMessage: error.toString() });
+              })
             },
             {
               path: 'groupPhotosList',
-              component: () => import('@/views/manage/group-photos-manage/GroupPhotosManage.vue').catch(() => errorPage)
+              component: () => import('@/views/manage/group-photos-manage/GroupPhotosManage.vue').catch((error) => {
+                console.error('组件加载失败:', error);
+                return h(errorPage, { errorMessage: error.toString() });
+              })
             },
             {
               path: 'shareList',
-              component: () => import('@/views/manage/share-manage/ShareManage.vue').catch(() => errorPage)
+              component: () => import('@/views/manage/share-manage/ShareManage.vue').catch((error) => {
+                console.error('组件加载失败:', error);
+                return h(errorPage, { errorMessage: error.toString() });
+              })
             },
             {
               path: 'userInfo',
-              component: () => import('@/views/manage/user-manage/UserManage.vue').catch(() => errorPage)
+              component: () => import('@/views/manage/user-manage/UserManage.vue').catch((error) => {
+                console.error('组件加载失败:', error);
+                return h(errorPage, { errorMessage: error.toString() });
+              })
             },
             {
-              path: 'developer',
-              component: () => import('@/views/manage/develop-manage/DevelopManage.vue').catch(() => errorPage)
+              path: 'control',
+              component: () => import('@/views/manage/control-manage/ControlManage.vue').catch((error) => {
+                console.error('组件加载失败:', error);
+                return h(errorPage, { errorMessage: error.toString() });
+              })
+            },
+            {
+              path: 'develop',
+              component: () => import('@/views/manage/develop-manage/DevelopManage.vue').catch((error) => {
+                console.error('组件加载失败:', error);
+                return h(errorPage, { errorMessage: error.toString() });
+              })
             }
           ]
         },
@@ -136,11 +201,17 @@ const router = createRouter({
         {
           path: '/share',
           name: 'Share',
-          component: () => import('@/views/share/Share.vue')
+          component: () => import('@/views/share/Share.vue').catch((error) => {
+            console.error('组件加载失败:', error);
+            return h(errorPage, { errorMessage: error.toString() });
+          })
         },
         {
           path: '/:pathMatch(.*)*',
-          component: () => import('@/components/common/error/Error.vue')
+          component: () => import('@/components/common/empty/Empty.vue').catch((error) => {
+            console.error('组件加载失败:', error);
+            return h(errorPage, { errorMessage: error.toString() });
+          })
         }
       ]
     },

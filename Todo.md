@@ -14,6 +14,8 @@
     - [√] 5.7 @Transactional解决数据一致性:多表操作使用注解
     - [√] 5.7 优化更新和删除操作的返回值:设置异常回滚
     - [√] 5.13 RocketMQ不同环境不同服务:本机启动
+    - [√] 5.13 区分常规管理方法ControlMange.vue与开发DevelopManage.vue
+    - [√] 5.13 区分Empty.vue与Error.vue
     
   - 待完成
     - [ ] 5.5 校验是气象照片但并不在任何气象组图里的照片

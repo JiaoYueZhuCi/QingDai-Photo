@@ -23,9 +23,13 @@
           <el-menu-item index="/manage/userInfo" style="width: 100px;">
             用户信息设置
           </el-menu-item>
-          <el-menu-item index="/manage/developer" style="width: 100px;">
-            其他
+          <el-menu-item index="/manage/control" style="width: 100px;">
+            管理
           </el-menu-item>
+          <el-menu-item index="/manage/develop" style="width: 100px;">
+            开发
+          </el-menu-item>
+          
           <el-menu-item class="logout" style="width: 100px;" @click="handleLogout">
             注销
           </el-menu-item>
