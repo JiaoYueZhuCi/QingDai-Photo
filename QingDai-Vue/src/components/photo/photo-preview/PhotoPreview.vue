@@ -142,7 +142,7 @@ const handleClose = () => {
         URL.revokeObjectURL(thumbnailUrl.value)
         thumbnailUrl.value = ''
     }
-
+ 
     previewData.value = {
         id: "",
         fileName: "",

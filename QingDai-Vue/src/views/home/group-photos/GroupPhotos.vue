@@ -62,7 +62,7 @@ import GroupPhotoUpdate from '@/components/group-photos/group-photos-update/Grou
 import PhotoWaterfall from '@/components/photo/photo-waterfall/PhotoWaterfall.vue';
 import { get100KPhotos, processPhotoData } from '@/utils/photo';
 import { useRouter, useRoute } from 'vue-router';
-import type { WaterfallLayoutOptions } from '@/components/photo/photo-viewer/useWaterfallLayout';
+import type { WaterfallLayoutOptions } from '@/components/photo/photo-waterfall/useWaterfallLayout';
 import { Edit } from '@element-plus/icons-vue';
 import { PhotoPagination, InfiniteScrollConfig, WaterfallLayoutConfig } from '@/config/pagination';
 import LoadMoreIndicator from '@/components/common/loading/LoadMoreIndicator.vue'

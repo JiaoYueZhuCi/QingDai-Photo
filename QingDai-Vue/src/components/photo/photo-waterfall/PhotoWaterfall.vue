@@ -47,7 +47,7 @@ import { ElImage, ElIcon, ElEmpty, ElCheckbox } from 'element-plus';
 import { Picture as IconPicture } from '@element-plus/icons-vue';
 import { computed, watch, ref, onMounted, onUnmounted } from 'vue';
 import { debounce } from 'lodash';
-import { useWaterfallLayout, type WaterfallLayoutOptions, type PhotoItem } from '@/components/photo/photo-viewer/useWaterfallLayout';
+import { useWaterfallLayout, type WaterfallLayoutOptions, type PhotoItem } from '@/components/photo/photo-waterfall/useWaterfallLayout';
 
 // Props 定义
 const props = defineProps({

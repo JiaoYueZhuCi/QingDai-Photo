@@ -19,17 +19,6 @@
           <i class="el-icon-home"></i>
           <span>我的摄影主页</span>
         </router-link>
-      
-        <router-link 
-          to="/show" 
-          class="nav-item" 
-          ref="showRef"
-          @mouseenter="handleNavHover($event, true)"
-          @mouseleave="handleNavHover($event, false)"
-        >
-          <i class="el-icon-picture"></i>
-          <span>网站介绍</span>
-        </router-link>
 
         <a 
           href="https://github.com/JiaoYueZhuCi/QingDai-Photo" 
@@ -41,6 +30,18 @@
           <i class="el-icon-picture"></i>
           <span>开源项目</span>
         </a>
+
+        <router-link 
+          to="/show" 
+          class="nav-item" 
+          ref="showRef"
+          @mouseenter="handleNavHover($event, true)"
+          @mouseleave="handleNavHover($event, false)"
+        >
+          <i class="el-icon-picture"></i>
+          <span>网站介绍</span>
+        </router-link>
+
       </div>
 
       <div class="user-container" ref="userRef">

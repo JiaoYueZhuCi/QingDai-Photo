@@ -49,6 +49,13 @@
                         <img v-if="!props.photoId || !preloadedImages[props.photoId]" src=""
                             class="preview-image placeholder-image" alt="预加载占位">
                     </div>
+                    <!-- 添加下载按钮 -->
+                    <div class="image-actions" v-if="hasViewerPermission">
+                        <el-button type="primary" @click.stop="handleDownloadFullPhoto">
+                            <el-icon><Download /></el-icon>
+                            下载原图
+                        </el-button>
+                    </div>
                 </div>
 
                 <!-- 下胶片孔 -->
@@ -180,8 +187,10 @@
 
 <script setup lang="ts">
 import { ref, watch, onUnmounted, computed, onMounted } from 'vue'
-import { ElTag, ElTooltip, ElMessage } from 'element-plus'
-import { get1000KPhoto, getPhotoDetailInfo, type EnhancedWaterfallItem } from '@/utils/photo'
+import { ElTag, ElTooltip, ElMessage, ElButton, ElIcon, ElLoading } from 'element-plus'
+import { get1000KPhoto, getPhotoDetailInfo, getFullPhoto, type EnhancedWaterfallItem } from '@/utils/photo'
+import { canViewFullSizePhoto } from '@/utils/auth'
+import { Download } from '@element-plus/icons-vue'
 import gsap from 'gsap'
 
 const props = defineProps<{
@@ -268,6 +277,19 @@ const extremeNextPhotoId = computed(() => {
 
 const isLoading = ref(false)
 const isInfoLoading = ref(false)  // 新增：专门用于控制信息加载状态
+
+// 添加权限检查
+const hasViewerPermission = ref(false)
+
+// 检查用户权限
+const checkUserPermission = async () => {
+    try {
+        hasViewerPermission.value = await canViewFullSizePhoto()
+    } catch (error) {
+        console.error('检查用户权限失败:', error)
+        hasViewerPermission.value = false
+    }
+}
 
 // 预加载图片，并添加到预加载对象中
 const preloadImage = async (photoId: string | null): Promise<void> => {
@@ -668,6 +690,40 @@ const getAnimationDistance = () => {
     return window.innerWidth <= 768 ? '81vw' : '71vw'
 }
 
+// 处理下载原图
+const handleDownloadFullPhoto = async (event: MouseEvent) => {
+    event.stopPropagation() // 阻止事件冒泡
+    if (!props.photoId) return
+
+    const loading = ElLoading.service({
+        target: '.film-preview',
+        text: '正在下载原图...',
+        background: 'rgba(0, 0, 0, 0.7)'
+    })
+
+    try {
+        const imageResult = await getFullPhoto(props.photoId)
+        if (imageResult) {
+            // 创建下载链接
+            const link = document.createElement('a')
+            link.href = imageResult.url
+            // 使用原始文件名，如果没有则使用photoId
+            link.download = previewData.value.fileName || `${props.photoId}.jpg`
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+            ElMessage.success('原图下载成功')
+        } else {
+            ElMessage.error('获取原图失败')
+        }
+    } catch (error) {
+        console.error('下载原图失败:', error)
+        ElMessage.error('下载原图失败')
+    } finally {
+        loading.close()
+    }
+}
+
 // 组件卸载时确保清理资源
 onUnmounted(() => {
     // 清理所有图片资源
@@ -682,7 +738,8 @@ onUnmounted(() => {
 })
 
 // 组件挂载后初始化
-onMounted(() => {
+onMounted(async () => {
+    await checkUserPermission()
     if (visible.value && props.photoId) {
         ensureDataLoaded()
     }
@@ -929,5 +986,22 @@ onMounted(() => {
     .metadata {
         font-size: calc(1.4vw + 0.6vh);
     }
+}
+
+.image-actions {
+    position: absolute;
+    bottom: 30px;
+    right: 20px;
+    z-index: 10;
+}
+
+.image-actions .el-button {
+    background: rgba(0, 0, 0, 0.5);
+    border: none;
+    color: white;
+}
+
+.image-actions .el-button:hover {
+    background: rgba(0, 0, 0, 0.7);
 }
 </style>
