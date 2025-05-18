@@ -192,6 +192,7 @@ import { get100KPhotos, processPhotoData, type EnhancedWaterfallItem } from '@/u
 import { PhotoStarRating, getStarColor, getStarLabel, getShortStarLabel } from '@/config/photo'
 import { ManagePagination } from '@/config/pagination'
 import type { WaterfallItem } from '@/types'
+import { deleteFullPhotoFromDB, delete100KPhotoFromDB, delete1000KPhotoFromDB } from '@/utils/indexedDB'
 
 const photoUpdateRef = ref()
 const photoUploadVisible = ref(false)
@@ -369,6 +370,12 @@ const submitEdit = async (row: EnhancedWaterfallItem) => {
         ElMessage.success('更新成功');
         row.isEditing = false;
         delete editOriginData.value[row.id];
+        // 清除该图片的缓存
+        await Promise.all([
+            deleteFullPhotoFromDB(row.id),
+            delete100KPhotoFromDB(row.id),
+            delete1000KPhotoFromDB(row.id)
+        ]);
         await fetchData();
     } catch (error) {
         console.error('更新失败:', error);
@@ -390,6 +397,12 @@ const handleDelete = async (row: EnhancedWaterfallItem) => {
         );
         await deletePhotoById(row.id);
         ElMessage.success('删除成功');
+        // 清除该图片的缓存
+        await Promise.all([
+            deleteFullPhotoFromDB(row.id),
+            delete100KPhotoFromDB(row.id),
+            delete1000KPhotoFromDB(row.id)
+        ]);
         await fetchData();
     } catch (error) {
         if (error !== 'cancel') {

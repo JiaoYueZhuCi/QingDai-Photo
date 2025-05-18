@@ -136,11 +136,11 @@ const handleClose = () => {
     visible.value = false;
 };
 
-const handleUploadComplete = () => {
+const handleUploadComplete = async () => {
     uploadLoading.value = false;
     clearFileList();
     // 发送照片上传完成事件
-    // emit('photo-uploaded');
+    emit('photo-uploaded');
 };
 
 const handleSubmit = async () => {
