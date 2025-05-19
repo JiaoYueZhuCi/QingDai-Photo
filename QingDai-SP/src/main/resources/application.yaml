@@ -1,5 +1,8 @@
 qingdai:
-  defaultAuthor: 皎月祝辞
+  photo:
+    author: 皎月祝辞
+  photographer:
+    id: 1
 
 jwt:
   expiration: 3600

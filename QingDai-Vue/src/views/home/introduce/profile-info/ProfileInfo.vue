@@ -2,7 +2,7 @@
     <div class="avatar-section">
         <div>
             <div class="avatar-container">
-                <el-avatar :size="avatarSize" :src="avatarImageUrl" class="avatar-static"
+                <el-avatar :size="avatarSize" :src="userInfoState.avatarUrl" class="avatar-static"
                     @click="$router.push('/manage')">
                     <template #default>
                         <el-icon :size="50">
@@ -16,25 +16,22 @@
         <!-- 用户信息 -->
         <div class="profile-info">
             <div class="profile-info-in">
-                <div class="username" ref="usernameRef">{{ userInfo.username }}</div>
-                <div class="description" ref="descriptionRef">{{ userInfo.description }}</div>
+                <div class="username" ref="usernameRef">{{ userInfoState.nickname }}</div>
+                <div class="description" ref="descriptionRef">{{ userInfoState.description }}</div>
             </div>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, reactive } from 'vue'
 import { User } from '@element-plus/icons-vue'
 import { userInfo } from '@/data/userInfo'
 import gsap from 'gsap';
 import { useThemeStore } from '@/stores/theme'
+import { getIntroduceInfo, getAvatar, getBackground } from '@/api/user'
 
 defineProps({
-    avatarImageUrl: {
-        type: String,
-        required: true
-    },
     avatarSize: {
         type: Number,
         default: 120
@@ -48,11 +45,76 @@ const isDarkTheme = computed(() => {
     return themeStore.theme === 'dark';
 });
 
+// 用户信息状态
+const userInfoState = reactive({
+    nickname: '',
+    description: '',
+    avatarUrl: '',
+    backgroundUrl: ''
+});
+
 // 添加用户名动画
 const usernameRef = ref<HTMLElement | null>(null);
 const descriptionRef = ref<HTMLElement | null>(null);
 
-onMounted(() => {
+// 获取头像图片
+const fetchAvatar = async () => {
+    try {
+        const response = await getAvatar();
+        userInfoState.avatarUrl = URL.createObjectURL(response.data);
+    } catch (error) {
+        console.error('获取头像失败:', error);
+    }
+};
+
+// 获取背景图片
+const fetchBackground = async () => {
+    try {
+        const response = await getBackground();
+        const objectUrl = URL.createObjectURL(response.data);
+        userInfoState.backgroundUrl = objectUrl;
+        
+        // 通知父组件背景图URL变更
+        emitBackgroundUpdate(objectUrl);
+    } catch (error) {
+        console.error('获取背景图失败:', error);
+    }
+};
+
+// 获取用户介绍信息
+const fetchIntroduceInfo = async () => {
+    try {
+        const res = await getIntroduceInfo();
+        if (res) {
+            userInfoState.nickname = res.nickname || userInfo.username; // 使用默认值
+            userInfoState.description = res.description || userInfo.description;
+        }
+    } catch (error) {
+        console.error('获取用户介绍信息失败:', error);
+        // 使用本地默认数据
+        userInfoState.nickname = userInfo.username;
+        userInfoState.description = userInfo.description;
+    }
+}
+
+// 定义事件
+const emit = defineEmits(['backgroundUpdate']);
+
+// 通知父组件背景图URL变更
+const emitBackgroundUpdate = (backgroundUrl: string) => {
+    if (backgroundUrl) {
+        emit('backgroundUpdate', backgroundUrl);
+    }
+}
+
+onMounted(async () => {
+    // 获取用户信息
+    await Promise.all([
+        fetchIntroduceInfo(),
+        fetchAvatar(),
+        fetchBackground()
+    ]);
+    
     let tl = gsap.timeline();
 
     if (usernameRef.value) {
@@ -82,7 +144,7 @@ onMounted(() => {
             y: 50,
             opacity: 0,
             ease: "power3.out",
-        }, "-=1.5"); // 与前一个动画重叠0.7秒
+        }, "-=1.5"); // 与前一个动画重叠1.5秒
         
         // 进场动画完成后添加永久浮动动画
         tl.to(descriptionRef.value, {

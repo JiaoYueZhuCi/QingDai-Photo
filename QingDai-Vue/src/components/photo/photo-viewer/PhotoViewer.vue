@@ -40,9 +40,6 @@ const visible = ref(props.modelValue)
 // 监听 modelValue 变化
 watch(() => props.modelValue, (newVal) => {
     visible.value = newVal
-    if (newVal) {
-        loadImages()
-    }
 })
 
 watch(() => visible.value, (newVal) => {
@@ -51,6 +48,13 @@ watch(() => visible.value, (newVal) => {
         emit('close')
     }
 })
+
+// 监听 urlList 变化
+watch(() => props.urlList, (newVal) => {
+    if (newVal && newVal.length > 0) {
+        urlList.value = newVal
+    }
+}, { immediate: true })
 
 // 组件挂载时处理滚动条和body样式
 onMounted(() => {
@@ -61,8 +65,6 @@ onMounted(() => {
     if (visible.value) {
         document.body.style.overflow = 'hidden'
         document.body.style.paddingRight = `${scrollbarWidth}px`
-
-        // 如果有photoId，加载图片
         if (props.photoId) {
             loadImages()
         }

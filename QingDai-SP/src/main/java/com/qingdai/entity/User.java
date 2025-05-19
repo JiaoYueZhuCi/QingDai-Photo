@@ -35,6 +35,18 @@ public class User {
     @TableField(value = "status")
     @Schema(description = "0-禁用, 1-启用")
     private Byte status;
+    @TableField(value = "nickname")
+    @Schema(description = "用户昵称")
+    private String nickname;
+    @TableField(value = "description")
+    @Schema(description = "用户介绍")
+    private String description;
+    @TableField(value = "avatar")
+    @Schema(description = "头像文件名")
+    private String avatar;
+    @TableField(value = "background")
+    @Schema(description = "背景图文件名")
+    private String background;
     @TableField(value = "created_time", fill = FieldFill.INSERT)
     @Schema(description = "创建时间")
     private LocalDateTime createdTime;

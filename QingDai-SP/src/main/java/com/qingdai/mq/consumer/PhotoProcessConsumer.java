@@ -29,13 +29,13 @@ public class PhotoProcessConsumer implements RocketMQListener<PhotoMessage> {
     @Autowired
     private FileProcessService fileProcessService;
 
-    @Value("${qingdai.fullSizeUrl}")
+    @Value("${qingdai.url.fullSizeUrl}")
     private String fullSizeUrl;
 
-    @Value("${qingdai.thumbnail100KUrl}")
+    @Value("${qingdai.url.thumbnail100KUrl}")
     private String thumbnail100KUrl;
 
-    @Value("${qingdai.thumbnail1000KUrl}")
+    @Value("${qingdai.url.thumbnail1000KUrl}")
     private String thumbnail1000KUrl;
 
     @Override

@@ -5,12 +5,9 @@ import com.qingdai.entity.dto.UserCreateDTO;
 import com.qingdai.entity.dto.UserInfoDTO;
 import com.qingdai.entity.User;
 import com.qingdai.entity.dto.UserUpdateDTO;
+import com.qingdai.entity.dto.IntroduceDTO;
 import com.qingdai.service.UserService;
-import com.qingdai.utils.DateUtils;
 import com.qingdai.utils.JwtTokenUtil;
-import com.qingdai.utils.SnowflakeIdGenerator;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jws;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -19,16 +16,23 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.time.LocalDateTime;
-import java.util.HashMap;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 
 /**
  * <p>
@@ -46,14 +50,10 @@ import java.util.Map;
 public class UserController {
     @Autowired
     private UserService userService;
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-    @Autowired
-    private JwtTokenUtil jwtTokenUtil;
-    // 雪花算法生成器
-    private final SnowflakeIdGenerator idGenerator = new SnowflakeIdGenerator(1, 1);
+    
+    @Value("${qingdai.url.introduceUrl}")
+    private String introduceUrl;
 
-    // 用户列表查询
     @Operation(summary = "获取所有用户", description = "需管理员权限")
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
@@ -68,7 +68,6 @@ public class UserController {
         }
     }
 
-    // 用户详情查询
     @Operation(summary = "通过ID查询用户")
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
@@ -89,34 +88,21 @@ public class UserController {
         }
     }
 
-    // 用户注册
     @Operation(summary = "用户注册", description = "无需认证")
     @PostMapping("/register")
     @PreAuthorize("permitAll()")
     public ResponseEntity<User> register(
             @Parameter(description = "用户注册信息", required = true) @RequestBody UserCreateDTO userDTO) {
         try {
-            String encode = passwordEncoder.encode(userDTO.getPassword());
-            userDTO.setPassword(encode);
-
-            LocalDateTime nowWithZone = DateUtils.getLocalDateTime();
-            User user = new User(idGenerator.nextId(), userDTO.getUsername(), userDTO.getPassword(), (byte) 1,
-                    nowWithZone, nowWithZone);
-            boolean isSaved = userService.save(user);
-            if (isSaved) {
-                log.info("用户注册成功，用户名: {}", user.getUsername());
-                return ResponseEntity.ok(user);
-            } else {
-                log.error("用户注册失败，用户名: {}", user.getUsername());
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-            }
+            User user = userService.register(userDTO);
+            log.info("用户注册成功，用户名: {}", user.getUsername());
+            return ResponseEntity.ok(user);
         } catch (Exception e) {
-            log.error("用户注册过程中发生错误，用户名: {}, 错误: {}", userDTO.getUsername(), e.getMessage(), e);
+            log.error("用户注册过程中发生错误: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-    // 用户删除
     @Operation(summary = "删除用户", description = "需 DELETE 权限")
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
@@ -141,120 +127,72 @@ public class UserController {
         }
     }
 
-    // 用户登录
     @Operation(summary = "用户登录", description = "用户登录接口，验证用户名和密码")
     @PostMapping("/login")
     @PreAuthorize("permitAll()")
-    public ResponseEntity<String> login(
+    public ResponseEntity<Object> login(
             @Parameter(description = "用户登录信息", required = true) @Valid @RequestBody LoginRequest user) {
         try {
-            log.info("用户登录请求，用户名: {}", user.getUsername());
-            User storedUser = userService.getByUsername(user.getUsername());
-            if (storedUser == null) {
-                log.warn("用户登录失败，用户不存在，用户名: {}", user.getUsername());
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("用户名或密码错误");
+            String token = userService.login(user);
+            if (token == null) {
+                // 用户名或密码错误，返回401状态码
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "用户名或密码错误"));
             }
-
-            Boolean matches = passwordEncoder.matches(user.getPassword(), storedUser.getPassword());
-
-            if (matches) {
-                String token = jwtTokenUtil.generateToken(storedUser);
-                log.info("用户登录成功，用户名: {}", user.getUsername());
-                return ResponseEntity.ok().header("Authorization", "Bearer " + token).body("登录成功");
-            } else {
-                log.warn("用户登录失败，用户名或密码错误，用户名: {}", user.getUsername());
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("用户名或密码错误");
-            }
+            log.info("用户登录成功，用户名: {}", user.getUsername());
+            // 登录成功，返回200状态码和token
+            return ResponseEntity.ok()
+                .header("Authorization", "Bearer " + token)
+                .body(Map.of(
+                    "message", "登录成功",
+                    "token", token
+                ));
         } catch (Exception e) {
-            log.error("用户登录过程中发生错误，用户名: {}, 错误: {}", user.getUsername(), e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("登录过程中发生错误");
+            log.error("用户登录过程中发生错误: {}", e.getMessage(), e);
+            // 系统错误，返回500状态码
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("message", "登录失败，系统错误"));
         }
     }
 
-    // 开发环境方法 只用于校验token信息
     @Operation(summary = "获取当前用户信息", description = "通过JWT令牌获取用户详情")
     @GetMapping("/me")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserInfoDTO> getUserInfo(
             @RequestParam(value = "testToken", required = false) String tokenParam) {
         try {
-
-            if (tokenParam != null) {
-                // 处理token，如果包含Bearer前缀，则去除
-                log.info("接收到的token: {}", tokenParam);
+            UserInfoDTO userInfo = userService.getUserInfo(tokenParam);
+            if (userInfo == null) {
+                log.warn("未找到用户信息");
+                return ResponseEntity.notFound().build();
             }
-
-            if (tokenParam == null) {
-                log.warn("未提供有效的token");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-            }
-
-            try {
-                Jws<Claims> claims = jwtTokenUtil.parseToken(tokenParam);
-                String username = claims.getBody().getSubject();
-                User user = userService.getByUsername(username);
-
-                if (user != null) {
-                    String userId = user.getId();
-                    List<String> roles = userService.getRolesByUserId(userId);
-                    List<String> permissions = userService.getPermissionsByUserId(userId);
-
-                    UserInfoDTO userInfoResponse = new UserInfoDTO(user, roles, permissions);
-
-                    log.info("成功获取用户信息，用户名: {}", username);
-                    return ResponseEntity.ok(userInfoResponse);
-                } else {
-                    log.warn("未找到用户名为{}的用户", username);
-                    return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-                }
-            } catch (io.jsonwebtoken.JwtException e) {
-                log.error("JWT Token解析失败: {}", e.getMessage());
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-            }
+            log.info("成功获取当前用户信息");
+            return ResponseEntity.ok(userInfo);
         } catch (Exception e) {
             log.error("获取用户信息时发生错误: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-    // 根据header获取用户角色及权限
     @Operation(summary = "根据header获取用户角色及权限", description = "通过JWT令牌获取用户角色及权限信息")
     @GetMapping("/me/roles-permissions")
     @PreAuthorize("permitAll()")
     public ResponseEntity<Map<String, Object>> getRolesAndPermissions(
             @RequestHeader(value = "Authorization", required = false) String authorization) {
         try {
-            if (authorization == null || !authorization.startsWith("Bearer ")) {
-                log.warn("无效的Authorization头");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            Map<String, Object> result = userService.getRolesAndPermissions(authorization);
+            if (result == null) {
+                log.warn("未找到用户角色及权限信息");
+                return ResponseEntity.notFound().build();
             }
-
-            String token = authorization.replace("Bearer ", "");
-            try {
-                Jws<Claims> claims = jwtTokenUtil.parseToken(token);
-                String username = claims.getBody().getSubject();
-                User user = userService.getByUsername(username);
-                String userId = user.getId();
-                List<String> roles = userService.getRolesByUserId(userId);
-                List<String> permissions = userService.getPermissionsByUserId(userId);
-
-                Map<String, Object> result = new HashMap<>();
-                result.put("roles", roles);
-                result.put("permissions", permissions);
-
-                log.info("成功获取用户角色及权限信息，用户名: {}", username);
-                return ResponseEntity.ok(result);
-            } catch (io.jsonwebtoken.JwtException e) {
-                log.error("JWT Token解析失败: {}", e.getMessage());
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-            }
+            log.info("成功获取用户角色及权限信息");
+            return ResponseEntity.ok(result);
         } catch (Exception e) {
             log.error("获取用户角色及权限信息时发生错误: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-    // 用户更新
     @Operation(summary = "更新用户信息", description = "根据用户ID更新用户信息")
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
@@ -262,32 +200,115 @@ public class UserController {
             @Parameter(description = "用户ID", required = true) @PathVariable String id,
             @Parameter(description = "用户更新信息", required = true) @RequestBody UserUpdateDTO userDTO) {
         try {
-            User existingUser = userService.getById(id);
-
-            if (existingUser == null) {
-                log.warn("未找到ID为{}的用户", id);
-                return ResponseEntity.notFound().build();
-            }
-
-            // 更新用户信息
-            if (userDTO.getUsername() != null) {
-                existingUser.setUsername(userDTO.getUsername());
-            }
-            if (userDTO.getPassword() != null) {
-                existingUser.setPassword(passwordEncoder.encode(userDTO.getPassword()));
-            }
-
-            boolean isUpdated = userService.updateById(existingUser);
-            if (isUpdated) {
-                log.info("成功更新用户信息，用户ID: {}", id);
-                return ResponseEntity.ok(existingUser);
-            } else {
-                log.error("更新用户信息失败，用户ID: {}", id);
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-            }
+            User updatedUser = userService.updateUserInfo(id, userDTO);
+            log.info("成功更新用户信息，ID: {}", id);
+            return ResponseEntity.ok(updatedUser);
         } catch (Exception e) {
             log.error("更新用户信息时发生错误: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @Operation(summary = "获取介绍信息", description = "获取个人介绍信息，包括昵称、介绍、头像和背景图")
+    @GetMapping("/introduce")
+    public ResponseEntity<IntroduceDTO> getIntroduceInfo() {
+        try {
+            IntroduceDTO info = userService.getIntroduceInfo();
+            log.info("成功获取介绍信息");
+            return ResponseEntity.ok(info);
+        } catch (Exception e) {
+            log.error("获取介绍信息时发生错误: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
+    @Operation(summary = "获取头像", description = "获取头像图片")
+    @GetMapping("/introduce/avatar")
+    public ResponseEntity<Resource> getAvatar() throws IOException {
+        try {
+            Resource resource = userService.getAvatarResource();
+            if (resource == null) {
+                log.warn("获取头像失败：文件不存在");
+                return ResponseEntity.notFound().build();
+            }
+            
+            String contentType = Files.probeContentType(resource.getFile().toPath());
+            log.info("成功获取头像");
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .body(resource);
+        } catch (Exception e) {
+            log.error("获取头像时发生错误: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
+    @Operation(summary = "获取背景图", description = "获取背景图片")
+    @GetMapping("/introduce/background")
+    public ResponseEntity<Resource> getBackground() throws IOException {
+        try {
+            Resource resource = userService.getBackgroundResource();
+            if (resource == null) {
+                log.warn("获取背景图失败：文件不存在");
+                return ResponseEntity.notFound().build();
+            }
+            
+            String contentType = Files.probeContentType(resource.getFile().toPath());
+            log.info("成功获取背景图");
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .body(resource);
+        } catch (Exception e) {
+            log.error("获取背景图时发生错误: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @Operation(summary = "上传头像", description = "上传头像图片，自动压缩到100K以下")
+    @PostMapping("/introduce/avatar")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> uploadAvatar(@RequestParam("file") MultipartFile file) {
+        try {
+            if (file.isEmpty()) {
+                log.warn("上传头像失败：文件为空");
+                return ResponseEntity.badRequest().body("请选择要上传的文件");
+            }
+            
+            if (!file.getContentType().startsWith("image/")) {
+                log.warn("上传头像失败：文件类型不是图片");
+                return ResponseEntity.badRequest().body("只能上传图片文件");
+            }
+            
+            userService.saveAvatar(file);
+            log.info("头像上传成功");
+            return ResponseEntity.ok("头像上传成功");
+        } catch (Exception e) {
+            log.error("上传头像时发生错误: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("上传失败：" + e.getMessage());
+        }
+    }
+
+    @Operation(summary = "上传背景图", description = "上传背景图片，自动压缩到500K以下")
+    @PostMapping("/introduce/background")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> uploadBackground(@RequestParam("file") MultipartFile file) {
+        try {
+            if (file.isEmpty()) {
+                log.warn("上传背景图失败：文件为空");
+                return ResponseEntity.badRequest().body("请选择要上传的文件");
+            }
+            
+            if (!file.getContentType().startsWith("image/")) {
+                log.warn("上传背景图失败：文件类型不是图片");
+                return ResponseEntity.badRequest().body("只能上传图片文件");
+            }
+            
+            userService.saveBackground(file);
+            log.info("背景图上传成功");
+            return ResponseEntity.ok("背景图上传成功");
+        } catch (Exception e) {
+            log.error("上传背景图时发生错误: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("上传失败：" + e.getMessage());
         }
     }
 }

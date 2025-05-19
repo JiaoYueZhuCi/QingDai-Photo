@@ -1,5 +1,5 @@
 <template>
-  <div class="back">
+  <div class="back" :style="{ backgroundImage: `url(${backgroundUrl})` }">
     <div class="loginBox" align-center>
       <el-form ref="loginForm" :model="form" :rules="rules" label-width="0" class="login-form">
         <el-form-item prop="username">
@@ -17,15 +17,30 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import type { FormInstance } from 'element-plus'
 import { login } from '@/api/user'
+import { getBackground } from '@/api/user'
 
 const router = useRouter()
-
 const loginForm = ref<FormInstance>()
+const backgroundUrl = ref('')
+
+// 获取背景图
+const fetchBackground = async () => {
+    try {
+        const response = await getBackground();
+        backgroundUrl.value = URL.createObjectURL(response.data);
+    } catch (error) {
+        console.error('获取背景图失败:', error);
+    }
+}
+
+onMounted(() => {
+    fetchBackground();
+})
 
 // 定义表单数据
 const form = reactive({
@@ -50,38 +65,24 @@ const submitForm = async () => {
       password: form.password
     });
 
-
-    // 检查响应是否有token，支持多种可能的结构
-    let token = null;
-    if (response && response.token) {
-      // 标准Response: { token: 'xxx', userInfo: {...} }
-      token = response.token;
-    } else if (response && response.headers && response.headers.authorization) {
-      // 后端可能通过headers返回: response.headers.authorization
-      token = response.headers.authorization;
-    } else if (response && response.data && response.data.token) {
-      // 可能后端返回套嵌结构: { data: { token: 'xxx' } }
-      token = response.data.token;
-    }
-
+    // 从响应中获取token
+    const token = response.data?.token;
     if (token) {
-      // 如果是Bearer token，提取token部分
-      if (typeof token === 'string' && token.startsWith('Bearer ')) {
-        token = token.substring(7);
-      }
       localStorage.setItem('token', token);
-      ElMessage.success('登录成功');
+      ElMessage.success(response.data?.message || '登录成功');
       router.push('/manage')
     } else {
-      console.error('无效的响应数据:', response);
-      ElMessage.error('登录失败：无效的响应数据');
+      ElMessage.warning(response.data?.message || '登录失败');
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('登录失败:', error);
-    ElMessage.error('登录失败，请检查用户名和密码');
+    if (error.response?.status === 401) {
+      ElMessage.warning('用户名或密码错误');
+    } else {
+      ElMessage.error('登录失败，请稍后重试');
+    }
   }
 }
-
 
 </script>
 
@@ -121,8 +122,9 @@ const submitForm = async () => {
 }
 
 .back {
-  background: url('/public/img/home/background.jpg') no-repeat center center;
   background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
   height: 100vh;
   width: 100%;
   position: fixed;

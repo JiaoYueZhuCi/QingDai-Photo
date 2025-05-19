@@ -68,21 +68,19 @@ public class PhotoController {
     @Autowired
     private PhotoProcessor photoProcessor;
 
-    @Autowired
-    private GroupPhotoPhotoService groupPhotoPhotoService;
 
     @Autowired
     private FileProcessService fileProcessService;
 
-    @Value("${qingdai.fullSizeUrl}")
+    @Value("${qingdai.url.fullSizeUrl}")
     private String fullSizeUrl;
-    @Value("${qingdai.pendingUrl}")
+    @Value("${qingdai.url.pendingUrl}")
     private String pendingUrl;
-    @Value("${qingdai.thumbnailSizeUrl}")
+    @Value("${qingdai.url.thumbnailSizeUrl}")
     private String thumbnailSizeUrl;
-    @Value("${qingdai.thumbnail1000KUrl}")
+    @Value("${qingdai.url.thumbnail1000KUrl}")
     private String thumbnail1000KUrl;
-    @Value("${qingdai.thumbnail100KUrl}")
+    @Value("${qingdai.url.thumbnail100KUrl}")
     private String thumbnail100KUrl;
 
     @GetMapping("/cdn/thumbnails/small")

@@ -72,16 +72,16 @@ import java.util.Set;
 @CacheConfig(cacheNames = "photo")
 public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> implements PhotoService {
 
-    @Value("${qingdai.defaultAuthor}")
-    private String defaultAuthor;
+    @Value("${qingdai.photo.author}")
+    private String author;
 
-    @Value("${qingdai.fullSizeUrl}")
+    @Value("${qingdai.url.fullSizeUrl}")
     private String fullSizeUrl;
 
-    @Value("${qingdai.thumbnail100KUrl}")
+    @Value("${qingdai.url.thumbnail100KUrl}")
     private String thumbnail100KUrl;
 
-    @Value("${qingdai.thumbnail1000KUrl}")
+    @Value("${qingdai.url.thumbnail1000KUrl}")
     private String thumbnail1000KUrl;
 
     @Autowired
@@ -384,7 +384,7 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
         Photo photo = new Photo();
         photo.setId(idGenerator.nextId());
         photo.setFileName(file.getName());
-        photo.setAuthor(defaultAuthor);
+        photo.setAuthor(author);
         photo.setWidth(Photo.getWidth());
         photo.setHeight(Photo.getHeight());
         photo.setTitle(null);

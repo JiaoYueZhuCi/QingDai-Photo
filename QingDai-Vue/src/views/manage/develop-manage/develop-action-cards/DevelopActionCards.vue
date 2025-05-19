@@ -86,16 +86,18 @@ const handleDebugUserInfo = async () => {
     }
 
     const response = await getUserInfo(tokenToUse);
+    if (response === null) {
+      userInfoResult.value = null;
+      ElMessage.error('获取用户信息失败：无效的token或用户不存在');
+      return;
+    }
+    
     userInfoResult.value = response;
     ElMessage.success('获取用户信息成功');
     console.log('用户信息:', response);
   } catch (error: any) {
     userInfoResult.value = null;
-    if (error.response && error.response.status === 401) {
-      ElMessage.error('Token验证失败：无效的token');
-    } else {
-      ElMessage.error('获取用户信息失败：' + (error as Error).message);
-    }
+    ElMessage.error('获取用户信息失败：' + (error as Error).message);
   }
 };
 </script>
@@ -155,6 +157,17 @@ const handleDebugUserInfo = async () => {
   color: var(--qd-color-text-primary);
 }
 
+.result-summary p {
+  margin: 0;
+  word-break: break-all;
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
+.result-summary h3 {
+  margin: 3px 0;
+}
+
 .pending-data {
   color: var(--qd-color-text-secondary);
   font-style: italic;
@@ -165,6 +178,8 @@ const handleDebugUserInfo = async () => {
   margin-right: 6px;
   margin-bottom: 6px;
   font-size: 12px;
+  word-break: break-all;
+  white-space: pre-wrap;
 }
 
 .role-list,
@@ -173,14 +188,6 @@ const handleDebugUserInfo = async () => {
   flex-wrap: wrap;
   margin-top: 5px;
   margin-bottom: 10px;
-}
-
-.result-summary p{
-  margin: 0;
-}
-
-.result-summary h3{
-  margin: 3px 0;
 }
 
 /* 媒体查询适配移动端 */

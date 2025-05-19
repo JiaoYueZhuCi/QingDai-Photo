@@ -1,17 +1,17 @@
 <template>
     <div :class="['introduce-container', { 'dark-theme': isDarkTheme }]">
         <!-- 背景图静态展示 -->
-        <div class="cover-container" :style="{ backgroundImage: `url(${backgroundImageUrl})` }"
-            @click="openPreview(backgroundImageUrl)">
+        <div class="cover-container" :style="{ backgroundImage: `url(${currentBackgroundUrl})` }"
+            @click="openPreview(currentBackgroundUrl)">
         </div>
 
         <!-- 头像和用户信息部分 -->
-        <ProfileInfo :avatar-image-url="avatarImageUrl" :avatar-size="avatarSize" />
+        <ProfileInfo :avatar-size="avatarSize" @backgroundUpdate="updateBackgroundUrl" />
 
         <!-- 用户详情描述部分 -->
         <UserDescription />
 
-        <PhotoViewer v-model="previewVisible" :urlList="[previewImageUrl]" @close="previewVisible = false" />
+        <PhotoViewer v-model="previewVisible" :urlList="previewImageUrl ? [previewImageUrl] : []" @close="previewVisible = false" />
     </div>
 </template>
 
@@ -20,12 +20,19 @@ import { ref, computed } from 'vue'
 import PhotoViewer from '@/components/photo/photo-viewer/PhotoViewer.vue'
 import ProfileInfo from '@/views/home/introduce/profile-info/ProfileInfo.vue'
 import UserDescription from '@/views/home/introduce/user-description/UserDescription.vue'
-import { homeImages } from '@/data/imageUrls'
 import { useThemeStore } from '@/stores/theme'
 
-const { backgroundImageUrl, avatarImageUrl } = homeImages;
 const themeStore = useThemeStore();
 const avatarSize = 120;
+
+const currentBackgroundUrl = ref();
+
+// 更新背景图URL
+const updateBackgroundUrl = (url: string) => {
+    if (url) {
+        currentBackgroundUrl.value = url;
+    }
+};
 
 // 计算是否为暗色主题
 const isDarkTheme = computed(() => {

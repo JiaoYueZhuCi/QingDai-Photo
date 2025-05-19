@@ -1,3 +1,13 @@
+qingdai:
+  url:
+    root: D:/QingDai Photos/
+    fullSizeUrl: D:/QingDai Photos/Photos/FullSize/
+    thumbnail1000KUrl: D:/QingDai Photos/Photos/Thumbnail-1000K/
+    thumbnail100KUrl: D:/QingDai Photos/Photos/Thumbnail-100K/
+    thumbnailSizeUrl: D:/QingDai Photos/Photos/Thumbnail/
+    pendingUrl: D:/QingDai Photos/Photos/Pending/
+    introduceUrl: D:/QingDai Photos/Photos/Introduce/
+  
 spring:
   datasource:
     url: jdbc:mysql://localhost:3306/qingdai-photo?useUnicode=true&characterEncoding=utf-8&serverTimezoneGMT%2B8
@@ -11,10 +21,3 @@ spring:
 rocketmq:
   name-server: localhost:9876
 
-qingdai:
-  url: D:/QingDai Photos/
-  fullSizeUrl: D:/QingDai Photos/Photos/FullSize/
-  thumbnail1000KUrl: D:/QingDai Photos/Photos/Thumbnail-1000K/
-  thumbnail100KUrl: D:/QingDai Photos/Photos/Thumbnail-100K/
-  thumbnailSizeUrl: D:/QingDai Photos/Photos/Thumbnail/
-  pendingUrl: D:/QingDai Photos/Photos/Pending/

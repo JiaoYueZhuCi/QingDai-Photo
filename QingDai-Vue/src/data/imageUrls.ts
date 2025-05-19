@@ -2,12 +2,6 @@
  * 全局图片资源路径
  */
 
-// 个人首页
-export const homeImages = {
-  backgroundImageUrl: '/img/home/background.jpg',
-  avatarImageUrl: '/img/home/avatar.jpg'
-};
-
 // 介绍页面
 export const showImages = [
   {
