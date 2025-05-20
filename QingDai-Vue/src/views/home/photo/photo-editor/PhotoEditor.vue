@@ -24,8 +24,8 @@
           <el-form-item label="介绍">
             <el-input v-model="form.introduce" type="textarea" :rows="3" placeholder="请输入照片介绍" />
           </el-form-item>
-          <el-form-item label="状态">
-            <el-select v-model="form.startRating" placeholder="请选择照片状态">
+          <el-form-item label="等级">
+            <el-select v-model="form.startRating" placeholder="请选择照片等级">
               <el-option :value="PhotoStarRating.STAR" :label="getStarLabel(PhotoStarRating.STAR)">
                 <div style="display: flex; align-items: center">
                   <el-icon :style="{ color: getStarColor(PhotoStarRating.STAR), marginRight: '8px' }">

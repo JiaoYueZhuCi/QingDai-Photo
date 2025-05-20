@@ -11,7 +11,7 @@
                 </template>
             </el-table-column>
 
-            <el-table-column prop="start" label="标记" width="115">
+            <el-table-column prop="startRating" label="等级" width="115">
                 <template #default="scope">
                     <el-select v-model="scope.row.startRating" :disabled="!scope.row.isEditing" placeholder="状态"
                         style="width: 100px">
@@ -354,7 +354,7 @@ const submitEdit = async (row: EnhancedWaterfallItem) => {
             id: row.id,
             title: row.title,
             introduce: row.introduce,
-            startRating: row.start,
+            startRating: row.startRating,
             camera: row.camera,
             lens: row.lens,
             aperture: row.aperture,

@@ -85,6 +85,7 @@ management:
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
   mapper-locations: com.qingdai.mapper/*.xml
   type-aliases-package: com.qingdai.pojo
   global-config:
@@ -94,6 +95,15 @@ mybatis-plus:
       logic-not-delete-value: 0
       logic-delete-value: 1
     enable-sql-runner: true
+
+# 添加日志级别配置
+logging:
+  level:
+    org.apache.ibatis: OFF
+    java.sql: OFF
+    org.mybatis: OFF
+    com.baomidou.mybatisplus: OFF
+    org.springframework.jdbc: OFF
 
 
 

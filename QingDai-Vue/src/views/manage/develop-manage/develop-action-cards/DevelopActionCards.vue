@@ -59,17 +59,70 @@
         </div>
       </div>
     </el-card>
+
+    <el-card class="develop-card">
+      <template #header>
+        <div class="card-header">
+          <span>SQL日志控制</span>
+        </div>
+      </template>
+      <div class="card-content">
+        <div class="action-group">
+          <el-switch
+            v-model="sqlLogEnabled"
+            :loading="sqlLogLoading"
+            active-text="启用"
+            inactive-text="禁用"
+            @change="handleSqlLogToggle"
+          />
+        </div>
+        <div class="description">
+          控制SQL日志的输出，启用后可以在后端日志中看到详细的SQL语句
+        </div>
+      </div>
+    </el-card>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
 import { getUserInfo } from '@/api/user';
+import { getSqlLogStatus, toggleSqlLog } from '@/api/log';
 
 // Token查验
 const debugToken = ref('');
 const userInfoResult = ref<any | null>(null);
+
+// SQL日志控制
+const sqlLogEnabled = ref(false);
+const sqlLogLoading = ref(false);
+
+// 获取SQL日志状态
+const fetchSqlLogStatus = async () => {
+  try {
+    const status = await getSqlLogStatus();
+    if (status !== null) {
+      sqlLogEnabled.value = status;
+    }
+  } catch (error) {
+    console.error('获取SQL日志状态失败:', error);
+  }
+};
+
+// 切换SQL日志状态
+const handleSqlLogToggle = async (enabled: boolean) => {
+  try {
+    sqlLogLoading.value = true;
+    await toggleSqlLog(enabled);
+    ElMessage.success(enabled ? 'SQL日志已启用' : 'SQL日志已禁用');
+  } catch (error) {
+    sqlLogEnabled.value = !enabled; // 恢复开关状态
+    ElMessage.error('切换SQL日志状态失败：' + (error as Error).message);
+  } finally {
+    sqlLogLoading.value = false;
+  }
+};
 
 // Token查验
 const handleDebugUserInfo = async () => {
@@ -100,6 +153,11 @@ const handleDebugUserInfo = async () => {
     ElMessage.error('获取用户信息失败：' + (error as Error).message);
   }
 };
+
+// 组件挂载时获取SQL日志状态
+onMounted(() => {
+  fetchSqlLogStatus();
+});
 </script>
 
 <style scoped>
