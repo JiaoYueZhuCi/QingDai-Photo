@@ -1,33 +1,54 @@
 package com.qingdai.service.impl;
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.qingdai.service.SharePhotoService;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.stereotype.Service;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Service;
+
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.qingdai.service.SharePhotoService;
+
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
 public class SharePhotoServiceImpl implements SharePhotoService {
 
-    private static final String SHARE_PREFIX = "share::";
-    private static final String PHOTO_IDS_KEY = "photoIds";
-    private static final String CREATE_TIME_KEY = "createTime";
-    private static final String EXPIRE_TIME_KEY = "expireTime";
+    @Value("${qingdai.redis.key.share}")
+    private String sharePrefix;
+
+    @Value("${qingdai.redis.key.share-photo-ids}")
+    private String photoIdsKey;
+
+    @Value("${qingdai.redis.key.share-create-time}")
+    private String createTimeKey;
+
+    @Value("${qingdai.redis.key.share-expire-time}")
+    private String expireTimeKey;
+
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
 
+    // 存储使用的Hash数据结构：
+    // photoIds:"287145287229771776"
+    // createTime:1747730519393
+    // expireTime:1747816919393
     @Override
     public String createShareLink(String[] photoIds, int expireDays) {
         if (photoIds == null || photoIds.length == 0) {
@@ -38,17 +59,17 @@ public class SharePhotoServiceImpl implements SharePhotoService {
         }
 
         String shareId = UUID.randomUUID().toString().replace("-", "");
-        String shareKey = SHARE_PREFIX + shareId;
+        String shareKey = sharePrefix + shareId;
 
         // 存储分享信息到Redis
-        redisTemplate.opsForHash().put(shareKey, PHOTO_IDS_KEY, String.join(",", photoIds));
+        redisTemplate.opsForHash().put(shareKey, photoIdsKey, String.join(",", photoIds));
         
         // 区分创建时间和过期时间
         long currentTimeMillis = System.currentTimeMillis();
         long expireTimeMillis = currentTimeMillis + expireDays * 24 * 60 * 60 * 1000L;
         
-        redisTemplate.opsForHash().put(shareKey, CREATE_TIME_KEY, currentTimeMillis);
-        redisTemplate.opsForHash().put(shareKey, EXPIRE_TIME_KEY, expireTimeMillis);
+        redisTemplate.opsForHash().put(shareKey, createTimeKey, currentTimeMillis);
+        redisTemplate.opsForHash().put(shareKey, expireTimeKey, expireTimeMillis);
 
         // 设置过期时间
         redisTemplate.expire(shareKey, Duration.ofDays(expireDays));
@@ -59,7 +80,7 @@ public class SharePhotoServiceImpl implements SharePhotoService {
 
     @Override
     public List<String> getSharePhotoIds(String shareId) {
-        String shareKey = SHARE_PREFIX + shareId;
+        String shareKey = sharePrefix + shareId;
         
         // 检查分享是否存在
         if (!redisTemplate.hasKey(shareKey)) {
@@ -68,7 +89,7 @@ public class SharePhotoServiceImpl implements SharePhotoService {
         }
 
         // 检查是否过期
-        Long expireTime = (Long) redisTemplate.opsForHash().get(shareKey, EXPIRE_TIME_KEY);
+        Long expireTime = (Long) redisTemplate.opsForHash().get(shareKey, expireTimeKey);
         if (expireTime != null && System.currentTimeMillis() > expireTime) {
             log.warn("分享链接已过期，shareId: {}", shareId);
             redisTemplate.delete(shareKey);
@@ -76,7 +97,7 @@ public class SharePhotoServiceImpl implements SharePhotoService {
         }
 
         // 获取照片ID列表
-        String photoIdsStr = (String) redisTemplate.opsForHash().get(shareKey, PHOTO_IDS_KEY);
+        String photoIdsStr = (String) redisTemplate.opsForHash().get(shareKey, photoIdsKey);
         if (photoIdsStr == null || photoIdsStr.isEmpty()) {
             log.warn("分享链接中没有照片ID，shareId: {}", shareId);
             return List.of();
@@ -87,7 +108,7 @@ public class SharePhotoServiceImpl implements SharePhotoService {
 
     @Override
     public boolean validateShareLink(String shareId) {
-        String shareKey = SHARE_PREFIX + shareId;
+        String shareKey = sharePrefix + shareId;
         
         // 检查分享是否存在
         if (!redisTemplate.hasKey(shareKey)) {
@@ -96,7 +117,7 @@ public class SharePhotoServiceImpl implements SharePhotoService {
         }
 
         // 检查是否过期
-        Long expireTime = (Long) redisTemplate.opsForHash().get(shareKey, EXPIRE_TIME_KEY);
+        Long expireTime = (Long) redisTemplate.opsForHash().get(shareKey, expireTimeKey);
         if (expireTime != null && System.currentTimeMillis() > expireTime) {
             log.warn("分享链接已过期，shareId: {}", shareId);
             redisTemplate.delete(shareKey);
@@ -108,8 +129,8 @@ public class SharePhotoServiceImpl implements SharePhotoService {
     
     @Override
     public List<Map<String, Object>> getAllShares() {
-        // 获取所有以SHARE_PREFIX开头的key
-        Set<String> keys = redisTemplate.keys(SHARE_PREFIX + "*");
+        // 获取所有以sharePrefix开头的key
+        Set<String> keys = redisTemplate.keys(sharePrefix + "*");
         List<Map<String, Object>> result = new ArrayList<>();
         
         if (keys == null || keys.isEmpty()) {
@@ -120,7 +141,7 @@ public class SharePhotoServiceImpl implements SharePhotoService {
         long currentTime = System.currentTimeMillis();
         
         for (String key : keys) {
-            String shareId = key.substring(SHARE_PREFIX.length());
+            String shareId = key.substring(sharePrefix.length());
             Map<Object, Object> shareData = redisTemplate.opsForHash().entries(key);
             
             if (shareData.isEmpty()) {
@@ -129,9 +150,9 @@ public class SharePhotoServiceImpl implements SharePhotoService {
             }
             
             // 获取基本信息
-            String photoIdsStr = (String) shareData.get(PHOTO_IDS_KEY);
-            Long createTimeMs = (Long) shareData.get(CREATE_TIME_KEY);
-            Long expireTimeMs = (Long) shareData.get(EXPIRE_TIME_KEY);
+            String photoIdsStr = (String) shareData.get(photoIdsKey);
+            Long createTimeMs = (Long) shareData.get(createTimeKey);
+            Long expireTimeMs = (Long) shareData.get(expireTimeKey);
             
             if (photoIdsStr == null || createTimeMs == null || expireTimeMs == null) {
                 log.warn("分享数据不完整，shareId: {}", shareId);
@@ -201,7 +222,7 @@ public class SharePhotoServiceImpl implements SharePhotoService {
     
     @Override
     public boolean deleteShare(String shareId) {
-        String shareKey = SHARE_PREFIX + shareId;
+        String shareKey = sharePrefix + shareId;
         
         // 检查分享是否存在
         if (!redisTemplate.hasKey(shareKey)) {

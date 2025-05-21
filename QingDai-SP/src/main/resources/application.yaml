@@ -3,6 +3,20 @@ qingdai:
     author: 皎月祝辞
   photographer:
     id: 1
+  redis:
+    key:
+      # 用户访问统计key
+      total-view: "total:view"
+      # 照片访问统计key前缀
+      photo-view: "photo:view:"
+      # 分享相关key前缀
+      share: "share:"
+      share-photo-ids: "photoIds"
+      share-create-time: "createTime"
+      share-expire-time: "expireTime"
+      # 照片上传状态key前缀
+      photo-upload-status: "photo:upload:status:"
+
 
 jwt:
   expiration: 3600

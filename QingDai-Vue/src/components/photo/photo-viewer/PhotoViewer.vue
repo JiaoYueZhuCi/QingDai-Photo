@@ -1,6 +1,6 @@
 <template>
     <div v-if="visible" class="showViewer">
-        <el-image-viewer v-if="urlList.length > 0" :url-list="urlList" :initial-index="initialIndex"
+        <el-image-viewer v-if="shouldShowViewer" :url-list="urlList" :initial-index="initialIndex"
             :hide-on-click-modal="true" @close="handleClose" ref="imageViewerRef" />
     </div>
 </template>
@@ -36,6 +36,18 @@ const emit = defineEmits(['update:modelValue', 'close'])
 const urlList = ref<string[]>([])
 const imageViewerRef = ref<any>(null)
 const visible = ref(props.modelValue)
+const isLoading = ref(false)
+
+// 计算是否应该显示查看器
+const shouldShowViewer = computed(() => {
+    // 如果有 urlList prop，直接使用它
+    if (props.urlList && props.urlList.length > 0) {
+        return true
+    }
+    // 如果有 photoId，等图片加载完成后再显示查看器
+    // console.log('照片加载结果', urlList.value.length > 0 && !isLoading.value)
+    return urlList.value.length > 0 && !isLoading.value
+})
 
 // 监听 modelValue 变化
 watch(() => props.modelValue, (newVal) => {
@@ -46,6 +58,12 @@ watch(() => visible.value, (newVal) => {
     emit('update:modelValue', newVal)
     if (newVal == false) {
         emit('close')
+    }
+})
+
+watch(() => props.photoId, (newVal) => {
+    if (newVal) {
+        loadImages()
     }
 })
 
@@ -65,9 +83,6 @@ onMounted(() => {
     if (visible.value) {
         document.body.style.overflow = 'hidden'
         document.body.style.paddingRight = `${scrollbarWidth}px`
-        if (props.photoId) {
-            loadImages()
-        }
     }
 })
 
@@ -105,6 +120,7 @@ watch(() => props.initialIndex, (newVal, oldVal) => {
 const loadImages = async () => {
     if (!props.photoId) return
 
+    isLoading.value = true
     const loading = ElLoading.service({
         target: '.showViewer',
         text: '加载中...',
@@ -131,12 +147,15 @@ const loadImages = async () => {
         ElMessage.error('加载图片失败')
     } finally {
         loading.close()
+        // console.log('图片加载完成')
+        isLoading.value = false
     }
 }
 
 // 处理关闭
 const handleClose = () => {
     visible.value = false
+    urlList.value = [] // 清除图片列表数据
 }
 </script>
 

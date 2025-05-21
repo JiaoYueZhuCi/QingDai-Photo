@@ -287,3 +287,21 @@ export function updateFocalLengthValue(oldFocalLength: string, newFocalLength: s
 export const getNoMetadataPhotosByPage = (params: { page: number; pageSize: number }): Promise<any> => {
   return request.get<PhotoResponse>(`${BASE_URL}/no-metadata/page`, { params })
 }
+
+// 获取照片浏览量
+export const getPhotoViewCount = async (id: string): Promise<any> => {
+  const response = await request.get<number>(`${BASE_URL}/${id}/view-count`);
+  return response;
+};
+
+// 增加照片浏览量
+export const incrementPhotoViewCount = async (id: string): Promise<any> => {
+  const response = await request.post<number>(`${BASE_URL}/${id}/view-count`);
+  return response;
+};
+
+// 获取所有照片浏览量统计
+export const getAllPhotoViewStats = async (): Promise<any> => {
+  const response = await request.get(`${BASE_URL}/stats/views`);
+  return response;
+};

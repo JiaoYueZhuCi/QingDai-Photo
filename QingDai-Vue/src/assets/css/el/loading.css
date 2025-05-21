@@ -1,15 +1,15 @@
 /* loading组件样式 */
 .el-loading-spinner .el-loading-text {
-  color: var(--qd-color-active) !important;
+  color: var(--qd-color-active);
   font-size: 14px;
 }
 
 .el-loading-spinner .path {
-  stroke: var(--qd-color-active) !important;
+  stroke: var(--qd-color-active);
 }
 
 .el-loading-spinner .circular {
-  color: var(--qd-color-active) !important;
+  color: var(--qd-color-active);
 }
 
 .el-loading-mask {

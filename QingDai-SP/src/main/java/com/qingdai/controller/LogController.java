@@ -17,7 +17,7 @@ public class LogController {
 
     @GetMapping("/sql/status")
     @Operation(summary = "获取SQL日志状态", description = "获取当前SQL日志是否启用")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<Boolean> getSqlLogStatus() {
         try {
             boolean status = DynamicLogConfig.isSqlLoggingEnabled();

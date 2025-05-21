@@ -1,7 +1,9 @@
 <template>
-    <div class="photo-list-container">
-        <el-button class="refresh-button" type="primary" @click="handleRefresh">刷新照片列表</el-button>
-        <el-button class="no-metadata-button" type="warning" @click="fetchNoMetadataData">无元数据照片列表</el-button>
+    <div class="photo-manage-container">
+        <div class="header-actions">
+            <el-button type="primary" @click="fetchData">刷新照片列表</el-button>
+            <el-button type="warning" @click="fetchNoMetadataData">无元数据照片列表</el-button>
+        </div>
         
         <el-table :data="tableData" style="width: 100%" border stripe :max-height="tableHeight">
             <el-table-column label="缩略图" width="180" fixed>
@@ -453,9 +455,15 @@ const adjustTableHeight = () => {
 </script>
 
 <style scoped>
-.photo-list-container {
+.photo-manage-container {
     background: #fff;
-    height: 100%;
+}
+
+.header-actions {
+    display: flex;
+    gap: 5px;
+    padding: 10px;
+    background-color: var(--qd-color-bg-light);
 }
 
 .floating-action {
@@ -465,34 +473,9 @@ const adjustTableHeight = () => {
     z-index: 100;
 }
 
-/* .pagination-wrapper {
-    position: fixed;
-    z-index: 99;
-    left: 50%;
-    transform: translateX(-50%);
-    bottom: 60px;
-    background-color: var(--qd-color-bg-light);
-    padding: 5px;
-    border-radius: 4px;
-    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-} */
 
 .el-button {
     margin: 0 2px;
-}
-
-.refresh-button {
-    position: fixed;
-    right: 20px;
-    top: 70px;
-    z-index: 99;
-}
-
-.no-metadata-button {
-    position: fixed;
-    right: 150px;
-    top: 70px;
-    z-index: 99;
 }
 
 .params {

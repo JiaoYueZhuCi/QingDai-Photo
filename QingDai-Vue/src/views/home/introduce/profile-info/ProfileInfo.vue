@@ -3,7 +3,7 @@
         <div>
             <div class="avatar-container">
                 <el-avatar :size="avatarSize" :src="userInfoState.avatarUrl" class="avatar-static"
-                    @click="$router.push('/manage')">
+                    @click="openInNewTab">
                     <template #default>
                         <el-icon :size="50">
                             <User />
@@ -99,6 +99,11 @@ const fetchIntroduceInfo = async () => {
 
 // 定义事件
 const emit = defineEmits(['backgroundUpdate']);
+
+// 处理新标签页打开
+const openInNewTab = () => {
+    window.open('/manage', '_blank');
+};
 
 // 通知父组件背景图URL变更
 const emitBackgroundUpdate = (backgroundUrl: string) => {

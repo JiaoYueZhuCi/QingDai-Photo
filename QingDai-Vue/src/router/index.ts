@@ -205,6 +205,13 @@ const router = createRouter({
                 console.error('组件加载失败:', error);
                 return h(errorPage, { errorMessage: error.toString() });
               })
+            },
+            {
+              path: 'view',
+              component: () => import('@/views/manage/view-stats-manage/ViewManage.vue').catch((error) => {
+                console.error('组件加载失败:', error);
+                return h(errorPage, { errorMessage: error.toString() });
+              })
             }
           ]
         },

@@ -1,7 +1,7 @@
 <template>
   <Header />
   
-  <div class="common-layout">
+  <div class="manage">
     <el-container>
       <el-header>
         <el-menu :default-active="$route.path" router mode="horizontal">
@@ -9,30 +9,30 @@
             我的主页
           </el-menu-item>
           <el-menu-item index="/manage/photoList" style="width: 100px;">
-            照片管理
+            照片编辑
           </el-menu-item>
           <el-menu-item index="/manage/groupPhotosList" style="width: 100px;">
-            组图管理
+            组图编辑
           </el-menu-item>
           <el-menu-item index="/manage/timelineList" style="width: 100px;">
-            时间线管理
+            时间线编辑
           </el-menu-item>
           <el-menu-item index="/manage/shareList" style="width: 100px;">
-            分享管理
+            分享编辑
           </el-menu-item>
           <el-menu-item index="/manage/userInfo" style="width: 100px;">
-            用户信息设置
+            用户设置
           </el-menu-item>
           <el-menu-item index="/manage/control" style="width: 100px;">
-            管理
+            照片管理
+          </el-menu-item>
+          <el-menu-item index="/manage/view" style="width: 100px;">
+            浏览数据
           </el-menu-item>
           <el-menu-item index="/manage/develop" style="width: 100px;">
             开发
           </el-menu-item>
           
-          <el-menu-item class="logout" style="width: 100px;" @click="handleLogout">
-            注销
-          </el-menu-item>
         </el-menu>
       </el-header>
       <el-main>
@@ -51,18 +51,11 @@
   position: relative;
 }
 
-:deep(.logout) {
-  color: rgb(255, 43, 43) !important;
-  background-color: rgb(255, 238, 238);
-}
+
 </style>
 
 <script setup>
 import Header from '@/components/common/header/Header.vue';
 import Footer from '@/components/common/footer/Footer.vue';
 
-const handleLogout = () => {
-  localStorage.clear('token');
-  window.location.href = '/';
-};
 </script>

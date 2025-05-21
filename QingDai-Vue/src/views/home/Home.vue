@@ -31,18 +31,29 @@
 </template>
 
 <script setup lang="ts">
-import { watch, ref } from 'vue';
+import { watch, ref, onMounted } from 'vue';
 import type { TabsPaneContext } from 'element-plus';
 import Introduce from '@/views/home/introduce/Introduce.vue';
 import ScrollReveal from '@/components/util/scroll-reveal/ScrollReveal.vue';
 import Footer from '@/components/common/footer/Footer.vue';
 import Header from '@/components/common/header/Header.vue';
 import { useRouter, useRoute } from 'vue-router'
+import { incrementViewCount } from '@/api/views';
 
 const router = useRouter()
 const route = useRoute()
 // 当前激活的标签页
 const activeTab = ref('featured')
+
+// 在组件挂载时增加浏览量
+onMounted(async () => {
+    try {
+        // 只增加浏览量，不显示
+        await incrementViewCount();
+    } catch (error) {
+        console.error('增加浏览量失败:', error);
+    }
+});
 
 // 同步路由状态
 watch(

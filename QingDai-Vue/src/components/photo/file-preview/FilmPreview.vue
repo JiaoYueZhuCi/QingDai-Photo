@@ -68,10 +68,16 @@
                     <div class="info-content">
                         <div class="title-row">
                             <div class="tag-container">
+                                <div class="tag-group">
                                 <el-tag v-if="previewData.startRating === 1" :type="'warning'" size="small">精选</el-tag>
                                 <el-tag v-if="previewData.startRating === 0" :type="'success'" size="small">普通</el-tag>
                                 <el-tag v-if="previewData.startRating === -1" :type="'info'" size="small">隐藏</el-tag>
                                 <el-tag v-if="previewData.startRating === 2" :type="'primary'" size="small">气象</el-tag>
+                                </div>
+                                <el-tag type="info" size="small" class="view-count">
+                                    <el-icon><View /></el-icon>
+                                    {{ viewCount }}
+                                </el-tag>
                             </div>
                             <p class="title">{{ previewData.title || '无标题' }}</p>
 
@@ -190,8 +196,9 @@ import { ref, watch, onUnmounted, computed, onMounted } from 'vue'
 import { ElTag, ElTooltip, ElMessage, ElButton, ElIcon, ElLoading } from 'element-plus'
 import { get1000KPhoto, getPhotoDetailInfo, getFullPhoto, type EnhancedWaterfallItem } from '@/utils/photo'
 import { canViewFullSizePhoto } from '@/utils/auth'
-import { Download } from '@element-plus/icons-vue'
+import { Download, View } from '@element-plus/icons-vue'
 import gsap from 'gsap'
+import { getPhotoViewCount, incrementPhotoViewCount } from '@/api/photo'
 
 const props = defineProps<{
     photoId: string,
@@ -280,6 +287,9 @@ const isInfoLoading = ref(false)  // 新增：专门用于控制信息加载状�
 
 // 添加权限检查
 const hasViewerPermission = ref(false)
+
+// 添加浏览量状态
+const viewCount = ref(0)
 
 // 检查用户权限
 const checkUserPermission = async () => {
@@ -437,6 +447,14 @@ const handleOpen = async () => {
         const photoInfo = await getPhotoDetailInfo(props.photoId)
         if (photoInfo) {
             previewData.value = photoInfo
+        }
+        
+        // 获取并增加浏览量
+        try {
+            const count = await incrementPhotoViewCount(props.photoId)
+            viewCount.value = count
+        } catch (error) {
+            console.error('获取浏览量失败:', error)
         }
         
         // 先加载当前照片
@@ -875,6 +893,36 @@ onMounted(async () => {
     color: #fff;
     padding: 0;
     flex-shrink: 0;
+    position: relative;
+}
+
+.info-container :deep(.el-loading-mask) {
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+.info-container :deep(.el-loading-spinner) {
+    position: relative;
+    top: 0;
+    margin-top: 0;
+    transform: none;
+}
+
+.info-container :deep(.el-loading-spinner .el-loading-text) {
+    color: #fff;
+    font-size: 14px;
+    margin-top: 8px;
+    white-space: nowrap;
+    overflow: visible;
+    line-height: 1.5;
+}
+
+.info-container :deep(.el-loading-spinner .circular) {
+    width: 30px;
+    height: 30px;
 }
 
 .side-film .info-container {
@@ -906,6 +954,14 @@ onMounted(async () => {
 .tag-container {
     margin-right: 3px;
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tag-group {
+    display: flex;
+    gap: 4px;
 }
 
 .description {
@@ -974,6 +1030,10 @@ onMounted(async () => {
     .info-container {
         height: 20vh;
     }
+    
+    .info-container :deep(.el-loading-spinner .el-loading-text) {
+        font-size: 16px;
+    }
 
     .title {
         font-size: calc(2vw + 1vh);
@@ -1003,5 +1063,15 @@ onMounted(async () => {
 
 .image-actions .el-button:hover {
     background: rgba(0, 0, 0, 0.7);
+}
+
+.view-count {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.view-count .el-icon {
+    font-size: 14px;
 }
 </style>

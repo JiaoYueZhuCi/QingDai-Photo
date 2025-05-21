@@ -84,6 +84,9 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
     @Value("${qingdai.url.thumbnail1000KUrl}")
     private String thumbnail1000KUrl;
 
+    @Value("${qingdai.redis.key.photo-upload-status}")
+    private String uploadStatusKeyPrefix;
+
     @Autowired
     private GroupPhotoPhotoService groupPhotoPhotoService;
 
@@ -96,9 +99,6 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
     @Lazy
     @Autowired
     private FileProcessService fileProcessService;
-
-    // Redis中存储上传任务状态的键前缀
-    private static final String UPLOAD_STATUS_KEY_PREFIX = "photo:upload:status:";
 
     // 雪花算法生成器
     private final SnowflakeIdGenerator idGenerator = new SnowflakeIdGenerator(1, 1);
@@ -1442,14 +1442,14 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
         statusInfo.put("updateTime", System.currentTimeMillis());
 
         // 存储到Redis，设置24小时过期
-        String key = UPLOAD_STATUS_KEY_PREFIX + messageId;
+        String key = uploadStatusKeyPrefix + messageId;
         redisTemplate.opsForValue().set(key, statusInfo, 24, TimeUnit.HOURS);
         log.debug("已更新消息ID: {} 的处理状态为: {}, 进度: {}%", messageId, status, progress);
     }
 
     @Override
     public Map<String, Object> getPhotoUploadStatus(String messageId) {
-        String key = UPLOAD_STATUS_KEY_PREFIX + messageId;
+        String key = uploadStatusKeyPrefix + messageId;
         Object statusObj = redisTemplate.opsForValue().get(key);
 
         if (statusObj != null && statusObj instanceof Map) {

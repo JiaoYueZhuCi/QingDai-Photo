@@ -1,6 +1,8 @@
 <template>
     <div class="group-photos-list-container">
-        <el-button class="refresh-button" type="primary" @click="fetchData">刷新组图列表</el-button>
+        <div class="header-actions">
+            <el-button type="primary" @click="fetchData">刷新组图列表</el-button>
+        </div>
         
         <el-table :data="tableData" style="width: 100%" border stripe :max-height="tableHeight">
             <el-table-column label="封面图" width="220" fixed>
@@ -240,6 +242,13 @@ const handleDelete = async (row: any) => {
     background: #fff;
 }
 
+.header-actions {
+    display: flex;
+    gap: 5px;
+    padding: 10px;
+    background-color: var(--qd-color-bg-light);
+}
+
 .floating-action {
     position: fixed;
     right: 20px;
@@ -249,12 +258,5 @@ const handleDelete = async (row: any) => {
 
 .el-button {
     margin: 0 2px;
-}
-
-.refresh-button {
-    position: fixed;
-    right: 20px;
-    top: 70px;
-    z-index: 100;
 }
 </style>

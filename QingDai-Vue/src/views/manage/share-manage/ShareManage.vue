@@ -1,6 +1,8 @@
 <template>
   <div class="share-manage-container">
-    <el-button class="refresh-button" type="primary" @click="refreshShares">刷新分享列表</el-button>
+    <div class="header-actions">
+        <el-button type="primary" @click="refreshShares">刷新分享列表</el-button>
+    </div>
 
     <el-table :data="shareList" stripe style="width: 100%"
       :empty-text="'暂无分享数据'" :max-height="tableHeight">
@@ -161,14 +163,15 @@ const handleDelete = async (shareId) => {
 
 <style scoped>
 .share-manage-container {
+  background: #fff;
   height: 100%;
 }
 
 .header-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
+    display: flex;
+    gap: 5px;
+    padding: 10px;
+    background-color: var(--qd-color-bg-light);
 }
 
 .share-link {
@@ -206,10 +209,7 @@ const handleDelete = async (shareId) => {
 }
 
 .refresh-button {
-  position: fixed;
-  right: 20px;
-  top: 70px;
-  z-index: 100;
+  display: none;
 }
 
 .pagination-wrapper {

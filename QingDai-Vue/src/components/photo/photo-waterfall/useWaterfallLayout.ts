@@ -54,7 +54,7 @@ export function useWaterfallLayout<T extends PhotoItem = PhotoItem>(options?: Wa
   const gap = ref(mergedOptions.defaultGap!); // 因为每行设置了justify-content: space-between; 所以gap实际为最小间隙
   
   // 考虑container-in的padding
-  const rowWidth = ref(window.innerWidth - scrollbarWidth - 2 * containerPadding.value);
+  const rowWidth = ref(document.documentElement.clientWidth - 2 * containerPadding.value);
   const rows = ref<RowData<T>[]>([]);
   
   // 定义计算属性
@@ -68,15 +68,15 @@ export function useWaterfallLayout<T extends PhotoItem = PhotoItem>(options?: Wa
       gap.value = mergedOptions.mobileGap!; // 图片间隙
       sideMargin.value = mergedOptions.mobileSideMargin!; // 更新 sideMargin 变量
       containerPadding.value = mergedOptions.mobileContainerPadding!; // 小屏幕下container-in的padding
-      rowWidth.value = window.innerWidth - 2 * containerPadding.value;  
     } else {
       rowHeightMax.value = mergedOptions.rowHeightMax!;
       rowHeightMin.value = mergedOptions.rowHeightMin!;
       gap.value = mergedOptions.defaultGap!; // 图片间隙
       sideMargin.value = mergedOptions.defaultSideMargin!; // 更新 sideMargin 变量
       containerPadding.value = mergedOptions.defaultContainerPadding!; // 大屏幕下container-in的padding
-      rowWidth.value = window.innerWidth - scrollbarWidth - 2 * sideMargin.value - 2 * containerPadding.value;
     }
+    rowWidth.value = document.documentElement.clientWidth - 2 * containerPadding.value;  
+
   };
 
   const calculateLayout = (images: T[]) => {

@@ -14,6 +14,7 @@ export const ManagePagination = {
   GROUP_PHOTOS_MANAGE_PAGE_SIZE: 30, // 组图管理每页加载数量
   TIMELINE_MANAGE_PAGE_SIZE: 30,     // 时间线管理每页加载数量
   SHARE_MANAGE_PAGE_SIZE: 30,        // 分享管理每页加载数量
+  VIEW_STATS_PAGE_SIZE: 10,          // 浏览量统计每页加载数量
 };
 
 // 无限滚动和懒加载配置

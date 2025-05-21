@@ -50,7 +50,6 @@
           class="logout-button"
           @click="handleLogout"
         >
-          <i class="el-icon-switch-button"></i>
           <span>注销</span>
         </button>
         <button class="theme-switch" @click="toggleTheme" ref="themeRef">
@@ -239,13 +238,10 @@ onMounted(() => {
 [data-theme="dark"] .header-container,
 .dark .header-container {
   background-color: var(--qd-color-primary-light-9);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
 }
 
-/* 移除全局 body padding */
-:global(body) {
-  padding-top: 0;
-}
+
 
 .header-content {
   max-width: 1200px;
@@ -390,19 +386,19 @@ onMounted(() => {
 }
 
 .logout-button {
-  display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
   padding: 0.3rem 0.8rem;
   border-radius: 6px;
-  background: var(--qd-color-primary-light-9);
+  background: var(--qd-color-primary-light-7);
   color: var(--qd-color-primary);
   border: 1px solid var(--qd-color-primary-light-5);
   font-weight: 500;
   font-size: 0.9rem;
   transition: all 0.3s ease;
   cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 [data-theme="dark"] .logout-button,

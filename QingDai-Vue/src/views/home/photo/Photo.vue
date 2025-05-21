@@ -223,6 +223,7 @@ const handleImageClick = (item: EnhancedWaterfallItem, event?: MouseEvent) => {
     } else {
         currentPreviewId.value = item.id;
         previewVisible.value = true;
+        viewerVisible.value = false;  
         updateUrlWithPhotoId(item.id);
     }
 };

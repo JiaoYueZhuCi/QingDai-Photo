@@ -14,6 +14,7 @@ import com.qingdai.utils.FileUtils;
 import com.qingdai.utils.ValidationUtils;
 import com.qingdai.mq.producer.PhotoProcessor;
 import com.qingdai.service.FileProcessService;
+import com.qingdai.service.PhotoViewService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -33,6 +34,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.data.redis.core.RedisTemplate;
 
 import java.io.File;
 import java.io.IOException;
@@ -68,9 +71,14 @@ public class PhotoController {
     @Autowired
     private PhotoProcessor photoProcessor;
 
-
     @Autowired
     private FileProcessService fileProcessService;
+
+    @Autowired
+    private PhotoViewService photoViewService;
+
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
 
     @Value("${qingdai.url.fullSizeUrl}")
     private String fullSizeUrl;
@@ -82,6 +90,9 @@ public class PhotoController {
     private String thumbnail1000KUrl;
     @Value("${qingdai.url.thumbnail100KUrl}")
     private String thumbnail100KUrl;
+
+    @Value("${qingdai.redis.key.photo-view}")
+    private String viewKeyPrefix;
 
     @GetMapping("/cdn/thumbnails/small")
     @PreAuthorize("permitAll()")
@@ -293,13 +304,13 @@ public class PhotoController {
             Photo photo = photoService.getById(id);
             if (photo == null) {
                 log.warn("未找到ID为{}的照片记录", id);
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Photo());
             }
             log.info("成功获取照片元数据，ID: {}", id);
             return ResponseEntity.ok(photo);
         } catch (Exception e) {
             log.error("获取照片元数据时发生错误，ID: {}, 错误: {}", id, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Photo());
         }
     }
 
@@ -1007,5 +1018,75 @@ public class PhotoController {
             log.error("查询照片上传状态时发生错误，消息ID: {}, 错误: {}", messageId, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
+    }
+
+    @GetMapping("/{id}/view-count")
+    @PreAuthorize("permitAll()")
+    @Operation(summary = "获取照片浏览量", description = "获取指定照片的浏览量")
+    public ResponseEntity<Long> getPhotoViewCount(@PathVariable String id) {
+        try {
+            long count = photoViewService.getViewCount(id);
+            log.info("成功获取照片浏览量，ID: {}, 浏览量: {}", id, count);
+            return ResponseEntity.ok(count);
+        } catch (Exception e) {
+            log.error("获取照片浏览量时发生错误，ID: {}, 错误: {}", id, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping("/stats/views")
+    @Operation(summary = "获取所有照片浏览量统计", description = "获取所有照片的浏览量统计信息")
+    public ResponseEntity<List<Map<String, Object>>> getPhotoViewStats() {
+        try {
+            List<Map<String, Object>> stats = photoViewService.getAllPhotoViewStats();
+            return ResponseEntity.ok(stats);
+        } catch (Exception e) {
+            log.error("获取照片浏览量统计失败: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @PostMapping("/{id}/view-count")
+    @PreAuthorize("permitAll()")
+    @Operation(summary = "增加照片浏览量", description = "增加指定照片的浏览量")
+    public ResponseEntity<Long> incrementPhotoViewCount(
+            @PathVariable String id,
+            HttpServletRequest request) {
+        try {
+            String ip = getClientIp(request);
+            long count = photoViewService.incrementViewCount(id, ip);
+            log.info("成功增加照片浏览量，ID: {}, IP: {}, 当前浏览量: {}", id, ip, count);
+            return ResponseEntity.ok(count);
+        } catch (Exception e) {
+            log.error("增加照片浏览量时发生错误，ID: {}, 错误: {}", id, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * 获取客户端真实IP地址
+     */
+    private String getClientIp(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("Proxy-Client-IP");
+        }
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("WL-Proxy-Client-IP");
+        }
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("HTTP_CLIENT_IP");
+        }
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("HTTP_X_FORWARDED_FOR");
+        }
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        // 对于通过多个代理的情况，第一个IP为客户端真实IP，多个IP按照','分割
+        if (ip != null && ip.contains(",")) {
+            ip = ip.split(",")[0].trim();
+        }
+        return ip;
     }
 }
