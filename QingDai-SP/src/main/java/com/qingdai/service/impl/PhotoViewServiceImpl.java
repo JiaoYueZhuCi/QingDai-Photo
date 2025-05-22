@@ -1,5 +1,6 @@
 package com.qingdai.service.impl;
 
+import com.qingdai.config.RedisConfig;
 import com.qingdai.service.PhotoViewService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import jakarta.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,9 +21,31 @@ public class PhotoViewServiceImpl implements PhotoViewService {
 
     @Value("${qingdai.redis.key.photo-view}")
     private String viewKeyPrefix;
+    
+    @Value("${qingdai.redis.ttl.photo-view-hours:0}")
+    private int photoViewTtlHours;
 
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
+    
+    @Autowired
+    private RedisConfig redisConfig;
+    
+    /**
+     * 初始化方法，设置照片浏览量key的过期时间
+     */
+    @PostConstruct
+    public void init() {
+        // 获取所有浏览量key
+        Set<String> keys = redisTemplate.keys(viewKeyPrefix + "*");
+        if (keys != null && !keys.isEmpty()) {
+            // 设置或更新所有key的过期时间
+            for (String key : keys) {
+                redisConfig.setKeyTTL(redisTemplate, key, photoViewTtlHours);
+            }
+            log.info("已为{}个照片浏览量key设置过期时间", keys.size());
+        }
+    }
 
     @Override
     public long incrementViewCount(String photoId, String ip) {
@@ -30,6 +54,10 @@ public class PhotoViewServiceImpl implements PhotoViewService {
         try {
             // 使用HyperLogLog记录访问
             redisTemplate.opsForHyperLogLog().add(key, ip);
+            
+            // 设置或更新过期时间
+            redisConfig.setKeyTTL(redisTemplate, key, photoViewTtlHours);
+            
             // 返回访问量
             return redisTemplate.opsForHyperLogLog().size(key);
         } catch (Exception e) {

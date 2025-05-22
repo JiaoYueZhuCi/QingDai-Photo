@@ -1,9 +1,23 @@
 qingdai:
   photo:
+    # 照片默认作者
     author: 皎月祝辞
   photographer:
+    # !需要与数据库中的(管理员)id一致
     id: 1
   redis:
+    ttl:
+      # Redis默认过期时间（小时）
+      default-hours: 24
+      # 用户访问统计过期时间（小时），0表示永不过期
+      uv-hours: 0
+      # 照片浏览量统计过期时间（小时），0表示永不过期
+      photo-view-hours: 0
+      cache:
+        # Cache默认过期时间（小时） 
+        cache-hours: 24
+        # photo缓存过期时间（小时），0表示永不过期
+        photo-hours: 0
     key:
       # 用户访问统计key
       total-view: "total:view"
@@ -79,7 +93,7 @@ spring:
   cache:
     type: redis
     redis:
-      time-to-live: 86400000  # 默认24小时，单位毫秒（photo缓存会在CacheConfig中单独配置为永久）
+      time-to-live: ${qingdai.redis.ttl.cache.cache-hours:24}0000  # 缓存过期时间（毫秒）
       cache-null-values: false  # 不缓存null值
 
 # JMX 配置
