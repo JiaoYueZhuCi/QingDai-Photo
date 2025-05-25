@@ -136,28 +136,12 @@ const emit = defineEmits(['updated', 'update:modelValue', 'close', 'deleted']);
 // 内部对话框可见性状态
 const visible = ref(props.modelValue);
 
-// 监听 modelValue 变化
-watch(() => props.modelValue, (newVal) => {
-  visible.value = newVal;
-  if (newVal && props.photoId) {
-    loadPhotoData();
-  }
-
-});
-
-// 监听对话框可见性状态变化
-watch(() => visible.value, (newVal) => {
-  emit('update:modelValue', newVal);
-  if (newVal == false) {
-    emit('close')
-  }
-});
-
 // 照片信息
 const photoInfo = ref<EnhancedWaterfallItem>({} as EnhancedWaterfallItem);
 const submitting = ref(false);
 const imageLoading = ref(false);
 const showDeleteConfirm = ref(false);
+const isDataLoaded = ref(false);
 
 // 表单数据
 const form = reactive({
@@ -174,7 +158,7 @@ const form = reactive({
 
 // 加载照片数据
 const loadPhotoData = async () => {
-  if (!props.photoId) return;
+  if (!props.photoId || isDataLoaded.value) return;
 
   imageLoading.value = true;
   try {
@@ -198,6 +182,7 @@ const loadPhotoData = async () => {
       if (thumbnailResult) {
         photoInfo.value.compressedSrc = thumbnailResult.url;
       }
+      isDataLoaded.value = true;
     }
   } catch (error) {
     console.error('加载照片数据失败:', error);
@@ -207,19 +192,38 @@ const loadPhotoData = async () => {
   }
 };
 
-// 监听photoId变化
-watch(() => props.photoId, (newVal, oldVal) => {
-  if (newVal !== oldVal && newVal && visible.value) {
+// 监听 modelValue 变化
+watch(() => props.modelValue, (newVal) => {
+  visible.value = newVal;
+  if (newVal && props.photoId) {
     loadPhotoData();
+  } else {
+    isDataLoaded.value = false;
   }
 });
 
-// 组件挂载时加载数据
+// 监听对话框可见性状态变化
+watch(() => visible.value, (newVal) => {
+  emit('update:modelValue', newVal);
+  if (newVal == false) {
+    emit('close');
+    isDataLoaded.value = false;
+  }
+});
+
+// 监听photoId变化
+watch(() => props.photoId, (newVal, oldVal) => {
+  if (newVal !== oldVal) {
+    isDataLoaded.value = false;
+    if (newVal && visible.value) {
+      loadPhotoData();
+    }
+  }
+});
+
+// 组件挂载时设置初始状态
 onMounted(() => {
   visible.value = props.modelValue;
-  if (props.photoId && visible.value) {
-    loadPhotoData();
-  }
 });
 
 // 处理关闭

@@ -340,8 +340,11 @@ watch(visible, (newVal) => {
     }
 })
 
+// 监听 photoId 变化，但只在组件可见时才响应
 watch(() => props.photoId, (newVal) => {
-    ensureDataLoaded()
+    if (visible.value) {
+        ensureDataLoaded()
+    }
 })
 
 // 确保数据加载 - 统一的加载入口

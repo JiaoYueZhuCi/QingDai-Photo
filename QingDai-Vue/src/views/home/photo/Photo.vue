@@ -220,6 +220,9 @@ const handleImageClick = (item: EnhancedWaterfallItem, event?: MouseEvent) => {
     if (isShareMode.value) {
         if (event) event.stopPropagation();
         togglePhotoSelection(item, !selectedPhotos.value.includes(item));
+    } else if (editorVisible.value) {
+        // 如果编辑器已打开，不执行任何操作
+        return;
     } else {
         currentPreviewId.value = item.id;
         previewVisible.value = true;
@@ -354,13 +357,12 @@ const handleNavigate = (photoId: string) => {
     updateUrlWithPhotoId(photoId);
 };
 
-// 添加图片编辑图标
-const openPhotoEditor = (item: EnhancedWaterfallItem) => {
-    // 先确保页面滚动状态被重置，避免多次锁定
-    document.body.style.overflow = '';
-    
-    currentPreviewId.value = item.id;
+// 打开照片编辑器
+const openPhotoEditor = (photo: EnhancedWaterfallItem) => {
+    currentPreviewId.value = photo.id;
     editorVisible.value = true;
+    // 不要打开FilmPreview
+    previewVisible.value = false;
 };
 
 // 处理照片信息更新

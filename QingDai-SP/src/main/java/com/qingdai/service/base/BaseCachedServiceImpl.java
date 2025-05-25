@@ -18,17 +18,17 @@ import java.util.List;
  * @param <M> Mapper类型
  * @param <T> 实体类型
  */
-@CacheConfig(cacheNames = "default")
+@CacheConfig(cacheNames = "base")
 public class BaseCachedServiceImpl<M extends BaseMapper<T>, T> extends ServiceImpl<M, T> {
 
     @Override
-    @Cacheable(keyGenerator = "classMethodParamsKeyGenerator")
+    // @Cacheable(keyGenerator = "classMethodParamsKeyGenerator")
     public T getById(Serializable id) {
         return super.getById(id);
     }
     
     @Override
-    @Cacheable(keyGenerator = "classMethodKeyGenerator")
+    // @Cacheable(keyGenerator = "classMethodKeyGenerator")
     public List<T> list() {
         return super.list();
     }
