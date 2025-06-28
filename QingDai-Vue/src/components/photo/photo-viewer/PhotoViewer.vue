@@ -52,6 +52,9 @@ const shouldShowViewer = computed(() => {
 // 监听 modelValue 变化
 watch(() => props.modelValue, (newVal) => {
     visible.value = newVal
+    if (newVal && props.photoId) {
+        loadImages()
+    }
 })
 
 watch(() => visible.value, (newVal) => {
@@ -62,9 +65,9 @@ watch(() => visible.value, (newVal) => {
 })
 
 watch(() => props.photoId, (newVal) => {
-    if (newVal) {
-        loadImages()
-    }
+    // if (newVal) {
+    //     loadImages()
+    // }
 })
 
 // 监听 urlList 变化
@@ -119,6 +122,7 @@ watch(() => props.initialIndex, (newVal, oldVal) => {
 // 加载图片
 const loadImages = async () => {
     if (!props.photoId) return
+    // if (!props.photoId || !visible.value) return
 
     isLoading.value = true
     const loading = ElLoading.service({

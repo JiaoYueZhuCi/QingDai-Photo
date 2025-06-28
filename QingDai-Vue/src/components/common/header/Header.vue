@@ -66,8 +66,7 @@ import { useRouter } from 'vue-router';
 import { useThemeStore } from '@/stores/theme';
 import { Sunny, Moon } from '@element-plus/icons-vue';
 import gsap from 'gsap';
-
-const router = useRouter();
+ 
 const themeStore = useThemeStore();
 const isDark = computed(() => themeStore.theme === 'dark');
 

@@ -283,7 +283,7 @@ const extremeNextPhotoId = computed(() => {
 })
 
 const isLoading = ref(false)
-const isInfoLoading = ref(false)  // 新增：专门用于控制信息加载状态
+const isInfoLoading = ref(false)  
 
 // 添加权限检查
 const hasViewerPermission = ref(false)
