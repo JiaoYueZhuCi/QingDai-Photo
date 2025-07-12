@@ -17,8 +17,8 @@
                 <el-tab-pane label="晚霞" name="sunsetGlow"></el-tab-pane>
                 <el-tab-pane label="日出" name="sunrise"></el-tab-pane>
                 <el-tab-pane label="日落" name="sunset"></el-tab-pane>
-                <el-tab-pane label="气象" name="meteorology"></el-tab-pane>
-                <el-tab-pane label="隐藏" name="hidden"></el-tab-pane>
+                <el-tab-pane v-if="hasToken" label="气象" name="meteorology"></el-tab-pane>
+                <el-tab-pane v-if="hasToken" label="隐藏" name="hidden"></el-tab-pane>
             </el-tabs>
         </div>
     </ScrollReveal>
@@ -31,7 +31,7 @@
 </template>
 
 <script setup lang="ts">
-import { watch, ref, onMounted } from 'vue';
+import { watch, ref, onMounted, computed } from 'vue';
 import type { TabsPaneContext } from 'element-plus';
 import Introduce from '@/views/home/introduce/Introduce.vue';
 import ScrollReveal from '@/components/util/scroll-reveal/ScrollReveal.vue';
@@ -68,6 +68,10 @@ watch(
 const handleTabClick = (tab: TabsPaneContext) => {
     router.push(`/home/${tab.paneName}`)
 }
+
+const hasToken = computed(() => {
+    return !!localStorage.getItem('token');
+});
 </script>
 
 <style>
@@ -81,16 +85,4 @@ const handleTabClick = (tab: TabsPaneContext) => {
     position: relative;
 }
 
-/* 管理员标签处理 */
-:deep(.el-tabs__item:nth-last-child(1)),
-:deep(.el-tabs__item:nth-last-child(2)) {
-    opacity: 0.1;
-    font-style: italic;
-    transition: opacity 0.3s;
-}
-
-:deep(.el-tabs__item:nth-last-child(1):hover),
-:deep(.el-tabs__item:nth-last-child(2):hover) {
-    opacity: 1;
-}
 </style>

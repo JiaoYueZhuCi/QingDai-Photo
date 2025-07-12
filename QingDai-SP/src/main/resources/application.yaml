@@ -133,6 +133,15 @@ logging:
     com.baomidou.mybatisplus: OFF
     org.springframework.jdbc: OFF
 
-
+# RocketMQ配置
+rocketmq:
+  producer:
+    group: qingdai-photo-group
+    send-message-timeout: 3000
+    retry-times-when-send-failed: 2
+  consumer:
+    group: qingdai-photo-consumer
+  topic:
+    photo: photo-topic
 
 

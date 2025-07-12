@@ -170,27 +170,22 @@ qingdai:
   thumbnailSizeUrl: ?
   pendingUrl: ?
 
+#RocketMQ配置
 rocketmq:
   name-server: ?
   producer:
-    group: qingdai-photo-group
-    send-message-timeout: 3000
-    retry-times-when-send-failed: 2
     access-key: ?
     secret-key: ?
   consumer:
-    group: qingdai-photo-consumer
     access-key: ?
     secret-key: ?
-  topic:
-    photo: photo-topic  
 ```
 - QingDai-Photo/QingDai-SP/src/main/resources/application.yml
 
 ```properties
 spring:
   profiles:
-    active: dev/prod
+    active: prod
 
 jwt:
   # 密钥

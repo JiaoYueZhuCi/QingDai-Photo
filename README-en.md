@@ -1,7 +1,8 @@
 # QingDai Photography
 
-[English Documentation](README-en.md)     [中文文档](README.md)
+[English Documentation](README-en.md)   |  [中文文档](README.md)
 
+Repository: [Github](https://github.com/JiaoYueZhuCi/QingDai-Photo) | [Gitee](https://gitee.com/JiaoYueZhuCi/QingDai-Photo)
 ## Project Introduction
 
 - QingDai is a Web application based on Vue 3 + TypeScript + Spring Boot + MySQL + Redis, mainly used for displaying and managing a photography portfolio
@@ -56,6 +57,7 @@ This project consists of two main modules:
   - Three.js 3D rendering
   - GSAP animation library
   - Axios network requests
+  - vue-verification-code   
 
 - **Directory Structure**:
   ```  
@@ -166,27 +168,22 @@ qingdai:
   thumbnailSizeUrl: ?
   pendingUrl: ?
 
+#RocketMQ Configuration
 rocketmq:
   name-server: ?
   producer:
-    group: qingdai-photo-group
-    send-message-timeout: 3000
-    retry-times-when-send-failed: 2
     access-key: ?
     secret-key: ?
   consumer:
-    group: qingdai-photo-consumer
     access-key: ?
     secret-key: ?
-  topic:
-    photo: photo-topic
 ```
 - QingDai-Photo/QingDai-SP/src/main/resources/application.yml
 
 ```properties
 spring:
   profiles:
-    active: dev/prod
+    active: prod
 
 jwt:
   # Secret key
@@ -231,3 +228,16 @@ Please check the [database/init.sql](database/init.sql) file, which contains the
 
 3. Password Notes:
    - All user passwords are the BCrypt encryption result of plain text "123456": $2a$10$jndgC.sZFv0volqxQeXdk.NGN.K7Smrko/5UtP33pPVUcQdP0604a (based on configuration file jwt.secret:QingDai)
+
+#### Special Fields
+1. photo.start_rating
+  - -1 Hidden
+  - 0 Normal
+  - 1 Featured
+  - 2 Weather
+
+2. group_photo.id
+ - 1 Dawn
+ - 2 Dusk
+ - 3 Sunrise
+ - 4 Sunset
