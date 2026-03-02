@@ -4,7 +4,7 @@ import { ElMessage } from 'element-plus';
 
 // 创建axios实例
 const service: AxiosInstance = axios.create({
-  timeout: 60000,
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json;charset=utf-8'
   },

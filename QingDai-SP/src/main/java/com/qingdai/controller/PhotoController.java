@@ -12,7 +12,6 @@ import com.qingdai.service.GroupPhotoPhotoService;
 import com.qingdai.service.GroupPhotoService;
 import com.qingdai.utils.FileUtils;
 import com.qingdai.utils.ValidationUtils;
-import com.qingdai.mq.producer.PhotoProcessor;
 import com.qingdai.service.FileProcessService;
 import com.qingdai.service.PhotoViewService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -67,9 +66,6 @@ public class PhotoController {
 
     @Autowired
     PhotoService photoService;
-    
-    @Autowired
-    private PhotoProcessor photoProcessor;
 
     @Autowired
     private FileProcessService fileProcessService;
@@ -569,38 +565,61 @@ public class PhotoController {
                 log.debug("图片：{},已保存文件到临时目录", file.getOriginalFilename());
             }
 
-            // 使用RocketMQ进行异步处理
+            // 同步处理图片
             try {
                 // 创建消息ID
                 String messageId = String.valueOf(System.currentTimeMillis());
                 
-                // 创建图片处理消息
-                PhotoProcessor.PhotoMessage photoMessage = new PhotoProcessor.PhotoMessage(
-                        start, overwrite, fileNames, tempDir.getAbsolutePath());
-                // 设置消息ID
-                photoMessage.setMessageId(messageId);
-                
                 // 初始化任务状态
-                photoService.updatePhotoUploadStatus(messageId, "PROCESSING", 0, "已提交到处理队列");
+                photoService.updatePhotoUploadStatus(messageId, "PROCESSING", 10, "开始处理图片");
                 
-                // 使用MQ发送消息
-                photoProcessor.sendPhotoProcessMessage(photoMessage);
+                // 处理图片压缩流程
+                photoService.updatePhotoUploadStatus(messageId, "PROCESSING", 30, "正在压缩图片");
+                fileProcessService.processPhotoCompression(tempDir, thumbnail100KDir, thumbnail1000KDir, fullSizeDir, overwrite);
+                log.info("完成图片压缩处理");
+                
+                // 处理元数据并保存到数据库
+                photoService.updatePhotoUploadStatus(messageId, "PROCESSING", 60, "正在处理图片元数据");
+                PhotoService.ProcessResult result = photoService.processPhotoFromMQ(
+                        fileNames, tempDir.getAbsolutePath(), start, overwrite);
+                
+                if (result.isSuccess()) {
+                    photoService.updatePhotoUploadStatus(messageId, "PROCESSING", 80,
+                            String.format("数据处理完成，更新：%d张，新增：%d张",
+                                    result.getExistingPhotos().size(), result.getNewPhotos().size()));
+                    log.info("成功处理图片数据，更新：{}张，新增：{}张",
+                            result.getExistingPhotos().size(), result.getNewPhotos().size());
+                } else {
+                    photoService.updatePhotoUploadStatus(messageId, "PROCESSING", 80, "图片数据处理未完全成功");
+                    log.warn("图片数据处理未完全成功");
+                }
+                
+                // 清理临时目录
+                try {
+                    photoService.updatePhotoUploadStatus(messageId, "PROCESSING", 90, "正在清理临时文件");
+                    FileUtils.clearFolder(tempDir, true);
+                    log.info("已清理临时目录: {}", tempDir.getAbsolutePath());
+                } catch (IOException cleanEx) {
+                    log.warn("清理临时目录时出错: {}", cleanEx.getMessage(), cleanEx);
+                }
                 
                 long endTime = System.currentTimeMillis();
                 long duration = endTime - startTime;
-                log.info("图片上传成功，已提交到队列进行异步处理，耗时{}毫秒", duration);
+                photoService.updatePhotoUploadStatus(messageId, "COMPLETED", 100,
+                        String.format("图片处理完成，耗时%d毫秒", duration));
+                log.info("图片处理完成，耗时{}毫秒", duration);
                 
                 // 返回消息ID，以便前端查询进度
                 Map<String, Object> response = new HashMap<>();
                 response.put("messageId", messageId);
-                response.put("message", "图片上传成功，已提交到队列进行异步处理，将在后台处理 " + files.length + " 张图片");
+                response.put("message", "图片上传并处理成功，共处理 " + files.length + " 张图片，耗时" + duration + "毫秒");
                 response.put("files", files.length);
                 
                 return ResponseEntity.ok(response);
             } catch (Exception e) {
-                log.error("提交到消息队列时出错, 错误: {}", e.getMessage(), e);
+                log.error("处理图片时出错, 错误: {}", e.getMessage(), e);
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body(Collections.singletonMap("error", "提交到消息队列时出错: " + e.getMessage()));
+                        .body(Collections.singletonMap("error", "处理图片时出错: " + e.getMessage()));
             }
         } catch (Exception e) {
             long endTime = System.currentTimeMillis();

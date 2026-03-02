@@ -18,6 +18,4 @@ spring:
       host: 129.226.192.212
       port: 6379
 
-rocketmq:
-  name-server: localhost:9876
 

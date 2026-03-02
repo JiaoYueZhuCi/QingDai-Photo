@@ -67,8 +67,7 @@ export const processPhotosFromFrontend = async (formData: FormData): Promise<any
   return await request.post(`${BASE_URL}`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data'
-    },
-    timeout: 30000 // 设置30秒超时时间，因为使用队列后上传接口会立即返回
+    }
   });
 };
 

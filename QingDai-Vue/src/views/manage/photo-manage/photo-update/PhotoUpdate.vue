@@ -160,14 +160,15 @@ const handleSubmit = async () => {
         uploadLoading.value = true;
 
         // 发送上传请求
-        ElMessage.success(`图片正在传输，请等待响应`);
+        ElMessage.success(`图片正在上传处理中，请等待响应`);
         const response = await processPhotosFromFrontend(formData);
         
         if (response) {
             // 获取消息ID并显示进度条
             messageId.value = response.messageId;
             // 显示成功消息
-            ElMessage.success(`成功提交${response.files || 0}张照片任务,请等待处理完成`);
+            ElMessage.success(response.message || `成功处理${response.files || 0}张照片`);
+            handleUploadComplete();
         }
     } catch (error) {
         console.error('上传失败:', error);

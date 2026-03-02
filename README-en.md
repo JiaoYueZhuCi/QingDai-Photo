@@ -101,7 +101,6 @@ This project consists of two main modules:
   - MyBatis-Plus
   - MySQL Database
   - Redis Cache
-  - RocketMQ Message Queue
   - JWT Authentication
   - Swagger/OpenAPI Documentation
   - kaptcha
@@ -117,9 +116,6 @@ This project consists of two main modules:
             │   └── dto/                  # DTOs 
             ├── filter/                   # Filters   
             ├── mapper/                   # MyBatis interfaces
-            ├── mq/                       # RocketMQ related
-            │   ├── consumer/             # Message consumers
-            │   └── producer/             # Message producers
             ├── service/                  # Business logic
             │   └── impl/                 # Service implementations
             ├── utils/                    # Utility classes
@@ -137,7 +133,7 @@ This project consists of two main modules:
 ## System Requirements
 
 - **Frontend**: Node.js 16+, npm 8+
-- **Backend**: Java 17+, Maven 3.6+, MySQL 8+, Redis 6+, RocketMQ 4.8+
+- **Backend**: Java 17+, Maven 3.6+, MySQL 8+, Redis 6+
 
 ## Configuration Instructions
 
@@ -158,25 +154,6 @@ spring:
       port: ?
       password: ?
       database: 0
-
-# Image file paths
-qingdai:
-  url: ?
-  fullSizeUrl: ?
-  thumbnail1000KUrl: ?
-  thumbnail100KUrl: ?
-  thumbnailSizeUrl: ?
-  pendingUrl: ?
-
-#RocketMQ Configuration
-rocketmq:
-  name-server: ?
-  producer:
-    access-key: ?
-    secret-key: ?
-  consumer:
-    access-key: ?
-    secret-key: ?
 ```
 - QingDai-Photo/QingDai-SP/src/main/resources/application.yml
 
