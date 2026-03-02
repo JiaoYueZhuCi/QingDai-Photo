@@ -25,7 +25,6 @@ import com.drew.metadata.exif.ExifSubIFDDirectory;
 import com.qingdai.utils.DateUtils;
 import com.qingdai.utils.FileUtils;
 import com.qingdai.utils.SnowflakeIdGenerator;
-import com.qingdai.utils.BloomFilterUtil;
 import net.coobird.thumbnailator.Thumbnails;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheConfig;
@@ -93,9 +92,6 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
 
-    @Autowired
-    private BloomFilterUtil bloomFilterUtil;
-
     @Lazy
     @Autowired
     private FileProcessService fileProcessService;
@@ -160,13 +156,6 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
     @Override
     @Cacheable(key = "'fileName_' + #photoId", unless = "#result == null")
     public String getFileNameById(String photoId) {
-        // 先检查布隆过滤器，如果布隆过滤器显示元素不存在，则直接返回null
-        // 这样可以避免对不存在的ID进行数据库查询，防止缓存穿透
-        // if (!bloomFilterUtil.exists(photoId)) {
-        // log.debug("照片ID在布隆过滤器中不存在: {}", photoId);
-        // return null;
-        // }
-
         Photo photo = getById(photoId);
         if (photo == null) {
             log.debug("照片ID在数据库中不存在: {}", photoId);
@@ -1514,26 +1503,12 @@ public class PhotoServiceImpl extends BaseCachedServiceImpl<PhotoMapper, Photo> 
 
     @Override
     public boolean save(Photo entity) {
-        boolean result = super.save(entity);
-        if (result) {
-            // 保存成功后，将ID添加到布隆过滤器
-            bloomFilterUtil.add(entity.getId());
-            log.debug("照片ID已添加到布隆过滤器: {}", entity.getId());
-        }
-        return result;
+        return super.save(entity);
     }
 
     @Override
     public boolean saveBatch(Collection<Photo> entityList) {
-        boolean result = super.saveBatch(entityList);
-        if (result) {
-            // 批量保存成功后，将所有ID添加到布隆过滤器
-            bloomFilterUtil.addBatch(entityList.stream()
-                    .map(Photo::getId)
-                    .collect(Collectors.toList()));
-            log.debug("已将{}个照片ID添加到布隆过滤器", entityList.size());
-        }
-        return result;
+        return super.saveBatch(entityList);
     }
 
     /**

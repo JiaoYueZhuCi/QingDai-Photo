@@ -32,13 +32,6 @@ const router = createRouter({
           }),
         },
         {
-          path: '/test',
-          component: () => import('@/views/test/Test.vue').catch((error) => {
-            console.error('组件加载失败:', error);
-            return h(errorPage, { errorMessage: error.toString() });
-          }),
-        },
-        {
           path: '/home',
           component: () => import('@/views/home/Home.vue').catch((error) => {
             console.error('组件加载失败:', error);

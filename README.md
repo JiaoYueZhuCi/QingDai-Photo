@@ -55,7 +55,6 @@
   - Pinia 状态管理
   - Vue Router
   - Element Plus UI组件库
-  - Three.js 3D渲染
   - GSAP 动画库
   - Axios 网络请求
   - vue-verification-code   

@@ -6,11 +6,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.qingdai.redis.RedisBloomCommands;
-import io.lettuce.core.RedisClient;
-import io.lettuce.core.RedisURI;
-import io.lettuce.core.api.StatefulRedisConnection;
-import io.lettuce.core.dynamic.RedisCommandFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
@@ -154,22 +149,4 @@ public class RedisConfig {
                 }
         }
 
-        /**
-         * 为布隆过滤器提供RedisBloomCommands
-         */
-        @Bean
-        public RedisBloomCommands redisBloomCommands(RedisConnectionFactory factory) {
-                // 使用Spring提供的Redis连接工厂，避免创建额外的连接
-                RedisClient redisClient = RedisClient.create();
-                StatefulRedisConnection<String, String> connection = redisClient.connect(
-                                RedisURI.builder()
-                                                .withHost(redisHost)
-                                                .withPort(redisPort)
-                                                .withDatabase(redisDatabase)
-                                                .withPassword(redisPassword)
-                                                .build());
-
-                RedisCommandFactory commandFactory = new RedisCommandFactory(connection);
-                return commandFactory.getCommands(RedisBloomCommands.class);
-        }
 }

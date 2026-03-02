@@ -54,7 +54,6 @@ This project consists of two main modules:
   - Pinia state management
   - Vue Router
   - Element Plus UI component library
-  - Three.js 3D rendering
   - GSAP animation library
   - Axios network requests
   - vue-verification-code   
